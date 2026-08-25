@@ -1,4 +1,4 @@
-import { Check, X, Lock } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 interface QuestionCardProps {
@@ -8,7 +8,7 @@ interface QuestionCardProps {
   options: string[];
   imageUrl?: string;
   selected?: number | null;
-  onSelect: (index: number) => void;
+  onSelect?: (index: number) => void;
   disabled?: boolean;
   review?: { correctIndex: number };
 }
@@ -56,7 +56,7 @@ export default function QuestionCard({
           return (
             <button
               key={i}
-              onClick={() => !disabled && onSelect(i)}
+              onClick={() => !disabled && onSelect?.(i)}
               disabled={disabled}
               className={cn(
                 "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left text-sm transition",

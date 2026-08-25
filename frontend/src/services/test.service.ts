@@ -1,133 +1,128 @@
 import { apiClient } from "./api";
-import { ActiveTestSession, FinishTestPayload, StartTestPayload } from "../types/test";
-import { TestResult } from "../types/result";
+import type { Question } from "../types/question";
+import type { StartTestResponse, TestResultDetail } from "../types/result";
 import { mockQuestions } from "../data/mockQuestions";
-import { mockResults } from "../data/mockResults";
+import { PASS_THRESHOLD } from "../constants/config";
+
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export const testService = {
-  async startTest(payload: StartTestPayload): Promise<ActiveTestSession> {
+  /**
+   * Starts a test session.
+   * Shuffles questions and option order dynamically on every call!
+   * Default count is 50 questions.
+   */
+  async start(
+    courseId?: string,
+    count: number = 50,
+    topicId?: string
+  ): Promise<StartTestResponse> {
     try {
-      const response = await apiClient.post<{ success: boolean; data: ActiveTestSession }>("/tests/start", payload);
-      if (response.data?.data) {
-        return response.data.data;
-      }
+      const response = await apiClient.post<{
+        success: boolean;
+        data: StartTestResponse;
+      }>("/tests/start", { courseId, questionCount: count, topicId });
+      if (response.data?.data) return response.data.data;
     } catch {
-      // fallback
+      // mock fallback with dynamic shuffle
     }
 
-    // Filter questions based on mode or lesson
-    let selectedQuestions = [...mockQuestions];
-    if (payload.lessonId) {
-      const filtered = selectedQuestions.filter((q) => q.lessonId === payload.lessonId);
+    // Prefer the selected topic, then fill from the remaining categorized bank.
+    let pool = [...mockQuestions];
+    if (topicId) {
+      const filtered = pool.filter((q) => q.lessonId === topicId);
       if (filtered.length > 0) {
-        selectedQuestions = filtered;
+        const filteredIds = new Set(filtered.map((q) => q.id));
+        pool = [...filtered, ...pool.filter((q) => !filteredIds.has(q.id))];
       }
     }
 
-    // Question count: default 20 for EXAM_20, or length
-    const limit = payload.questionCount || (payload.mode === "EXAM_20" ? 20 : 15);
-    const sliced = selectedQuestions.slice(0, limit);
+    const requestedCount = Math.min(count, pool.length);
 
-    // SECURITY: Strip isCorrect from options so frontend doesn't see answer before submission
-    const sanitizedQuestions = sliced.map((q) => ({
-      ...q,
-      options: q.options.map((opt) => ({
-        id: opt.id,
-        text: opt.text,
-        order: opt.order,
-      })),
-      explanation: undefined, // hidden during active exam
-    }));
+    // Shuffle the full bank so every new attempt gets a different selection.
+    const shuffledPool = shuffleArray(pool);
+    const selectedQuestions = shuffledPool.slice(0, requestedCount);
 
-    const duration = payload.timeLimitSeconds || (payload.mode === "EXAM_20" ? 20 * 60 : 15 * 60);
+    // 3. For each question, dynamically shuffle its 4 options and update correctIndex
+    const finalQuestions: Question[] = selectedQuestions.map((q, idx) => {
+      const optsWithMeta = q.options.map((optText, origIdx) => ({
+        text: optText,
+        isCorrect: origIdx === q.correctIndex,
+      }));
 
-    return {
-      attemptId: "att-" + Date.now(),
-      mode: payload.mode,
-      lessonId: payload.lessonId,
-      totalQuestions: sanitizedQuestions.length,
-      timeLimitSeconds: duration,
-      startedAt: new Date().toISOString(),
-      questions: sanitizedQuestions,
-      currentQuestionIndex: 0,
-      userAnswers: {},
-      markedForReview: {},
-    };
-  },
-
-  async finishTest(payload: FinishTestPayload): Promise<TestResult> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data: TestResult }>(
-        `/tests/${payload.attemptId}/finish`,
-        payload
-      );
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // fallback
-    }
-
-    // Calculate score locally in mock fallback mode
-    const answeredMap = new Map(payload.answers.map((a) => [a.questionId, a.selectedOptionId]));
-    let correctCount = 0;
-    let incorrectCount = 0;
-
-    const reviewItems = mockQuestions.slice(0, payload.answers.length || 20).map((q) => {
-      const selectedOptionId = answeredMap.get(q.id) || null;
-      const correctOption = q.options.find((o) => o.isCorrect);
-      const correctOptionId = correctOption?.id || q.options[0].id;
-      const isCorrect = selectedOptionId === correctOptionId;
-
-      if (isCorrect) {
-        correctCount++;
-      } else {
-        incorrectCount++;
-      }
+      const shuffledOpts = shuffleArray(optsWithMeta);
+      const newCorrectIndex = shuffledOpts.findIndex((o) => o.isCorrect);
 
       return {
-        question: q,
-        selectedOptionId,
-        correctOptionId,
-        isCorrect,
-        explanation: q.explanation,
-        ruleClause: q.ruleClause,
+        ...q,
+        id: `${q.id}-att-${Date.now()}-${idx}`,
+        options: shuffledOpts.map((o) => o.text),
+        correctIndex: newCorrectIndex >= 0 ? newCorrectIndex : 0,
+        order: idx + 1,
       };
     });
 
-    const totalQuestions = reviewItems.length;
-    const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
-    const isPassed = scorePercentage >= 90; // 18 out of 20 needed
-
-    const result: TestResult = {
-      id: "res-" + Date.now(),
-      attemptId: payload.attemptId,
-      userId: "user-1",
-      mode: "EXAM_20",
-      totalQuestions,
-      correctAnswersCount: correctCount,
-      incorrectAnswersCount: incorrectCount,
-      unansweredCount: totalQuestions - (correctCount + incorrectCount),
-      scorePercentage,
-      isPassed,
-      timeSpentSeconds: payload.timeSpentSeconds,
-      completedAt: new Date().toISOString(),
-      questionsReview: reviewItems,
+    return {
+      test: {
+        id: "test-" + Date.now(),
+        totalQuestions: finalQuestions.length,
+      },
+      questions: finalQuestions,
     };
-
-    return result;
   },
 
-  async getResultById(id: string): Promise<TestResult | null> {
-    try {
-      const response = await apiClient.get<{ success: boolean; data: TestResult }>(`/results/${id}`);
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // fallback
-    }
-    const found = mockResults.find((r) => r.id === id || r.attemptId === id);
-    return found || mockResults[0];
+  computeResult(
+    testId: string,
+    questions: Question[],
+    answers: Record<string, number>,
+    timeSpent: number,
+    courseId?: string
+  ): TestResultDetail {
+    let correct = 0;
+    let wrong = 0;
+    let skipped = 0;
+
+    const review = questions.map((q) => {
+      const selectedIndex =
+        answers[q.id] === undefined ? null : answers[q.id];
+      if (selectedIndex === null) skipped++;
+      else if (selectedIndex === q.correctIndex) correct++;
+      else wrong++;
+
+      return {
+        questionId: q.id,
+        text: q.text,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        selectedIndex,
+        explanation: q.explanation,
+      };
+    });
+
+    const total = questions.length;
+    const score = total ? Math.round((correct / total) * 100) : 0;
+    const passed = score >= PASS_THRESHOLD;
+
+    return {
+      id: testId,
+      courseId,
+      totalQuestions: total,
+      correctAnswers: correct,
+      wrongAnswers: wrong,
+      skippedAnswers: skipped,
+      score,
+      passed,
+      timeSpent,
+      createdAt: new Date().toISOString(),
+      answers: review,
+      questionsReview: review,
+    };
   },
 };

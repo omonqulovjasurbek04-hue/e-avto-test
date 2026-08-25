@@ -21,3 +21,9 @@ export const LoadingScreen: React.FC<{ text?: string }> = ({ text = "Yuklanmoqda
     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{text}</p>
   </div>
 );
+
+export const FullSpinner: React.FC = () => (
+  <div className="flex min-h-screen w-full items-center justify-center">
+    <Spinner size="lg" />
+  </div>
+);

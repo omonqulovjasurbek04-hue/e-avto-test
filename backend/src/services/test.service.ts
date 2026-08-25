@@ -26,7 +26,7 @@ export const startTest = async (userId: string, input: TestStartInput) => {
     throw err;
   }
 
-  const requested = input.count ?? 20;
+  const requested = input.count ?? 50;
   const totalQuestions = Math.min(requested, available.length);
   const picked = shuffle(available).slice(0, totalQuestions);
 

@@ -4,4 +4,3 @@ export * from "./course.service";
 export * from "./lesson.service";
 export * from "./test.service";
 export * from "./result.service";
-export * from "./admin.service";

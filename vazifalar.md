@@ -78,3 +78,33 @@ Barcha asosiy bosqichlar to'liq ishlab chiqildi va muvaffaqiyatli sinovdan o'tka
 ### 🚀 9-BOSQICH: Build, Testlash va Hujjatlashtirish
 - [x] Frontend `npm run build` va `npm run typecheck` (Muvaffaqiyatli yakunlandi: 0 xato)
 - [x] Backend `npm run build` va `npm run typecheck` (Muvaffaqiyatli yakunlandi: 0 xato)
+
+---
+
+### 🤖 10-BOSQICH: Skilllardan foydalanish qoidasi
+
+Har bir yangi vazifani boshlashdan avval mos `SKILL.md` faylini o‘qing.
+Skilllar `skills/` papkasida, to‘liq yo‘riqnoma esa `skills/PROJECT_SKILLS.md`
+va `AGENTS.md`da joylashgan.
+
+| Vazifa turi | Qayerda ishlatiladi | O‘qiladigan skill |
+|---|---|---|
+| Frontend + backend yangi funksiya | `frontend/src/` va `backend/src/` birga o‘zgarsa | `skills/claude-skills/skills/fullstack-guardian/SKILL.md` |
+| React sahifa, component, hook, Zustand yoki forma | `frontend/src/pages/`, `components/`, `hooks/`, `store/` | `skills/claude-skills/skills/react-expert/SKILL.md` |
+| Responsive UI, Tailwind, dark mode, accessibility | `frontend/src/components/`, `index.css`, Tailwind config | `skills/ui-ux-pro-max-skill/cli/assets/skills/ui-styling/SKILL.md` |
+| API endpoint, controller, service yoki CRUD | `backend/src/routes/`, `controllers/`, `services/`, `validators/` | `skills/claude-skills/skills/api-designer/SKILL.md` |
+| JWT, login, admin rol, Zod, CORS, rate limit | `backend/src/middleware/`, `validators/`, `utils/`, auth service | `skills/claude-skills/skills/secure-code-guardian/SKILL.md` |
+| Prisma model, migration, indeks yoki seed | `backend/prisma/schema.prisma`, `migrations/`, `seed.ts` | `skills/claude-skills/skills/postgres-pro/SKILL.md` va `skills/awesome-ai-agent-skills/database/database-migration/SKILL.md` |
+| Query performance va database optimizatsiyasi | Prisma service querylari va `schema.prisma` indekslari | `skills/claude-skills/skills/database-optimizer/SKILL.md` |
+| Unit, integration yoki E2E test | Test fayllari, login/course/test flow | `skills/awesome-ai-agent-skills/code-and-development/testing/SKILL.md`, E2E uchun `skills/claude-skills/skills/playwright-expert/SKILL.md` |
+| Bug, typecheck yoki runtime xatosi | Xato chiqqan frontend/backend modul | `skills/claude-skills/skills/debugging-wizard/SKILL.md` |
+| Kod va security review | Pull request yoki yakuniy o‘zgarishlar | `skills/claude-skills/skills/code-reviewer/SKILL.md`, security uchun `skills/awesome-ai-agent-skills/security/security-audit/SKILL.md` |
+| Docker, CI/CD va deployment | `docker-compose.yml`, `.github/workflows/`, `.env.example`, README | `skills/awesome-ai-agent-skills/devops-and-infrastructure/docker-compose-setup/SKILL.md` va `ci-cd/SKILL.md` |
+
+#### Har bir yangi task uchun ketma-ketlik
+
+- [ ] Task turiga mos skillni jadvaldan tanlab, `SKILL.md`ni o‘qish.
+- [ ] Agar API o‘zgarsa frontend service/type va `docs/api.md`ni ham yangilash.
+- [ ] Agar database o‘zgarsa migration, `prisma generate` va `prisma validate`ni tekshirish.
+- [ ] Auth yoki foydalanuvchi ma’lumoti bo‘lsa server tomondagi validation va authorizationni tekshirish.
+- [ ] Yakunda `npm run typecheck`, build va tegishli testni bajarish.

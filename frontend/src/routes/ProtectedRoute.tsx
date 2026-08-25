@@ -1,14 +1,13 @@
-import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "../store/auth.store";
+import { Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { ROUTES } from "@/constants/routes";
+import { FullSpinner } from "@/components/ui/Spinner";
 
-export const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  const location = useLocation();
+export default function ProtectedRoute() {
+  const { isAuthenticated, loading } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+  if (loading) return <FullSpinner />;
+  if (!isAuthenticated) return <Navigate to={ROUTES.login} replace />;
 
-  return children;
-};
+  return <Outlet />;
+}

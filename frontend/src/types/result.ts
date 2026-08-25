@@ -1,59 +1,52 @@
-import { Question } from "./question";
-import { TestMode } from "./test";
+import type { Question } from "./question";
 
-export interface QuestionReviewItem {
-  question: Question;
-  selectedOptionId: string | null;
-  correctOptionId: string;
-  isCorrect: boolean;
-  explanation?: string | null;
-  ruleClause?: string | null;
+export interface AnswerReview {
+  questionId: string;
+  text: string;
+  options: string[];
+  correctIndex: number;
+  selectedIndex: number | null;
+  explanation?: string;
 }
 
-export interface TestResult {
+export interface TestResultSummary {
   id: string;
-  attemptId: string;
-  userId: string;
-  mode: TestMode;
-  lessonId?: string | null;
-  lessonTitle?: string | null;
+  courseId?: string;
+  courseTitle?: string;
   totalQuestions: number;
-  correctAnswersCount: number;
-  incorrectAnswersCount: number;
-  unansweredCount: number;
-  scorePercentage: number;
-  isPassed: boolean; // >= 90% (18/20) for standard exam
-  timeSpentSeconds: number;
-  completedAt: string;
-  questionsReview?: QuestionReviewItem[];
+  correctAnswers: number;
+  wrongAnswers: number;
+  skipped?: number;
+  skippedAnswers?: number;
+  score: number;
+  passed: boolean;
+  timeSpent: number;
+  createdAt: string;
+}
+
+export interface TestResultDetail extends TestResultSummary {
+  answers: AnswerReview[];
+  questionsReview?: AnswerReview[];
+}
+
+export interface StartTestResponse {
+  test: { id: string; totalQuestions: number };
+  questions: Question[];
 }
 
 export interface LeaderboardEntry {
-  rank: number;
-  userId: string;
+  id: string;
   name: string;
-  avatarUrl?: string;
-  testsCompleted: number;
+  points: number;
+  tests: number;
   averageScore: number;
-  passRate: number;
-  studyStreakDays: number;
+  avatarColor?: string;
 }
 
-export interface ProgressSummary {
-  overallPassRate: number;
-  totalTestsTaken: number;
-  totalQuestionsSolved: number;
-  averageTimePerTestSeconds: number;
-  categoryStrengths: {
-    category: string;
-    total: number;
-    correct: number;
-    accuracyPercentage: number;
-  }[];
-  recentActivity: {
-    date: string;
-    score: number;
-    passed: boolean;
-    mode: string;
-  }[];
+export interface ProgressStats {
+  weekly: { date: string; count: number }[];
+  avgScore: number;
+  completedLessons: number;
+  learningMinutes: number;
+  progressPct: number;
 }

@@ -1,51 +1,67 @@
 import { create } from "zustand";
-import { User } from "../types/user";
+import type { User } from "../types/user";
+import { authService } from "../services/auth.service";
 import { storage } from "../utils/storage";
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  setAuth: (user: User, token: string) => void;
-  updateUser: (user: Partial<User>) => void;
+  loading: boolean;
+  init: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (input: { name: string; email: string; password: string }) => Promise<void>;
   logout: () => void;
-  initAuth: () => void;
+  updateUser: (u: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: storage.getUser<User>(),
-  token: storage.getToken(),
   isAuthenticated: !!storage.getToken(),
-  isLoading: false,
+  loading: false,
 
-  setAuth: (user, token) => {
-    storage.setToken(token);
-    storage.setUser(user);
-    set({ user, token, isAuthenticated: true, isLoading: false });
+  init: () => {
+    const token = storage.getToken();
+    const user = storage.getUser<User>();
+    set({ isAuthenticated: !!(token && user), user: user ?? null });
   },
 
-  updateUser: (updatedFields) => {
-    const currentUser = get().user;
-    if (!currentUser) return;
-    const updated = { ...currentUser, ...updatedFields };
-    storage.setUser(updated);
-    set({ user: updated });
+  login: async (email, password) => {
+    set({ loading: true });
+    try {
+      const { user, token } = await authService.login({ email, password });
+      storage.setToken(token);
+      storage.setUser(user);
+      set({ user, isAuthenticated: true, loading: false });
+    } catch (e) {
+      set({ loading: false });
+      throw e;
+    }
+  },
+
+  register: async (input) => {
+    set({ loading: true });
+    try {
+      const { user, token } = await authService.register(input);
+      storage.setToken(token);
+      storage.setUser(user);
+      set({ user, isAuthenticated: true, loading: false });
+    } catch (e) {
+      set({ loading: false });
+      throw e;
+    }
   },
 
   logout: () => {
     storage.removeToken();
     storage.removeUser();
-    set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+    set({ user: null, isAuthenticated: false, loading: false });
   },
 
-  initAuth: () => {
-    const token = storage.getToken();
-    const user = storage.getUser<User>();
-    if (token && user) {
-      set({ token, user, isAuthenticated: true });
-    } else {
-      set({ token: null, user: null, isAuthenticated: false });
-    }
+  updateUser: (u) => {
+    const current = get().user;
+    if (!current) return;
+    const updated = { ...current, ...u };
+    storage.setUser(updated);
+    set({ user: updated });
   },
 }));

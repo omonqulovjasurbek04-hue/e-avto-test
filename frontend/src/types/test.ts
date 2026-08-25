@@ -1,39 +1,17 @@
-import { Question } from "./question";
+import type { Question } from "./question";
+import type { TestResultDetail } from "./result";
 
-export type TestMode = "EXAM_20" | "LESSON_TOPIC" | "MARATHON" | "MISTAKES_PRACTICE";
+export type TestStatus = "idle" | "active" | "finished";
 
-export interface StartTestPayload {
-  mode: TestMode;
-  lessonId?: string;
-  questionCount?: number;
-  timeLimitSeconds?: number;
-}
-
-export interface ActiveTestSession {
-  attemptId: string;
-  mode: TestMode;
-  lessonId?: string;
-  lessonTitle?: string;
-  totalQuestions: number;
-  timeLimitSeconds: number; // e.g. 20 * 60 = 1200 seconds for 20 questions
-  startedAt: string;
+export interface TestSession {
+  id: string;
+  courseId?: string;
   questions: Question[];
-  currentQuestionIndex: number;
-  userAnswers: Record<string, string>; // questionId -> selectedOptionId
-  markedForReview: Record<string, boolean>; // questionId -> boolean flag
-}
-
-export interface SubmitAnswerPayload {
-  attemptId: string;
-  questionId: string;
-  selectedOptionId: string;
-}
-
-export interface FinishTestPayload {
-  attemptId: string;
-  timeSpentSeconds: number;
-  answers: {
-    questionId: string;
-    selectedOptionId: string;
-  }[];
+  answers: Record<string, number>;
+  currentIndex: number;
+  marked: string[];
+  timeLeft: number;
+  duration: number;
+  status: TestStatus;
+  result: TestResultDetail | null;
 }

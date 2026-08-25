@@ -1,116 +1,84 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+import { MainLayout } from "@/layouts/MainLayout";
+import { AuthLayout } from "@/layouts/AuthLayout";
+import { StudentLayout } from "@/layouts/StudentLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import { FullSpinner } from "@/components/ui/Spinner";
+import { ROUTES } from "@/constants/routes";
 
-// Layouts
-import { MainLayout } from "../layouts/MainLayout";
-import { AuthLayout } from "../layouts/AuthLayout";
-import { StudentLayout } from "../layouts/StudentLayout";
-import { AdminLayout } from "../layouts/AdminLayout";
+const Home = lazy(() => import("@/pages/public/Home"));
+const Courses = lazy(() => import("@/pages/public/Courses"));
+const CourseDetails = lazy(() => import("@/pages/public/CourseDetails"));
+const About = lazy(() => import("@/pages/public/About"));
+const Contact = lazy(() => import("@/pages/public/Contact"));
+const Faq = lazy(() => import("@/pages/public/Faq"));
 
-// Guards
-import { ProtectedRoute } from "./ProtectedRoute";
-import { AdminRoute } from "./AdminRoute";
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Register = lazy(() => import("@/pages/auth/Register"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 
-// Public Pages
-import { HomePage } from "../pages/public/HomePage";
-import { CoursesPage } from "../pages/public/CoursesPage";
-import { CourseDetailPage } from "../pages/public/CourseDetailPage";
-import { AboutPage } from "../pages/public/AboutPage";
-import { ContactPage } from "../pages/public/ContactPage";
-import { FaqPage } from "../pages/public/FaqPage";
+const Dashboard = lazy(() => import("@/pages/student/Dashboard"));
+const Lessons = lazy(() => import("@/pages/student/Lessons"));
+const LessonDetails = lazy(() => import("@/pages/student/LessonDetails"));
+const VideoLesson = lazy(() => import("@/pages/student/VideoLesson"));
+const Tests = lazy(() => import("@/pages/student/Tests"));
+const TestPage = lazy(() => import("@/pages/student/TestPage"));
+const TestResult = lazy(() => import("@/pages/student/TestResult"));
+const TestReview = lazy(() => import("@/pages/student/TestReview"));
+const History = lazy(() => import("@/pages/student/History"));
+const Progress = lazy(() => import("@/pages/student/Progress"));
+const Leaderboard = lazy(() => import("@/pages/student/Leaderboard"));
+const Profile = lazy(() => import("@/pages/student/Profile"));
+const Settings = lazy(() => import("@/pages/student/Settings"));
 
-// Auth Pages
-import { LoginPage } from "../pages/auth/LoginPage";
-import { RegisterPage } from "../pages/auth/RegisterPage";
-import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
-import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
+const NotFound = lazy(() => import("@/pages/errors/NotFound"));
+const Forbidden = lazy(() => import("@/pages/errors/Forbidden"));
+const ServerError = lazy(() => import("@/pages/errors/ServerError"));
 
-// Student Pages
-import { DashboardPage } from "../pages/student/DashboardPage";
-import { LessonsPage } from "../pages/student/LessonsPage";
-import { LessonDetailPage } from "../pages/student/LessonDetailPage";
-import { VideoLessonPage } from "../pages/student/VideoLessonPage";
-import { TestsListPage } from "../pages/student/TestsListPage";
-import { TestActivePage } from "../pages/student/TestActivePage";
-import { TestResultPage } from "../pages/student/TestResultPage";
-import { TestReviewPage } from "../pages/student/TestReviewPage";
-import { HistoryPage } from "../pages/student/HistoryPage";
-import { ProgressPage } from "../pages/student/ProgressPage";
-import { LeaderboardPage } from "../pages/student/LeaderboardPage";
-import { ProfilePage } from "../pages/student/ProfilePage";
-
-// Admin Pages
-import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
-import { AdminCoursesPage } from "../pages/admin/AdminCoursesPage";
-import { AdminQuestionsPage } from "../pages/admin/AdminQuestionsPage";
-import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
-
-// Error Pages
-import { NotFoundPage } from "../pages/errors/NotFoundPage";
-import { ForbiddenPage } from "../pages/errors/ForbiddenPage";
-
-export const AppRoutes: React.FC = () => {
+export default function AppRoutes() {
   return (
-    <Routes>
-      {/* 1. Public Routes with MainLayout */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/courses" element={<CoursesPage />} />
-        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/faq" element={<FaqPage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-      </Route>
+    <Suspense fallback={<FullSpinner />}>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path={ROUTES.home} element={<Home />} />
+          <Route path={ROUTES.courses} element={<Courses />} />
+          <Route path="/courses/:courseId" element={<CourseDetails />} />
+          <Route path={ROUTES.about} element={<About />} />
+          <Route path={ROUTES.contact} element={<Contact />} />
+          <Route path={ROUTES.faq} element={<Faq />} />
+        </Route>
 
-      {/* 2. Auth Routes with AuthLayout */}
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-      </Route>
+        <Route element={<AuthLayout />}>
+          <Route path={ROUTES.login} element={<Login />} />
+          <Route path={ROUTES.register} element={<Register />} />
+          <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
+          <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
+        </Route>
 
-      {/* 3. Student Cabinet (Protected) */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <StudentLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/lessons" element={<LessonsPage />} />
-        <Route path="/lessons/:lessonId" element={<LessonDetailPage />} />
-        <Route path="/lessons/:lessonId/video" element={<VideoLessonPage />} />
-        <Route path="/tests" element={<TestsListPage />} />
-        <Route path="/tests/:testId" element={<TestActivePage />} />
-        <Route path="/tests/:testId/result" element={<TestResultPage />} />
-        <Route path="/tests/:testId/review" element={<TestReviewPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<Navigate to="/profile" replace />} />
-      </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<StudentLayout />}>
+            <Route path={ROUTES.dashboard} element={<Dashboard />} />
+            <Route path={ROUTES.lessons} element={<Lessons />} />
+            <Route path="/lessons/:lessonId" element={<LessonDetails />} />
+            <Route path="/lessons/:lessonId/video" element={<VideoLesson />} />
+            <Route path={ROUTES.tests} element={<Tests />} />
+            <Route path="/tests/:testId" element={<TestPage />} />
+            <Route path="/tests/:testId/result" element={<TestResult />} />
+            <Route path="/tests/:testId/review" element={<TestReview />} />
+            <Route path={ROUTES.history} element={<History />} />
+            <Route path={ROUTES.progress} element={<Progress />} />
+            <Route path={ROUTES.leaderboard} element={<Leaderboard />} />
+            <Route path={ROUTES.profile} element={<Profile />} />
+            <Route path={ROUTES.settings} element={<Settings />} />
+          </Route>
+        </Route>
 
-      {/* 4. Admin Management (Admin Protected) */}
-      <Route
-        element={
-          <AdminRoute>
-            <AdminLayout />
-          </AdminRoute>
-        }
-      >
-        <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="/admin/courses" element={<AdminCoursesPage />} />
-        <Route path="/admin/questions" element={<AdminQuestionsPage />} />
-        <Route path="/admin/users" element={<AdminUsersPage />} />
-      </Route>
-
-      {/* 5. Error routes */}
-      <Route path="/403" element={<ForbiddenPage />} />
-      <Route path="/404" element={<NotFoundPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route path="/403" element={<Forbidden />} />
+        <Route path="/500" element={<ServerError />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
-};
+}

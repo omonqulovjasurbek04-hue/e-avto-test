@@ -59,16 +59,20 @@ export const Progress: React.FC<ProgressProps> = ({
   );
 };
 
+export const ProgressBar = Progress;
+
 export const CircularProgress: React.FC<{
-  percentage: number;
+  value?: number;
+  percentage?: number;
   size?: number;
   strokeWidth?: number;
   color?: string;
   label?: string;
-}> = ({ percentage, size = 110, strokeWidth = 10, color = "#2563eb", label }) => {
+}> = ({ value, percentage, size = 110, strokeWidth = 10, color = "#2563eb", label }) => {
+  const pct = percentage ?? value ?? 0;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -86,18 +90,18 @@ export const CircularProgress: React.FC<{
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={color.startsWith("text-") ? "currentColor" : color}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           fill="transparent"
-          className="transition-all duration-500 ease-out"
+          className={cn("transition-all duration-500 ease-out", color.startsWith("text-") ? color : "")}
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center text-center">
         <span className="text-xl font-extrabold text-slate-900 dark:text-white">
-          {percentage}%
+          {pct}%
         </span>
         {label && <span className="text-[10px] text-slate-500 dark:text-slate-400">{label}</span>}
       </div>

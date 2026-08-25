@@ -1,22 +1,26 @@
 export interface Lesson {
   id: string;
   courseId: string;
+  slug?: string;
   title: string;
-  slug: string;
   description?: string;
-  content: string;
+  content?: string;
   videoUrl?: string;
-  durationMinutes: number;
+  thumbnail?: string;
   duration?: number;
-  completed?: boolean;
+  durationMinutes?: number;
   order: number;
-  isPublished: boolean;
-  createdAt: string;
-  updatedAt: string;
+  completed?: boolean;
+  objectives?: string[];
+  category?: string;
+  questionCount?: number;
+  isPublished?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   course?: {
     id: string;
     title: string;
-    slug: string;
+    slug?: string;
   };
   attachments?: {
     id: string;
@@ -24,22 +28,4 @@ export interface Lesson {
     fileUrl: string;
     fileType: string;
   }[];
-  questionCount?: number;
-  userProgress?: {
-    isCompleted: boolean;
-    watchedSeconds: number;
-    lastAccessedAt: string;
-  };
-}
-
-export interface CreateLessonPayload {
-  courseId: string;
-  title: string;
-  slug?: string;
-  description?: string;
-  content: string;
-  videoUrl?: string;
-  durationMinutes?: number;
-  order?: number;
-  isPublished?: boolean;
 }

@@ -3,7 +3,8 @@ import { cn } from "../../utils/cn";
 import { X } from "lucide-react";
 
 export interface ModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
   title?: string;
   description?: string;
@@ -13,19 +14,21 @@ export interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
+  open,
   onClose,
   title,
   description,
   children,
   maxWidth = "md",
 }) => {
+  const isOpenResolved = open ?? isOpen;
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape" && isOpenResolved) {
         onClose();
       }
     };
-    if (isOpen) {
+    if (isOpenResolved) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
     }
@@ -33,9 +36,9 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpenResolved, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpenResolved) return null;
 
   const maxWidthClasses = {
     sm: "max-w-sm",
