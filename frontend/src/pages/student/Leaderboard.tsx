@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Trophy, Medal, Crown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { userService } from "@/services/user.service";
 import type { LeaderboardEntry } from "@/types/result";
 import { Avatar } from "@/components/ui/Avatar";
@@ -31,6 +32,7 @@ const medalStyles: Record<number, { ring: string; bg: string; label: string; ico
 };
 
 export default function Leaderboard() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -75,8 +77,8 @@ export default function Leaderboard() {
       <div className="container-page py-8">
         <EmptyState
           icon={<Trophy className="h-12 w-12" />}
-          title="Reyting hozircha bo'sh"
-          description="Tez orada o'quvchilar paydo bo'ladi."
+          title={t("leaderboard.noData")}
+          description={t("leaderboard.noData")}
         />
       </div>
     );
@@ -87,10 +89,10 @@ export default function Leaderboard() {
       <header className="mb-6">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
           <Trophy className="h-6 w-6 text-amber-500" />
-          O'quvchilar Reytingi
+          {t("leaderboard.title")}
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Eng yaxshi natijalarga erishgan o'quvchilar.
+          {t("leaderboard.description")}
         </p>
       </header>
 
@@ -125,14 +127,14 @@ export default function Leaderboard() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900 dark:text-white">{e.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {e.tests} ta test · O'rtacha {Math.round(e.averageScore)}%
+                    {e.tests} {t("leaderboard.tests")} · {t("leaderboard.avgScore")} {Math.round(e.averageScore)}%
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-brand-600 dark:text-brand-400">
                     {e.points}
                   </p>
-                  <p className="text-[11px] text-slate-400">ball</p>
+                  <p className="text-[11px] text-slate-400">{t("leaderboard.points")}</p>
                 </div>
               </CardContent>
             </Card>

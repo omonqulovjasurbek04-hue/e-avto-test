@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { History as HistoryIcon, Eye, Clock, Trophy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { resultService } from "@/services/result.service";
 import type { TestResultSummary } from "@/types/result";
 import { ROUTES } from "@/constants/routes";
@@ -18,6 +19,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 type FilterId = "all" | "passed" | "failed";
 
 export default function History() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [results, setResults] = useState<TestResultSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,17 +56,17 @@ export default function History() {
   }, [results, filter]);
 
   const tabs = [
-    { id: "all", label: "Hammasi", count: counts.all },
-    { id: "passed", label: "O'tganlar", count: counts.passed },
-    { id: "failed", label: "Yiqilganlar", count: counts.failed },
+    { id: "all", label: t("common.all"), count: counts.all },
+    { id: "passed", label: t("common.passed"), count: counts.passed },
+    { id: "failed", label: t("common.failed"), count: counts.failed },
   ];
 
   return (
     <div className="container-page py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Test Tarixi</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("history.title")}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Topshirgan imtihonlaringiz natijalari va tahlili.
+          {t("history.description")}
         </p>
       </header>
 
@@ -83,10 +85,10 @@ export default function History() {
       {!loading && !error && filtered.length === 0 && (
         <EmptyState
           icon={<HistoryIcon className="h-12 w-12" />}
-          title="Hozircha natija yo'q"
-          description="Imtihon topshirgandan so'ng natijalaringiz shu yerda paydo bo'ladi."
+          title={t("history.noHistory")}
+          description={t("history.noHistoryDesc")}
           action={
-            <Button onClick={() => navigate(ROUTES.tests)}>Test topshirish</Button>
+            <Button onClick={() => navigate(ROUTES.tests)}>{t("tests.startTest")}</Button>
           }
         />
       )}
@@ -99,10 +101,10 @@ export default function History() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="truncate font-semibold text-slate-900 dark:text-white">
-                      {r.courseTitle ?? "Umumiy test"}
+                      {r.courseTitle ?? t("tests.generalTest")}
                     </h3>
                     <Badge variant={r.passed ? "success" : "danger"}>
-                      {r.passed ? "O'tdi" : "O'tmadi"}
+                      {r.passed ? t("common.passed") : t("common.failed")}
                     </Badge>
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
@@ -113,7 +115,7 @@ export default function History() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Trophy className="h-3.5 w-3.5" />
-                      {r.correctAnswers}/{r.totalQuestions} to'g'ri
+                      {r.correctAnswers}/{r.totalQuestions} {t("testResult.correct")}
                     </span>
                   </div>
                 </div>
@@ -130,7 +132,7 @@ export default function History() {
                     >
                       {Math.round(r.score)}%
                     </p>
-                    <p className="text-[11px] text-slate-400">Natija</p>
+                    <p className="text-[11px] text-slate-400">{t("testResult.score")}</p>
                   </div>
                   <Link to={ROUTES.testReview(r.id)}>
                     <Button variant="outline" size="sm" leftIcon={<Eye className="h-4 w-4" />}>

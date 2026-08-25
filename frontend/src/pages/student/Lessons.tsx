@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDebounce } from "@/hooks/useDebounce";
 import { lessonService } from "@/services/lesson.service";
 import type { Lesson } from "@/types/lesson";
@@ -10,6 +11,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function Lessons() {
+  const { t } = useTranslation();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -44,34 +46,33 @@ export default function Lessons() {
   }, [lessons, debounced]);
 
   return (
-    <div className="container-page py-8">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Video darslar</h1>
-      <p className="mt-1 text-sm text-slate-500">Barcha mavjud darslar ro'yxati</p>
+    <div className="container-page py-8 space-y-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{t("lessons.title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("lessons.description")}</p>
+      </div>
 
-      <div className="relative mt-6 max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <div className="max-w-md">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Darslarni qidirish..."
-          className="pl-9"
+          placeholder={t("lessons.searchPlaceholder")}
+          leftIcon={<Search className="h-4 w-4" />}
         />
       </div>
 
       {loading ? (
-        <div className="mt-6 grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
+            <Skeleton key={i} className="h-20 w-full rounded-2xl" />
           ))}
         </div>
       ) : error ? (
-        <div className="mt-6">
-          <ErrorState onRetry={load} />
-        </div>
+        <ErrorState onRetry={load} />
       ) : filtered.length === 0 ? (
-        <EmptyState title="Darslar topilmadi" description="Qidiruv bo'yicha natija yo'q." />
+        <EmptyState title={t("lessons.noLessons")} description={t("common.noResults")} />
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {filtered.map((l, i) => (
             <LessonCard key={l.id} lesson={l} index={i} courseId={l.courseId} />
           ))}

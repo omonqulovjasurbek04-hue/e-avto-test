@@ -136,13 +136,13 @@ export const AdminLayout: React.FC = () => {
             >
               <Menu className="h-6 w-6" />
             </button>
-            <span className="text-xs font-semibold text-slate-400">
+            <span className="truncate text-xs font-semibold text-slate-400">
               Admin Platformasi
             </span>
           </div>
 
           <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span>{user?.name || "Bosh Admin"}</span>
+            <span className="max-w-[9rem] truncate sm:max-w-none">{user?.name || "Bosh Admin"}</span>
           </div>
         </header>
 

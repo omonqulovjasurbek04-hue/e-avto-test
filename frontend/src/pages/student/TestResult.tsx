@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, MinusCircle, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { resultService } from "@/services/result.service";
 import { ROUTES } from "@/constants/routes";
 import type { TestResultDetail } from "@/types/result";
@@ -14,6 +15,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatTime } from "@/utils/formatTime";
 
 export default function TestResult() {
+  const { t } = useTranslation();
   const { testId } = useParams<{ testId: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<TestResultDetail | null>(null);
@@ -59,8 +61,8 @@ export default function TestResult() {
     return (
       <div className="container-page py-8">
         <EmptyState
-          title="Natija topilmadi"
-          description="Kechirasiz, bu test natijasi mavjud emas."
+          title={t("common.noResults")}
+          description={t("common.noResults")}
         />
       </div>
     );
@@ -88,10 +90,10 @@ export default function TestResult() {
             </span>
           </div>
           <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
-            {detail.passed ? "Tabriklaymiz! Siz o'tdingiz" : "Afsuski, siz o'ta olmadingiz"}
+            {detail.passed ? t("testResult.congratulations") + " " + t("testResult.passed") : t("testResult.failed")}
           </h1>
           <Badge variant={detail.passed ? "success" : "danger"} className="mt-2">
-            {detail.passed ? "Muvaffaqiyatli" : "Muvaffaqiyatsiz"}
+            {detail.passed ? t("common.passed") : t("common.failed")}
           </Badge>
         </div>
 
@@ -102,7 +104,7 @@ export default function TestResult() {
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {detail.correctAnswers}
               </span>
-              <span className="text-xs text-slate-500">To'g'ri</span>
+              <span className="text-xs text-slate-500">{t("testResult.correct")}</span>
             </CardContent>
           </Card>
           <Card>
@@ -111,7 +113,7 @@ export default function TestResult() {
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {detail.wrongAnswers}
               </span>
-              <span className="text-xs text-slate-500">Noto'g'ri</span>
+              <span className="text-xs text-slate-500">{t("testResult.incorrect")}</span>
             </CardContent>
           </Card>
           <Card>
@@ -120,7 +122,7 @@ export default function TestResult() {
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {detail.skipped}
               </span>
-              <span className="text-xs text-slate-500">O'tkazib yuborilgan</span>
+              <span className="text-xs text-slate-500">{t("common.skipped")}</span>
             </CardContent>
           </Card>
           <Card>
@@ -129,7 +131,7 @@ export default function TestResult() {
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {formatTime(detail.timeSpent)}
               </span>
-              <span className="text-xs text-slate-500">Sarflangan vaqt</span>
+              <span className="text-xs text-slate-500">{t("testResult.timeSpent")}</span>
             </CardContent>
           </Card>
         </div>
@@ -139,14 +141,14 @@ export default function TestResult() {
             onClick={() => navigate(ROUTES.testReview(detail.id))}
             leftIcon={<AlertTriangle className="h-5 w-5" />}
           >
-            Xatolarni ko'rish
+            {t("testResult.reviewAnswers")}
           </Button>
           <Button
             variant="outline"
             onClick={() => navigate(ROUTES.tests)}
             leftIcon={<RotateCcw className="h-5 w-5" />}
           >
-            Qayta ishlash
+            {t("testResult.retakeTest")}
           </Button>
         </div>
       </motion.div>

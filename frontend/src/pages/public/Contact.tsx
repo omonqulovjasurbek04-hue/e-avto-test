@@ -3,20 +3,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Mail, Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 
-const schema = z.object({
-  name: z.string().min(2, "Ism kamida 2 ta belgidan iborat bo'lishi kerak"),
-  email: z.string().email("Noto'g'ri email manzili"),
-  subject: z.string().min(3, "Mavzu kamida 3 ta belgidan iborat bo'lishi kerak"),
-  message: z.string().min(10, "Xabar kamida 10 ta belgidan iborat bo'lishi kerak"),
-});
-
-type FormValues = z.infer<typeof schema>;
-
 export default function Contact() {
+  const { t } = useTranslation();
+
+  const schema = z.object({
+    name: z.string().min(2, t("validation.minLength", { min: 2 })),
+    email: z.string().email(t("validation.email")),
+    subject: z.string().min(3, t("validation.minLength", { min: 3 })),
+    message: z.string().min(10, t("validation.minLength", { min: 10 })),
+  });
+
+  type FormValues = z.infer<typeof schema>;
+
   const {
     register,
     handleSubmit,
@@ -26,10 +29,9 @@ export default function Contact() {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (_values: FormValues) => {
     await new Promise((r) => setTimeout(r, 600));
-    console.log("Contact form submitted (mock):", values);
-    toast.success("Xabaringiz yuborildi!");
+    toast.success(t("contact.form.success"));
     reset();
   };
 
@@ -37,43 +39,43 @@ export default function Contact() {
     <div className="container-page py-10">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Biz bilan bog'laning</h1>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t("contact.title")}</h1>
           <p className="mt-2 text-slate-500">
-            Savollaringiz bo'lsa, quyidagi forma orqali yuboring.
+            {t("contact.description")}
           </p>
         </div>
 
         <Card padded>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
-              label="Ismingiz"
-              placeholder="Ismingiz"
+              label={t("contact.form.name")}
+              placeholder={t("contact.form.namePlaceholder")}
               error={errors.name?.message}
               {...register("name")}
             />
             <Input
-              label="Email"
+              label={t("contact.form.email")}
               type="email"
-              placeholder="email@example.com"
+              placeholder={t("contact.form.emailPlaceholder")}
               leftIcon={<Mail className="h-4 w-4" />}
               error={errors.email?.message}
               {...register("email")}
             />
             <Input
-              label="Mavzu"
-              placeholder="Xabar mavzusi"
+              label={t("contact.form.subject")}
+              placeholder={t("contact.form.subjectPlaceholder")}
               error={errors.subject?.message}
               {...register("subject")}
             />
             <Textarea
-              label="Xabar"
+              label={t("contact.form.message")}
               rows={5}
-              placeholder="Xabaringizni shu yerga yozing..."
+              placeholder={t("contact.form.messagePlaceholder")}
               error={errors.message?.message}
               {...register("message")}
             />
             <Button type="submit" loading={isSubmitting} rightIcon={<Send className="h-4 w-4" />}>
-              Yuborish
+              {t("contact.form.send")}
             </Button>
           </form>
         </Card>

@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import App from "./App";
 import { ThemeProvider } from "./store/ui.store";
+import "./i18n";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

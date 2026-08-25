@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
 import { Target, Heart, Lightbulb, Users } from "lucide-react";
-
-const values = [
-  { icon: Target, title: "Maqsadimiz", desc: "Haydovchilarni xavfsiz va o'qigan holda yo'lga chiqarish." },
-  { icon: Heart, title: "Qadriyatlarimiz", desc: "Halollik, sifat va foydalanuvchi qulayligi." },
-  { icon: Lightbulb, title: "Yondashuv", desc: "Zamonaviy va tushunarli o'quv materiallari." },
-  { icon: Users, title: "Jamoa", desc: "Tajribali pedagoglar va dasturchilar birgalikda." },
-];
+import { useTranslation } from "react-i18next";
 
 export default function About() {
+  const { t } = useTranslation();
+
+  const values = [
+    { icon: Target, title: t("about.values.quality.title"), desc: t("about.values.quality.description") },
+    { icon: Heart, title: t("about.values.accessibility.title"), desc: t("about.values.accessibility.description") },
+    { icon: Lightbulb, title: t("about.values.innovation.title"), desc: t("about.values.innovation.description") },
+    { icon: Users, title: t("about.team.title"), desc: t("about.team.description") },
+  ];
+
   return (
     <div className="container-page py-10 space-y-16">
       <section className="text-center">
@@ -18,18 +21,16 @@ export default function About() {
           transition={{ duration: 0.5 }}
           className="text-4xl font-extrabold text-slate-800 dark:text-slate-100"
         >
-          Biz haqimizda
+          {t("about.title")}
         </motion.h1>
         <p className="mx-auto mt-4 max-w-2xl text-slate-500">
-          E-Avto Test — haydovchilik imtihoniga tayyorgarlik ko'rish uchun yaratilgan
-          o'zbek tilidagi platforma. Bizning maqsadimiz har bir o'quvchini ishonchli
-          va xavfsiz haydovchiga aylantirish.
+          {t("about.mission.description")}
         </p>
       </section>
 
       <section>
         <h2 className="mb-8 text-center text-3xl font-bold text-slate-800 dark:text-slate-100">
-          Qadriyatlarimiz
+          {t("about.values.title")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {values.map((v) => (
@@ -52,12 +53,10 @@ export default function About() {
 
       <section className="rounded-2xl border border-slate-200 bg-slate-50 p-8 dark:border-slate-800 dark:bg-slate-900/50">
         <h2 className="mb-4 text-2xl font-bold text-slate-800 dark:text-slate-100">
-          Bizning hikoyamiz
+          {t("about.values.title")}
         </h2>
         <p className="text-slate-600 dark:text-slate-300">
-          Platforma haydovchilik imtihoniga bir necha marta urinib ko'rgan, lekin yetarli
-          material topa olmagan o'quvchilar tajribasidan ilhomlanib tashkil etilgan.
-          Bugungi kunda minglab o'quvchilar bizning test va kurslarimiz orqali muvaffaqiyatga erishmoqda.
+          {t("about.mission.description")}
         </p>
       </section>
     </div>

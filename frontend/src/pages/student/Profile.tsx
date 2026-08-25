@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { User as UserIcon, Mail, Phone, Save, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/user.service";
 import { resultService } from "@/services/result.service";
@@ -27,6 +28,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const [results, setResults] = useState<TestResultSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,8 +96,8 @@ export default function Profile() {
     return (
       <div className="container-page py-8">
         <ErrorState
-          title="Foydalanuvchi topilmadi"
-          message="Iltimos, tizimga qayta kiring."
+          title={t("common.error")}
+          message={t("auth.login.title")}
         />
       </div>
     );
@@ -106,10 +108,10 @@ export default function Profile() {
       <header className="mb-6">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
           <UserIcon className="h-6 w-6 text-brand-600" />
-          Profil
+          {t("profile.title")}
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Shaxsiy ma'lumotlaringiz va natijalaringiz.
+          {t("profile.description")}
         </p>
       </header>
 
@@ -130,13 +132,13 @@ export default function Profile() {
                 <p className="text-xl font-bold text-slate-900 dark:text-white">
                   {loading ? "—" : stats.tests}
                 </p>
-                <p className="text-xs text-slate-500">Testlar</p>
+                <p className="text-xs text-slate-500">{t("nav.tests")}</p>
               </div>
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
                 <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                   {loading ? "—" : `${stats.best}%`}
                 </p>
-                <p className="text-xs text-slate-500">Eng yaxshi</p>
+                <p className="text-xs text-slate-500">{t("leaderboard.avgScore")}</p>
               </div>
             </div>
           </CardContent>
@@ -144,7 +146,7 @@ export default function Profile() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Ma'lumotlarni tahrirlash</CardTitle>
+            <CardTitle>{t("profile.editProfile")}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -156,13 +158,13 @@ export default function Profile() {
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <Input
-                  label="Ism"
+                  label={t("profile.name")}
                   leftIcon={<UserIcon className="h-4 w-4" />}
                   error={errors.name?.message}
                   {...register("name")}
                 />
                 <Input
-                  label="Email"
+                  label={t("profile.email")}
                   type="email"
                   leftIcon={<Mail className="h-4 w-4" />}
                   error={errors.email?.message}
@@ -176,7 +178,7 @@ export default function Profile() {
                 />
                 <div className="flex justify-end">
                   <Button type="submit" loading={saving} leftIcon={<Save className="h-4 w-4" />}>
-                    Saqlash
+                    {t("common.save")}
                   </Button>
                 </div>
               </form>
@@ -194,7 +196,7 @@ export default function Profile() {
       {saving && (
         <div className="fixed bottom-6 right-6 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Saqlanmoqda...
+          {t("common.loading")}
         </div>
       )}
     </div>

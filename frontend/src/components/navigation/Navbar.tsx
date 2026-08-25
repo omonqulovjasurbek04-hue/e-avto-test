@@ -1,32 +1,35 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Car, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { cn } from "@/utils/cn";
 
-const publicLinks = [
-  { to: ROUTES.home, label: "Bosh sahifa" },
-  { to: ROUTES.courses, label: "Kurslar" },
-  { to: ROUTES.tests, label: "Testlar" },
-  { to: ROUTES.leaderboard, label: "Reyting" },
-  { to: ROUTES.about, label: "Haqida" },
-];
-
-const studentLinks = [
-  { to: ROUTES.dashboard, label: "Kabinet" },
-  { to: ROUTES.courses, label: "Kurslar" },
-  { to: ROUTES.tests, label: "Testlar" },
-  { to: ROUTES.history, label: "Tarix" },
-  { to: ROUTES.leaderboard, label: "Reyting" },
-];
-
 export default function Navbar() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  const publicLinks = [
+    { to: ROUTES.home, label: t("nav.home") },
+    { to: ROUTES.courses, label: t("nav.courses") },
+    { to: ROUTES.tests, label: t("nav.tests") },
+    { to: ROUTES.leaderboard, label: t("nav.leaderboard") },
+    { to: ROUTES.about, label: t("nav.about") },
+  ];
+
+  const studentLinks = [
+    { to: ROUTES.dashboard, label: t("nav.dashboard") },
+    { to: ROUTES.courses, label: t("nav.courses") },
+    { to: ROUTES.tests, label: t("nav.tests") },
+    { to: ROUTES.history, label: t("nav.history") },
+    { to: ROUTES.leaderboard, label: t("nav.leaderboard") },
+  ];
 
   const links = isAuthenticated ? studentLinks : publicLinks;
 
@@ -58,11 +61,12 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <LanguageSwitcher />
           {isAuthenticated ? (
             <>
               <Link to={ROUTES.dashboard}>
                 <Button variant="ghost" size="sm">
-                  <LayoutDashboard className="h-4 w-4" /> Kabinet
+                  <LayoutDashboard className="h-4 w-4" /> {t("nav.dashboard")}
                 </Button>
               </Link>
               <Link to={ROUTES.profile}>
@@ -72,16 +76,16 @@ export default function Navbar() {
                 </div>
               </Link>
               <Button variant="outline" size="sm" onClick={() => { logout(); navigate(ROUTES.home); }}>
-                <LogOut className="h-4 w-4" /> Chiqish
+                <LogOut className="h-4 w-4" /> {t("nav.logout")}
               </Button>
             </>
           ) : (
             <>
               <Link to={ROUTES.login}>
-                <Button variant="ghost" size="sm">Kirish</Button>
+                <Button variant="ghost" size="sm">{t("nav.login")}</Button>
               </Link>
               <Link to={ROUTES.register}>
-                <Button size="sm">Ro'yxatdan o'tish</Button>
+                <Button size="sm">{t("nav.register")}</Button>
               </Link>
             </>
           )}
@@ -105,18 +109,21 @@ export default function Navbar() {
                 {l.label}
               </NavLink>
             ))}
+            <div className="mt-2 flex items-center justify-center">
+              <LanguageSwitcher />
+            </div>
             <div className="mt-2 flex gap-2">
               {isAuthenticated ? (
                 <Button variant="outline" size="sm" onClick={() => { logout(); navigate(ROUTES.home); setOpen(false); }}>
-                  Chiqish
+                  {t("nav.logout")}
                 </Button>
               ) : (
                 <>
                   <Link to={ROUTES.login} onClick={() => setOpen(false)} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">Kirish</Button>
+                    <Button variant="outline" size="sm" className="w-full">{t("nav.login")}</Button>
                   </Link>
                   <Link to={ROUTES.register} onClick={() => setOpen(false)} className="flex-1">
-                    <Button size="sm" className="w-full">Ro'yxatdan o'tish</Button>
+                    <Button size="sm" className="w-full">{t("nav.register")}</Button>
                   </Link>
                 </>
               )}

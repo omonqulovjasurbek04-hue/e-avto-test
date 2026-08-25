@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { resultService } from "@/services/result.service";
 import { ROUTES } from "@/constants/routes";
 import type { TestResultDetail } from "@/types/result";
@@ -13,6 +14,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function TestReview() {
+  const { t } = useTranslation();
   const { testId } = useParams<{ testId: string }>();
   const navigate = useNavigate();
   const [detail, setDetail] = useState<TestResultDetail | null>(null);
@@ -59,8 +61,8 @@ export default function TestReview() {
     return (
       <div className="container-page py-8">
         <EmptyState
-          title="Natija topilmadi"
-          description="Kechirasiz, bu test natijasi mavjud emas."
+          title={t("common.noResults")}
+          description={t("common.noResults")}
         />
       </div>
     );
@@ -71,10 +73,10 @@ export default function TestReview() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Xatolarni ko'rish
+            {t("testReview.title")}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            {detail.courseTitle || "Umumiy test"} · {detail.totalQuestions} savol · {detail.score}%
+            {detail.courseTitle || t("tests.generalTest")} · {t("common.question")} · {detail.score}%
           </p>
         </div>
         <Button
@@ -82,7 +84,7 @@ export default function TestReview() {
           onClick={() => navigate(ROUTES.tests)}
           leftIcon={<RotateCcw className="h-5 w-5" />}
         >
-          Qayta ishlash
+          {t("testResult.retakeTest")}
         </Button>
       </div>
 
@@ -111,11 +113,11 @@ export default function TestReview() {
                 <Badge variant={isCorrect ? "success" : "danger"}>
                   {isCorrect ? (
                     <>
-                      <CheckCircle2 className="h-3.5 w-3.5" /> To'g'ri
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {t("testReview.correct")}
                     </>
                   ) : (
                     <>
-                      <XCircle className="h-3.5 w-3.5" /> Noto'g'ri
+                      <XCircle className="h-3.5 w-3.5" /> {t("testReview.incorrect")}
                     </>
                   )}
                 </Badge>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { PlayCircle, History } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { resultService } from "@/services/result.service";
 import { testService } from "@/services/test.service";
@@ -16,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatTime } from "@/utils/formatTime";
 
 export default function Tests() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [results, setResults] = useState<TestResultSummary[]>([]);
@@ -56,9 +58,9 @@ export default function Tests() {
 
   return (
     <div className="container-page py-8">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Test topshirish</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("tests.title")}</h1>
       <p className="mt-1 text-sm text-slate-500">
-        150 ta mavzu va 100 ta savol bankidan har bir urinishda 50 ta savol aralashtirib tanlanadi.
+        {t("tests.description")}
       </p>
 
       {loading ? (
@@ -91,7 +93,7 @@ export default function Tests() {
                     leftIcon={<PlayCircle className="h-5 w-5" />}
                     onClick={() => handleStart(c.id)}
                   >
-                    Testni boshlash
+                    {t("tests.startTest")}
                   </Button>
                 </CardContent>
               </Card>
@@ -100,12 +102,12 @@ export default function Tests() {
 
           <div className="mt-10">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
-              <History className="h-5 w-5 text-brand-600" /> Oldingi natijalar
+              <History className="h-5 w-5 text-brand-600" /> {t("tests.previousResults")}
             </h2>
             {results.length === 0 ? (
               <EmptyState
-                title="Hali testlar topshirmagansiz"
-                description="Yuqoridagi kurslardan birini tanlab test boshang."
+                title={t("tests.noTests")}
+                description={t("tests.noTestsDesc")}
               />
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -117,10 +119,10 @@ export default function Tests() {
                   >
                     <div>
                       <p className="font-medium text-slate-800 dark:text-slate-100">
-                        {r.courseTitle || "Umumiy test"}
+                        {r.courseTitle || t("tests.generalTest")}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {r.totalQuestions} savol · {formatTime(r.timeSpent)} ·{" "}
+                        {t("common.questions", { count: r.totalQuestions })} · {formatTime(r.timeSpent)} ·{" "}
                         {new Date(r.createdAt).toLocaleDateString()}
                       </p>
                     </div>

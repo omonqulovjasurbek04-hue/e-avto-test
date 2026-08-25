@@ -1,0 +1,415 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "retry": "Попробовать снова",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "next": "Далее",
+    "previous": "Предыдущий",
+    "search": "Поиск",
+    "all": "Все",
+    "yes": "Да",
+    "no": "Нет",
+    "or": "или",
+    "close": "Закрыть",
+    "viewAll": "Посмотреть все",
+    "learnMore": "Подробнее",
+    "getStarted": "Начать",
+    "seeDetails": "Подробнее",
+    "noResults": "Результаты не найдены",
+    "questions": "вопросов",
+    "question": "вопрос",
+    "answer": "ответ",
+    "answers": "ответы",
+    "score": "балл",
+    "time": "время",
+    "min": "минут",
+    "sec": "секунд",
+    "of": "из",
+    "total": "Всего",
+    "general": "Общий",
+    "passed": "Сдано",
+    "failed": "Не сдано"
+  },
+  "nav": {
+    "home": "Главная",
+    "courses": "Курсы",
+    "lessons": "Уроки",
+    "tests": "Тесты",
+    "about": "О нас",
+    "contact": "Контакты",
+    "faq": "Часто задаваемые вопросы",
+    "login": "Войти",
+    "register": "Регистрация",
+    "dashboard": "Панель",
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "history": "История",
+    "progress": "Прогресс",
+    "leaderboard": "Рейтинг",
+    "logout": "Выйти"
+  },
+  "home": {
+    "heroTitle": "Подготовьтесь к экзамену по вождению",
+    "heroSubtitle": "Проверьте и повысьте свои знания Правил дорожного движения Республики Узбекистан",
+    "startTest": "Начать тест",
+    "viewCourses": "Посмотреть курсы",
+    "features": {
+      "title": "Почему стоит выбрать нас",
+      "items": {
+        "test": { "title": "Интерактивные тесты", "description": "150 тем и банк из 100 вопросов, 50 вопросов перемешиваются при каждом прохождении" },
+        "results": { "title": "Подробные результаты", "description": "Объясняется правильность или неправильность каждого ответа" },
+        "progress": { "title": "Отслеживание прогресса", "description": "Следите за своим прогрессом" },
+        "access": { "title": "Доступ 24/7", "description": "Учитесь в любое время и в любом месте" }
+      }
+    },
+    "courses": {
+      "title": "Популярные курсы",
+      "description": "Выберите курс, подходящий вашему уровню",
+      "startCourse": "Начать курс"
+    },
+    "howItWorks": {
+      "title": "Как это работает",
+      "steps": {
+        "register": { "title": "Зарегистрируйтесь", "description": "Создайте бесплатный аккаунт" },
+        "choose": { "title": "Выберите курс", "description": "Выберите курс по теме" },
+        "learn": { "title": "Учитесь", "description": "Изучайте уроки" },
+        "test": { "title": "Сдайте тест", "description": "Проверьте свои знания" }
+      }
+    },
+    "stats": {
+      "title": "В цифрах",
+      "users": "Пользователи",
+      "questions": "Вопросы",
+      "tests": "Тесты",
+      "passRate": "Процент сдачи"
+    },
+    "whyUs": {
+      "title": "Почему мы?",
+      "items": {
+        "official": "На основе официальных экзаменационных материалов",
+        "free": "Полностью бесплатно",
+        "convenient": "Удобный и понятный интерфейс",
+        "mobile": "Адаптировано для мобильных устройств"
+      }
+    },
+    "testimonials": {
+      "title": "Мнения пользователей"
+    },
+    "faq": {
+      "title": "Часто задаваемые вопросы",
+      "viewAll": "Посмотреть все вопросы"
+    },
+    "cta": {
+      "title": "Начните сейчас!",
+      "description": "Зарегистрируйтесь бесплатно и подготовьтесь к экзамену по вождению",
+      "button": "Начать бесплатно"
+    }
+  },
+  "courses": {
+    "title": "Курсы",
+    "description": "Курсы по всем темам",
+    "searchPlaceholder": "Поиск курса...",
+    "allCategories": "Все категории",
+    "difficulty": {
+      "beginner": "Начальный",
+      "intermediate": "Средний",
+      "advanced": "Продвинутый"
+    },
+    "noCourses": "Курсы не найдены",
+    "lessonsCount": "{{count}} уроков",
+    "viewCourse": "Посмотреть курс"
+  },
+  "courseDetails": {
+    "aboutCourse": "О курсе",
+    "lessonsList": "Список уроков",
+    "startCourse": "Начать курс",
+    "continueCourse": "Продолжить",
+    "lessonCount": "{{count}} уроков",
+    "duration": "{{hours}} часов",
+    "difficulty": "Уровень",
+    "noLessons": "Пока нет уроков"
+  },
+  "about": {
+    "title": "О нас",
+    "mission": {
+      "title": "Наша миссия",
+      "description": "Платформа E-Avto Test создана для повышения знаний Правил дорожного движения Республики Узбекистан и подготовки к экзамену по вождению."
+    },
+    "values": {
+      "title": "Наши ценности",
+      "quality": { "title": "Качество", "description": "Высококачественный контент и сервис" },
+      "accessibility": { "title": "Доступность", "description": "Открыто и бесплатно для всех" },
+      "innovation": { "title": "Инновации", "description": "Современные технологии" }
+    },
+    "team": {
+      "title": "Команда",
+      "description": "Мы — команда опытных разработчиков и преподавателей."
+    }
+  },
+  "contact": {
+    "title": "Контакты",
+    "description": "Если у вас есть вопросы, свяжитесь с нами",
+    "form": {
+      "name": "Имя",
+      "email": "Email",
+      "subject": "Тема",
+      "message": "Сообщение",
+      "namePlaceholder": "Введите ваше имя",
+      "emailPlaceholder": "email@example.com",
+      "subjectPlaceholder": "Введите тему сообщения",
+      "messagePlaceholder": "Напишите ваше сообщение...",
+      "send": "Отправить сообщение",
+      "success": "Сообщение успешно отправлено!",
+      "error": "Ошибка при отправке сообщения"
+    },
+    "info": {
+      "title": "Контактная информация",
+      "email": "Email",
+      "phone": "Телефон",
+      "address": "Адрес"
+    }
+  },
+  "faq": {
+    "title": "Часто задаваемые вопросы",
+    "description": "Ответы на часто задаваемые вопросы",
+    "questions": {
+      "q1": { "q": "Платформа бесплатная?", "a": "Да, платформа E-Avto Test полностью бесплатная." },
+      "q2": { "q": "Сколько времени даётся на тест?", "a": "На каждый тест даётся 25 минут." },
+      "q3": { "q": "Сколько вопросов задаётся?", "a": "В каждом тесте задаётся 50 вопросов." },
+      "q4": { "q": "Какой проходной балл?", "a": "Проходной балл начинается от 70%." },
+      "q5": { "q": "Можно ли пересдать?", "a": "Да, можно пересдать в любое время." }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Войдите в свой аккаунт",
+      "subtitle": "Добро пожаловать на платформу E-Avto Test",
+      "email": "Email",
+      "password": "Пароль",
+      "forgotPassword": "Забыли пароль?",
+      "submit": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "register": "Зарегистрируйтесь",
+      "error": "Ошибка при входе"
+    },
+    "register": {
+      "title": "Регистрация",
+      "subtitle": "Создайте новый аккаунт и начните учиться",
+      "name": "Имя",
+      "email": "Email",
+      "password": "Пароль",
+      "confirmPassword": "Подтвердите пароль",
+      "submit": "Зарегистрироваться",
+      "hasAccount": "Уже есть аккаунт?",
+      "login": "Войти",
+      "error": "Ошибка при регистрации"
+    },
+    "forgotPassword": {
+      "title": "Сброс пароля",
+      "subtitle": "Введите ваш email, и мы отправим вам ссылку для сброса",
+      "email": "Email",
+      "submit": "Отправить ссылку",
+      "success": "Ссылка для сброса пароля отправлена",
+      "error": "Произошла ошибка, попробуйте снова"
+    },
+    "resetPassword": {
+      "title": "Установите новый пароль",
+      "subtitle": "Создайте новый пароль для вашего аккаунта",
+      "newPassword": "Новый пароль",
+      "confirmPassword": "Подтвердите новый пароль",
+      "submit": "Обновить пароль",
+      "success": "Пароль успешно обновлён",
+      "error": "Ошибка при обновлении пароля",
+      "backToLogin": "Вернуться на страницу входа"
+    }
+  },
+  "validation": {
+    "required": "Обязательное поле",
+    "email": "Неверный формат email",
+    "minLength": "Минимум {{min}} символов",
+    "passwordMatch": "Пароли не совпадают"
+  },
+  "dashboard": {
+    "greeting": "Привет, {{name}}!",
+    "subtitle": "Готовы ли вы к обучению сегодня?",
+    "stats": {
+      "progress": "Прогресс",
+      "completedLessons": "Завершённые уроки",
+      "completedTests": "Пройденные тесты",
+      "avgScore": "Средний балл"
+    },
+    "continueLearning": {
+      "title": "Нужно продолжить",
+      "button": "Продолжить урок"
+    },
+    "recommended": {
+      "title": "Рекомендуемые уроки",
+      "empty": "Пока нет уроков",
+      "emptyDesc": "Скоро будут добавлены новые уроки."
+    }
+  },
+  "lessons": {
+    "title": "Уроки",
+    "description": "Все уроки",
+    "searchPlaceholder": "Поиск урока...",
+    "allCourses": "Все курсы",
+    "noLessons": "Уроки не найдены",
+    "startLesson": "Начать урок",
+    "continueLesson": "Продолжить",
+    "completed": "Завершён",
+    "inProgress": "В процессе",
+    "notStarted": "Не начат"
+  },
+  "lessonDetails": {
+    "backToLessons": "Вернуться к урокам",
+    "aboutLesson": "Об уроке",
+    "startLesson": "Начать урок",
+    "continueLesson": "Продолжить",
+    "relatedTests": "Связанные тесты",
+    "takeTest": "Пройти тест"
+  },
+  "videoLesson": {
+    "title": "Видео урок",
+    "backToLesson": "Вернуться к уроку",
+    "watchAgain": "Смотреть снова",
+    "nextLesson": "Следующий урок"
+  },
+  "tests": {
+    "title": "Прохождение тестов",
+    "description": "150 тем и банк из 100 вопросов, 50 вопросов перемешиваются при каждом прохождении.",
+    "startTest": "Начать тест",
+    "previousResults": "Предыдущие результаты",
+    "noTests": "Вы ещё не проходили тесты",
+    "noTestsDesc": "Выберите один из курсов выше и начните тест.",
+    "generalTest": "Общий тест",
+    "questionsCount": "{{count}} вопросов",
+    "timeSpent": "{{time}} время",
+    "course": "Курс"
+  },
+  "testPage": {
+    "question": "Вопрос {{current}} / {{total}}",
+    "timeLeft": "Оставшееся время",
+    "finish": "Завершить",
+    "previous": "Предыдущий",
+    "next": "Далее",
+    "mark": "Отметить",
+    "unmark": "Снять отметку",
+    "confirmFinish": "Вы хотите завершить тест?",
+    "confirmFinishDesc": "Не будет возможности проверить ответы.",
+    "answered": "Отвечено",
+    "marked": "Отмечено",
+    "unanswered": "Не отвечено"
+  },
+  "testResult": {
+    "title": "Результаты теста",
+    "congratulations": "Поздравляем!",
+    "passed": "Вы сдали тест!",
+    "failed": "Вы не сдали тест",
+    "score": "Балл",
+    "correct": "Правильно",
+    "incorrect": "Неправильно",
+    "timeSpent": "Затраченное время",
+    "passingScore": "Проходной балл",
+    "reviewAnswers": "Посмотреть ответы",
+    "retakeTest": "Пересдать",
+    "backToTests": "Вернуться к тестам"
+  },
+  "testReview": {
+    "title": "Обзор теста",
+    "backToResults": "Вернуться к результатам",
+    "question": "Вопрос {{current}} / {{total}}",
+    "yourAnswer": "Ваш ответ",
+    "correctAnswer": "Правильный ответ",
+    "explanation": "Пояснение",
+    "correct": "Правильно",
+    "incorrect": "Неправильно"
+  },
+  "history": {
+    "title": "История тестов",
+    "description": "Все результаты тестов",
+    "noHistory": "Вы ещё не проходили тесты",
+    "noHistoryDesc": "Пройдите свой первый тест!",
+    "date": "Дата",
+    "course": "Курс",
+    "score": "Балл",
+    "time": "Время",
+    "status": "Статус",
+    "actions": "Действия",
+    "view": "Посмотреть"
+  },
+  "progress": {
+    "title": "Прогресс",
+    "description": "Следите за своим прогрессом",
+    "overallProgress": "Общий прогресс",
+    "weeklyActivity": "Недельная активность",
+    "coursesCompleted": "Завершённые курсы",
+    "testsCompleted": "Пройденные тесты",
+    "avgScore": "Средний балл",
+    "studyTime": "Время обучения",
+    "noData": "Пока нет данных"
+  },
+  "leaderboard": {
+    "title": "Рейтинг",
+    "description": "Показаны лучшие результаты",
+    "rank": "Место",
+    "student": "Студент",
+    "points": "Баллы",
+    "tests": "Тесты",
+    "avgScore": "Средний балл",
+    "noData": "Пока нет данных"
+  },
+  "profile": {
+    "title": "Профиль",
+    "editProfile": "Редактировать профиль",
+    "name": "Имя",
+    "email": "Email",
+    "role": "Роль",
+    "memberSince": "Участник с",
+    "saveChanges": "Сохранить изменения",
+    "changePassword": "Изменить пароль",
+    "currentPassword": "Текущий пароль",
+    "newPassword": "Новый пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "updatePassword": "Обновить пароль"
+  },
+  "settings": {
+    "title": "Настройки",
+    "appearance": "Внешний вид",
+    "theme": "Тема",
+    "language": "Язык",
+    "darkMode": "Тёмная тема",
+    "lightMode": "Светлая тема",
+    "systemMode": "Системная",
+    "notifications": "Уведомления",
+    "emailNotifications": "Email уведомления",
+    "pushNotifications": "Push уведомления",
+    "account": "Аккаунт",
+    "deleteAccount": "Удалить аккаунт",
+    "deleteAccountDesc": "Это действие необратимо"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Страница не найдена",
+      "description": "Запрашиваемая страница не существует или была удалена.",
+      "backHome": "Вернуться на главную"
+    },
+    "forbidden": {
+      "title": "Доступ запрещён",
+      "description": "У вас нет прав для доступа к этой странице.",
+      "backHome": "Вернуться на главную",
+      "contactAdmin": "Связаться с администратором"
+    },
+    "serverError": {
+      "title": "Произошла ошибка",
+      "description": "Возникла проблема с сервером. Пожалуйста, попробуйте позже.",
+      "tryAgain": "Попробовать снова",
+      "backHome": "Вернуться на главную"
+    }
+  }
+}

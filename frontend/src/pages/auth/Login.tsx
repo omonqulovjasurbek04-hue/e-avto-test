@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,13 +14,14 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 
 const loginSchema = z.object({
-  email: z.string().min(1, "Email kiritilishi shart").email("Noto‘g‘ri email formati"),
-  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo‘lishi kerak"),
+  email: z.string().min(1, "Email kiritilishi shart").email("Noto'g'ri email formati"),
+  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function Login() {
       navigate(ROUTES.dashboard);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Kirishda xatolik yuz berdi";
+        err instanceof Error ? err.message : t("auth.login.error");
       setServerError(message);
       toast.error(message);
     }
@@ -50,10 +52,10 @@ export default function Login() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Hisobingizga kiring
+          {t("auth.login.title")}
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          E-Avto Test platformasiga xush kelibsiz
+          {t("auth.login.subtitle")}
         </p>
       </div>
 
@@ -63,7 +65,7 @@ export default function Login() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input
-          label="Email"
+          label={t("auth.login.email")}
           type="email"
           placeholder="example@mail.com"
           leftIcon={<Mail className="h-4 w-4" />}
@@ -72,7 +74,7 @@ export default function Login() {
         />
 
         <Input
-          label="Parol"
+          label={t("auth.login.password")}
           type="password"
           placeholder="••••••••"
           leftIcon={<Lock className="h-4 w-4" />}
@@ -85,22 +87,22 @@ export default function Login() {
             to={ROUTES.forgotPassword}
             className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
           >
-            Parolni unutdingizmi?
+            {t("auth.login.forgotPassword")}
           </Link>
         </div>
 
         <Button type="submit" loading={isSubmitting} className="w-full">
-          Kirish
+          {t("auth.login.submit")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-        Hisobingiz yo‘qmi?{" "}
+        {t("auth.login.noAccount")}{" "}
         <Link
           to={ROUTES.register}
           className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
         >
-          Ro‘yxatdan o‘ting
+          {t("auth.login.register")}
         </Link>
       </p>
     </div>

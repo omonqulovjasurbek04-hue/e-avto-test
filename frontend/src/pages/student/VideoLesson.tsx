@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PlayCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
 import { testService } from "@/services/test.service";
 import { ROUTES } from "@/constants/routes";
@@ -13,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import VideoPlayer from "@/components/video/VideoPlayer";
 
 export default function VideoLesson() {
+  const { t } = useTranslation();
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -70,8 +72,8 @@ export default function VideoLesson() {
     return (
       <div className="container-page py-8">
         <EmptyState
-          title="Video topilmadi"
-          description="Kechirasiz, bu video mavjud emas."
+          title={t("common.noResults")}
+          description={t("common.noResults")}
         />
       </div>
     );
@@ -81,9 +83,9 @@ export default function VideoLesson() {
     <div className="container-page py-8">
       <Breadcrumb
         items={[
-          { label: "Darslar", to: ROUTES.lessons },
+          { label: t("nav.lessons"), to: ROUTES.lessons },
           { label: lesson.title, to: ROUTES.lessonDetails(lesson.id) },
-          { label: "Video" },
+          { label: t("videoLesson.title") },
         ]}
       />
 
@@ -97,7 +99,7 @@ export default function VideoLesson() {
             {lesson.title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            {lesson.description || "Bu video dars uchun tavsif mavjud emas."}
+            {lesson.description || t("common.noResults")}
           </p>
         </div>
         <Button
@@ -105,7 +107,7 @@ export default function VideoLesson() {
           leftIcon={<PlayCircle className="h-5 w-5" />}
           onClick={handleStartTest}
         >
-          Testni boshlash
+          {t("tests.startTest")}
         </Button>
       </div>
     </div>

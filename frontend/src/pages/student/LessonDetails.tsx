@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PlayCircle, FileText, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
 import { testService } from "@/services/test.service";
 import { ROUTES } from "@/constants/routes";
@@ -16,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDuration } from "@/utils/formatTime";
 
 export default function LessonDetails() {
+  const { t } = useTranslation();
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -73,8 +75,8 @@ export default function LessonDetails() {
     return (
       <div className="container-page py-8">
         <EmptyState
-          title="Dars topilmadi"
-          description="Kechirasiz, bu dars mavjud emas."
+          title={t("common.noResults")}
+          description={t("common.noResults")}
         />
       </div>
     );
@@ -86,7 +88,7 @@ export default function LessonDetails() {
     <div className="container-page py-8">
       <Breadcrumb
         items={[
-          { label: "Darslar", to: ROUTES.lessons },
+          { label: t("nav.lessons"), to: ROUTES.lessons },
           { label: lesson.title },
         ]}
       />
@@ -106,7 +108,7 @@ export default function LessonDetails() {
               {lesson.category && <Badge variant="neutral">{lesson.category}</Badge>}
               {lesson.completed && (
                 <Badge variant="success">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Tugallangan
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t("lessons.completed")}
                 </Badge>
               )}
             </div>
@@ -117,10 +119,10 @@ export default function LessonDetails() {
               leftIcon={<PlayCircle className="h-5 w-5" />}
               onClick={() => navigate(ROUTES.videoLesson(lesson.id))}
             >
-              Video darsni ko'rish
+              {t("videoLesson.title")}
             </Button>
             <Button loading={starting} onClick={handleStartTest}>
-              Testni boshlash
+              {t("tests.startTest")}
             </Button>
           </div>
         </div>
@@ -128,16 +130,16 @@ export default function LessonDetails() {
         <Card className="mt-6">
           <CardContent>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
-              <FileText className="h-5 w-5 text-brand-600" /> Dars haqida
+              <FileText className="h-5 w-5 text-brand-600" /> {t("lessonDetails.aboutLesson")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              {lesson.description || "Bu dars uchun tavsif mavjud emas."}
+              {lesson.description || t("common.noResults")}
             </p>
 
             {lesson.objectives && lesson.objectives.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Maqsadlar
+                  {t("about.mission.title")}
                 </h3>
                 <ul className="mt-2 space-y-2">
                   {lesson.objectives.map((o, i) => (

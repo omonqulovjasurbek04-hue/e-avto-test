@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import type { Course } from "@/types/course";
 import type { Lesson } from "@/types/lesson";
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 export default function CourseDetails() {
+  const { t } = useTranslation();
   const { courseId } = useParams<{ courseId: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -44,9 +46,9 @@ export default function CourseDetails() {
   if (!course) {
     return (
       <div className="container-page py-16 text-center space-y-4">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Kurs topilmadi</h2>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t("courses.noCourses")}</h2>
         <Link to="/courses">
-          <Button variant="outline">Kurslar ro'yxatiga qaytish</Button>
+          <Button variant="outline">{t("courses.title")}</Button>
         </Link>
       </div>
     );
@@ -54,23 +56,21 @@ export default function CourseDetails() {
 
   return (
     <div className="container-page py-10 space-y-8 pb-16">
-      {/* Back button */}
       <Link
         to="/courses"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
       >
-        <ArrowLeft className="h-4 w-4" /> Barcha kurslarga qaytish
+        <ArrowLeft className="h-4 w-4" /> {t("courses.title")}
       </Link>
 
-      {/* Header Banner */}
       <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 p-8 text-white shadow-xl space-y-6">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="primary" className="bg-brand-600 text-white font-bold">
-            {course.category} TOIFA
+            {course.category}
           </Badge>
           {course.difficulty && (
             <Badge variant="neutral" className="bg-white/10 text-white border-white/20">
-              {course.difficulty}
+              {t(`courses.difficulty.${course.difficulty}`)}
             </Badge>
           )}
         </div>
@@ -83,23 +83,22 @@ export default function CourseDetails() {
         <div className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-slate-300 pt-2 border-t border-slate-800">
           <span className="flex items-center gap-1.5">
             <BookOpen className="h-4 w-4 text-brand-400" />
-            {course.totalLessons || lessons.length} ta dars
+            {t("courseDetails.lessonCount", { count: course.totalLessons || lessons.length })}
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4 text-brand-400" />
-            {course.totalDurationMinutes || 180} daqiqa o'quv vaqti
+            {t("courseDetails.duration", { hours: Math.round((course.totalDurationMinutes || 180) / 60) })}
           </span>
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Rasmiy YHQ 2026 standarti
+            Rasmiy YHQ 2026
           </span>
         </div>
       </div>
 
-      {/* Curriculum Syllabus */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          Kurs O'quv Dasturi (Syllabus)
+          {t("courseDetails.lessonsList")}
         </h2>
 
         <div className="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -118,21 +117,21 @@ export default function CourseDetails() {
                       {lesson.title}
                     </h4>
                     <span className="text-xs text-slate-400">
-                      {lesson.durationMinutes || 15} daqiqa • {lesson.questionCount || 10} savol
+                      {lesson.durationMinutes || 15} {t("common.min")} · {lesson.questionCount || 10} {t("common.question")}
                     </span>
                   </div>
                 </div>
 
                 <Link to={`/lessons/${lesson.id}/video`}>
                   <Button size="sm" variant="outline" leftIcon={<PlayCircle className="h-4 w-4 text-brand-600" />}>
-                    Darsni Ko'rish
+                    {t("lessonDetails.startLesson")}
                   </Button>
                 </Link>
               </div>
             ))
           ) : (
             <div className="p-8 text-center text-xs text-slate-400">
-              Ushbu kurs uchun darslar tez kunda yuklanadi.
+              {t("courseDetails.noLessons")}
             </div>
           )}
         </div>

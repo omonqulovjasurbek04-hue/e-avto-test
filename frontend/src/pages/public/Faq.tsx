@@ -1,46 +1,33 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-
-const faqs = [
-  {
-    q: "E-Avto Test nima uchun kerak?",
-    a: "Haydovchilik imtihoniga tayyorgarlik ko'rish va bilimlarni sinash uchun mo'ljallangan platforma.",
-  },
-  {
-    q: "Kurslar bepulmi?",
-    a: "Ro'yxatdan o'tish va ko'pgina kurslar bepul. Ba'zi maxsus materiallar alohida ochilishi mumkin.",
-  },
-  {
-    q: "Mobil qurilmada ishlaydimi?",
-    a: "Ha, sayt barcha zamonaviy qurilmalarda to'liq ishlaydi va responsive dizaynga ega.",
-  },
-  {
-    q: "Test natijalarim saqlanadimi?",
-    a: "Ha, hisobingizga kirgan holda natijalaringiz profilda saqlanadi va kuzatib boriladi.",
-  },
-  {
-    q: "Imtihon qanchalik haqiqiy testlarga o'xshaydi?",
-    a: "Testlar haqiqiy haydovchilik imtihoni formatiga imkon qadar yaqin tarzda tayyorlangan.",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Faq() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState<number | null>(0);
+
+  const faqs = [
+    { q: t("faq.questions.q1.q"), a: t("faq.questions.q1.a") },
+    { q: t("faq.questions.q2.q"), a: t("faq.questions.q2.a") },
+    { q: t("faq.questions.q3.q"), a: t("faq.questions.q3.a") },
+    { q: t("faq.questions.q4.q"), a: t("faq.questions.q4.a") },
+    { q: t("faq.questions.q5.q"), a: t("faq.questions.q5.a") },
+  ];
 
   return (
     <div className="container-page py-10">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-          Tez-tez so'raladigan savollar
+          {t("faq.title")}
         </h1>
         <p className="mt-2 text-slate-500">
-          Sizni qiziqtirgan savollarga javoblar quyida keltirilgan.
+          {t("faq.description")}
         </p>
 
         <div className="mt-8 space-y-3">
           {faqs.map((item, i) => (
             <div
-              key={item.q}
+              key={i}
               className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
             >
               <button

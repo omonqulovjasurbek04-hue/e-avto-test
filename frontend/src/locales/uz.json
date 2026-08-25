@@ -1,0 +1,415 @@
+{
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinib ko'rish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "confirm": "Tasdiqlash",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "back": "Orqaga",
+    "next": "Keyingi",
+    "previous": "Oldingi",
+    "search": "Qidirish",
+    "all": "Hammasi",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "or": "yoki",
+    "close": "Yopish",
+    "viewAll": "Hammasini ko'rish",
+    "learnMore": "Batafsil",
+    "getStarted": "Boshlash",
+    "seeDetails": "Batafsil ko'rish",
+    "noResults": "Natija topilmadi",
+    "questions": "savollar",
+    "question": "savol",
+    "answer": "javob",
+    "answers": "javoblar",
+    "score": "ball",
+    "time": "vaqt",
+    "min": "daqiqa",
+    "sec": "soniya",
+    "of": "dan",
+    "total": "Jami",
+    "general": "Umumiy",
+    "passed": "O'tildi",
+    "failed": "O'tilmadi"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "courses": "Kurslar",
+    "lessons": "Darslar",
+    "tests": "Testlar",
+    "about": "Biz haqimizda",
+    "contact": "Bog'lanish",
+    "faq": "Ko'p beriladigan savollar",
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "dashboard": "Panel",
+    "profile": "Profil",
+    "settings": "Sozlamalar",
+    "history": "Tarix",
+    "progress": "Rivojlanish",
+    "leaderboard": "Reyting",
+    "logout": "Chiqish"
+  },
+  "home": {
+    "heroTitle": "Haydovchilik testiga tayyorlang",
+    "heroSubtitle": "O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlaringizni sinang va oshiring",
+    "startTest": "Testni boshlash",
+    "viewCourses": "Kurslarni ko'rish",
+    "features": {
+      "title": "Nima uchun bizni tanlash kerak",
+      "items": {
+        "test": { "title": "Interaktiv testlar", "description": "150 ta mavzu va 100 ta savol bankidan 50 ta savol aralashtirib tanlanadi" },
+        "results": { "title": "Batafsil natijalar", "description": "Har bir javobning to'g'ri yoki noto'g'riligini tushuntirib beradi" },
+        "progress": { "title": "Rivojlanish kuzatuvi", "description": "O'z progresslaringizni kuzatib boring" },
+        "access": { "title": "24/7 kirish", "description": "Istalgan vaqtda va istalgan joyda o'rganing" }
+      }
+    },
+    "courses": {
+      "title": "Mashhur kurslar",
+      "description": "O'z darajangizga mos kursni tanlang",
+      "startCourse": "Kursni boshlash"
+    },
+    "howItWorks": {
+      "title": "Qanday ishlaydi",
+      "steps": {
+        "register": { "title": "Ro'yxatdan o'ting", "description": "Bepul hisob yarating" },
+        "choose": { "title": "Kursni tanlang", "description": "Mavzu bo'yicha kursni tanlang" },
+        "learn": { "title": "O'rganing", "description": "Darslarni o'rganing" },
+        "test": { "title": "Test topshiring", "description": "Bilimingizni sinang" }
+      }
+    },
+    "stats": {
+      "title": "Raqamlarda",
+      "users": "Foydalanuvchilar",
+      "questions": "Savollar",
+      "tests": "Testlar",
+      "passRate": "O'tish darajasi"
+    },
+    "whyUs": {
+      "title": "Nima uchun biz?",
+      "items": {
+        "official": "Rasmiy test topshiriqlari asosida",
+        "free": "To'liq bepul",
+        "convenient": "Qulay va tushunarli interfeys",
+        "mobile": "Mobil qurilmalarga mos"
+      }
+    },
+    "testimonials": {
+      "title": "Foydalanuvchilar fikrlari"
+    },
+    "faq": {
+      "title": "Ko'p beriladigan savollar",
+      "viewAll": "Barcha savollarni ko'rish"
+    },
+    "cta": {
+      "title": "Hoziroq boshlang!",
+      "description": "Bepul ro'yxatdan o'ting va haydovchilik testiga tayyorlang",
+      "button": "Bepul boshlash"
+    }
+  },
+  "courses": {
+    "title": "Kurslar",
+    "description": "Barcha mavzular bo'yicha kurslar",
+    "searchPlaceholder": "Kurs qidirish...",
+    "allCategories": "Barcha kategoriyalar",
+    "difficulty": {
+      "beginner": "Boshlang'ich",
+      "intermediate": "O'rta",
+      "advanced": "Yuqori"
+    },
+    "noCourses": "Kurslar topilmadi",
+    "lessonsCount": "{{count}} dars",
+    "viewCourse": "Kursni ko'rish"
+  },
+  "courseDetails": {
+    "aboutCourse": "Kurs haqida",
+    "lessonsList": "Darslar ro'yxati",
+    "startCourse": "Kursni boshlash",
+    "continueCourse": "Davom ettirish",
+    "lessonCount": "{{count}} dars",
+    "duration": "{{hours}} soat",
+    "difficulty": "Daraja",
+    "noLessons": "Hozircha darslar yo'q"
+  },
+  "about": {
+    "title": "Biz haqimizda",
+    "mission": {
+      "title": "Bizning maqsadimiz",
+      "description": "E-Avto Test platformasi O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlarni oshirish va haydovchilik imtihoniga tayyorlash maqsadida yaratilgan."
+    },
+    "values": {
+      "title": "Bizning qadriyatlarimiz",
+      "quality": { "title": "Sifat", "description": "Yuqori sifatli kontent va xizmat" },
+      "accessibility": { "title": "Ochiqlik", "description": "Hammaga ochiq va bepul" },
+      "innovation": { "title": "Innovatsiya", "description": "Zamonaviy texnologiyalar" }
+    },
+    "team": {
+      "title": "Jamoa",
+      "description": "Biz tajribali dasturchilar va o'qituvchilar jamoasiz."
+    }
+  },
+  "contact": {
+    "title": "Bog'lanish",
+    "description": "Savollaringiz bo'lsa, biz bilan bog'laning",
+    "form": {
+      "name": "Ism",
+      "email": "Email",
+      "subject": "Mavzu",
+      "message": "Xabar",
+      "namePlaceholder": "Ismingizni kiriting",
+      "emailPlaceholder": "email@example.com",
+      "subjectPlaceholder": "Xabar mavzusini kiriting",
+      "messagePlaceholder": "Xabaringizni yozing...",
+      "send": "Xabar yuborish",
+      "success": "Xabar muvaffaqiyatli yuborildi!",
+      "error": "Xabar yuborishda xatolik yuz berdi"
+    },
+    "info": {
+      "title": "Aloqa ma'lumotlari",
+      "email": "Email",
+      "phone": "Telefon",
+      "address": "Manzil"
+    }
+  },
+  "faq": {
+    "title": "Ko'p beriladigan savollar",
+    "description": "Eng ko'p beriladigan savollarga javoblar",
+    "questions": {
+      "q1": { "q": "Platforma bepulmi?", "a": "Ha, E-Avto Test platformasi to'liq bepul." },
+      "q2": { "q": "Qancha vaqtda test topshirish mumkin?", "a": "Har bir test uchun 25 daqiqa vaqt beriladi." },
+      "q3": { "q": "Nechta savol beriladi?", "a": "Har bir testda 50 ta savol beriladi." },
+      "q4": { "q": "O'tish bali necha?", "a": "O'tish bali 70% dan boshlanadi." },
+      "q5": { "q": "Qayta topshirish mumkinmi?", "a": "Ha, istalgan vaqtda qayta topshirish mumkin." }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Hisobingizga kiring",
+      "subtitle": "E-Avto Test platformasiga xush kelibsiz",
+      "email": "Email",
+      "password": "Parol",
+      "forgotPassword": "Parolni unutdingizmi?",
+      "submit": "Kirish",
+      "noAccount": "Hisobingiz yo'qmi?",
+      "register": "Ro'yxatdan o'ting",
+      "error": "Kirishda xatolik yuz berdi"
+    },
+    "register": {
+      "title": "Ro'yxatdan o'tish",
+      "subtitle": "Yangi hisob yaratib o'qishni boshlang",
+      "name": "Ism",
+      "email": "Email",
+      "password": "Parol",
+      "confirmPassword": "Parolni tasdiqlang",
+      "submit": "Ro'yxatdan o'tish",
+      "hasAccount": "Hisobingiz bormi?",
+      "login": "Kirish",
+      "error": "Ro'yxatdan o'tishda xatolik yuz berdi"
+    },
+    "forgotPassword": {
+      "title": "Parolni tiklash",
+      "subtitle": "Emailingizni kiriting, biz sizga tiklash havolasini yuboramiz",
+      "email": "Email",
+      "submit": "Havola yuborish",
+      "success": "Parol tiklash havolasi yuborildi",
+      "error": "Xatolik yuz berdi, qayta urinib ko'ring"
+    },
+    "resetPassword": {
+      "title": "Yangi parol o'rnating",
+      "subtitle": "Hisobingiz uchun yangi parol yarating",
+      "newPassword": "Yangi parol",
+      "confirmPassword": "Yangi parolni tasdiqlang",
+      "submit": "Parolni yangilash",
+      "success": "Parol muvaffaqiyatli yangilandi",
+      "error": "Parolni yangilashda xatolik yuz berdi",
+      "backToLogin": "Kirish sahifasiga qaytish"
+    }
+  },
+  "validation": {
+    "required": "Kiritilishi shart",
+    "email": "Noto'g'ri email formati",
+    "minLength": "Kamida {{min}} ta belgi kerak",
+    "passwordMatch": "Parollar mos kelmaydi"
+  },
+  "dashboard": {
+    "greeting": "Salom, {{name}}!",
+    "subtitle": "Bugun ham bilimlarni rivojlantirishga tayyormisiz?",
+    "stats": {
+      "progress": "Progress",
+      "completedLessons": "Tugallangan darslar",
+      "completedTests": "Bajarilgan testlar",
+      "avgScore": "O'rtacha ball"
+    },
+    "continueLearning": {
+      "title": "Davom etilishi kerak",
+      "button": "Darsni davom ettirish"
+    },
+    "recommended": {
+      "title": "Tavsiya etilgan darslar",
+      "empty": "Hozircha darslar yo'q",
+      "emptyDesc": "Tez orada yangi darslar qo'shiladi."
+    }
+  },
+  "lessons": {
+    "title": "Darslar",
+    "description": "Barcha darslar",
+    "searchPlaceholder": "Dars qidirish...",
+    "allCourses": "Barcha kurslar",
+    "noLessons": "Darslar topilmadi",
+    "startLesson": "Darsni boshlash",
+    "continueLesson": "Davom ettirish",
+    "completed": "Tugallangan",
+    "inProgress": "Jarayonda",
+    "notStarted": "Boshlanmagan"
+  },
+  "lessonDetails": {
+    "backToLessons": "Darslarga qaytish",
+    "aboutLesson": "Dars haqida",
+    "startLesson": "Darsni boshlash",
+    "continueLesson": "Davom ettirish",
+    "relatedTests": "Tegishli testlar",
+    "takeTest": "Test topshirish"
+  },
+  "videoLesson": {
+    "title": "Video dars",
+    "backToLesson": "Darsga qaytish",
+    "watchAgain": "Qayta ko'rish",
+    "nextLesson": "Keyingi dars"
+  },
+  "tests": {
+    "title": "Test topshirish",
+    "description": "150 ta mavzu va 100 ta savol bankidan har bir urinishda 50 ta savol aralashtirib tanlanadi.",
+    "startTest": "Testni boshlash",
+    "previousResults": "Oldingi natijalar",
+    "noTests": "Hali testlar topshirmagansiz",
+    "noTestsDesc": "Yuqoridagi kurslardan birini tanlab test boshang.",
+    "generalTest": "Umumiy test",
+    "questionsCount": "{{count}} savol",
+    "timeSpent": "{{time}} vaqt",
+    "course": "Kurs"
+  },
+  "testPage": {
+    "question": "Savol {{current}} / {{total}}",
+    "timeLeft": "Qolgan vaqt",
+    "finish": "Tugatish",
+    "previous": "Oldingi",
+    "next": "Keyingi",
+    "mark": "Belgilash",
+    "unmark": "Belgilashni olib tashlash",
+    "confirmFinish": "Testni tugatishni xohlaysizmi?",
+    "confirmFinishDesc": "Javoblarni tekshirish imkoniyati bo'lmaydi.",
+    "answered": "Javob berildi",
+    "marked": "Belgilangan",
+    "unanswered": "Javob berilmagan"
+  },
+  "testResult": {
+    "title": "Test natijalari",
+    "congratulations": "Tabriklaymiz!",
+    "passed": "Siz testdan o'tdingiz!",
+    "failed": "Siz testdan o'ta olmadingiz",
+    "score": "Ball",
+    "correct": "To'g'ri",
+    "incorrect": "Noto'g'ri",
+    "timeSpent": "Sarflangan vaqt",
+    "passingScore": "O'tish bali",
+    "reviewAnswers": "Javoblarni ko'rish",
+    "retakeTest": "Qayta topshirish",
+    "backToTests": "Testlarga qaytish"
+  },
+  "testReview": {
+    "title": "Test sharhi",
+    "backToResults": "Natijalarga qaytish",
+    "question": "Savol {{current}} / {{total}}",
+    "yourAnswer": "Sizning javobingiz",
+    "correctAnswer": "To'g'ri javob",
+    "explanation": "Tushuntirish",
+    "correct": "To'g'ri",
+    "incorrect": "Noto'g'ri"
+  },
+  "history": {
+    "title": "Test tarixi",
+    "description": "Barcha test natijalari",
+    "noHistory": "Hali test topshirmagansiz",
+    "noHistoryDesc": "Birinchi testni topshiring!",
+    "date": "Sana",
+    "course": "Kurs",
+    "score": "Ball",
+    "time": "Vaqt",
+    "status": "Holat",
+    "actions": "Amallar",
+    "view": "Ko'rish"
+  },
+  "progress": {
+    "title": "Rivojlanish",
+    "description": "O'z progresslaringizni kuzatib boring",
+    "overallProgress": "Umumiy progress",
+    "weeklyActivity": "Haftalik faoliyat",
+    "coursesCompleted": "Tugallangan kurslar",
+    "testsCompleted": "Tugallangan testlar",
+    "avgScore": "O'rtacha ball",
+    "studyTime": "O'qish vaqti",
+    "noData": "Hozircha ma'lumot yo'q"
+  },
+  "leaderboard": {
+    "title": "Reyting",
+    "description": "Eng yaxshi natijalar ko'rsatilmoqda",
+    "rank": "O'rin",
+    "student": "Talaba",
+    "points": "Ballar",
+    "tests": "Testlar",
+    "avgScore": "O'rtacha ball",
+    "noData": "Hozircha ma'lumot yo'q"
+  },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Profilni tahrirlash",
+    "name": "Ism",
+    "email": "Email",
+    "role": "Rol",
+    "memberSince": "A'zo bo'lgan",
+    "saveChanges": "O'zgarishlarni saqlash",
+    "changePassword": "Parolni o'zgartirish",
+    "currentPassword": "Joriy parol",
+    "newPassword": "Yangi parol",
+    "confirmPassword": "Parolni tasdiqlang",
+    "updatePassword": "Parolni yangilash"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "appearance": "Ko'rinish",
+    "theme": "Mavzu",
+    "language": "Til",
+    "darkMode": "Qorong'u rejim",
+    "lightMode": "Yorug'lik rejim",
+    "systemMode": "Tizim",
+    "notifications": "Bildirishnomalar",
+    "emailNotifications": "Email bildirishnomalar",
+    "pushNotifications": "Push bildirishnomalar",
+    "account": "Hisob",
+    "deleteAccount": "Hisobni o'chirish",
+    "deleteAccountDesc": "Bu amal qaytarib bo'lmaydi"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Sahifa topilmadi",
+      "description": "Siz qidirgan sahifa mavjud emas yoki o'chirilgan.",
+      "backHome": "Bosh sahifaga qaytish"
+    },
+    "forbidden": {
+      "title": "Ruxsat yo'q",
+      "description": "Sizda bu sahifaga kirish huquqi yo'q.",
+      "backHome": "Bosh sahifaga qaytish",
+      "contactAdmin": "Admin bilan bog'lanish"
+    },
+    "serverError": {
+      "title": "Xatolik yuz berdi",
+      "description": "Server bilan muammo yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.",
+      "tryAgain": "Qayta urinib ko'rish",
+      "backHome": "Bosh sahifaga qaytish"
+    }
+  }
+}

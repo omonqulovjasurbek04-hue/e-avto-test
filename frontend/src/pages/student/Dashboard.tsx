@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { lessonService } from "@/services/lesson.service";
 import { userService } from "@/services/user.service";
@@ -17,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import LessonCard from "@/components/lesson/LessonCard";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -54,10 +56,10 @@ export default function Dashboard() {
     <div className="container-page py-8">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Salom, {user?.name ?? "foydalanuvchi"}!
+          {t("dashboard.greeting", { name: user?.name ?? "foydalanuvchi" })}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Bugun ham bilimlarni rivojlantirishga tayyormisiz?
+          {t("dashboard.subtitle")}
         </p>
       </motion.div>
 
@@ -75,25 +77,25 @@ export default function Dashboard() {
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              label="Progress"
+              label={t("dashboard.stats.progress")}
               value={`${stats?.progressPct ?? 0}%`}
               icon={<Trophy className="h-6 w-6" />}
               color="brand"
             />
             <StatCard
-              label="Tugallangan darslar"
+              label={t("dashboard.stats.completedLessons")}
               value={stats?.completedLessons ?? 0}
               icon={<CheckCircle className="h-6 w-6" />}
               color="green"
             />
             <StatCard
-              label="Bajarilgan testlar"
+              label={t("dashboard.stats.completedTests")}
               value={results.length}
               icon={<ClipboardList className="h-6 w-6" />}
               color="amber"
             />
             <StatCard
-              label="O'rtacha ball"
+              label={t("dashboard.stats.avgScore")}
               value={`${stats?.avgScore ?? 0}%`}
               icon={<BookOpen className="h-6 w-6" />}
               color="slate"
@@ -105,7 +107,7 @@ export default function Dashboard() {
               <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                    Davom etilishi kerak
+                    {t("dashboard.continueLearning.title")}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">{continueLearning.title}</p>
                 </div>
@@ -113,7 +115,7 @@ export default function Dashboard() {
                   to={ROUTES.lessonDetails(continueLearning.id)}
                   className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
                 >
-                  <PlayCircle className="h-5 w-5" /> Darsni davom ettirish
+                  <PlayCircle className="h-5 w-5" /> {t("dashboard.continueLearning.button")}
                 </Link>
               </CardContent>
             </Card>
@@ -121,12 +123,12 @@ export default function Dashboard() {
 
           <div className="mt-8">
             <h2 className="mb-4 text-lg font-semibold text-slate-800 dark:text-slate-100">
-              Tavsiya etilgan darslar
+              {t("dashboard.recommended.title")}
             </h2>
             {recommended.length === 0 ? (
               <EmptyState
-                title="Hozircha darslar yo'q"
-                description="Tez orada yangi darslar qo'shiladi."
+                title={t("dashboard.recommended.empty")}
+                description={t("dashboard.recommended.emptyDesc")}
               />
             ) : (
               <div className="grid grid-cols-1 gap-3">

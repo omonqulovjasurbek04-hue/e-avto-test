@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants/routes";
 import { Input } from "@/components/ui/Input";
@@ -13,7 +14,7 @@ import { Alert } from "@/components/ui/Alert";
 
 const resetSchema = z
   .object({
-    newPassword: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo‘lishi kerak"),
+    newPassword: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
     confirmPassword: z.string().min(6, "Parolni tasdiqlang"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -24,6 +25,7 @@ const resetSchema = z
 type ResetFormValues = z.infer<typeof resetSchema>;
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -40,11 +42,11 @@ export default function ResetPassword() {
     setServerError(null);
     try {
       await new Promise((resolve) => setTimeout(resolve, 600));
-      toast.success("Parol muvaffaqiyatli yangilandi");
+      toast.success(t("auth.resetPassword.success"));
       navigate(ROUTES.login);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Parolni yangilashda xatolik yuz berdi";
+        err instanceof Error ? err.message : t("auth.resetPassword.error");
       setServerError(message);
       toast.error(message);
     }
@@ -54,10 +56,10 @@ export default function ResetPassword() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Yangi parol o‘rnating
+          {t("auth.resetPassword.title")}
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Hisobingiz uchun yangi parol yarating
+          {t("auth.resetPassword.subtitle")}
         </p>
       </div>
 
@@ -65,7 +67,7 @@ export default function ResetPassword() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input
-          label="Yangi parol"
+          label={t("auth.resetPassword.newPassword")}
           type="password"
           placeholder="••••••••"
           leftIcon={<Lock className="h-4 w-4" />}
@@ -74,7 +76,7 @@ export default function ResetPassword() {
         />
 
         <Input
-          label="Yangi parolni tasdiqlang"
+          label={t("auth.resetPassword.confirmPassword")}
           type="password"
           placeholder="••••••••"
           leftIcon={<Lock className="h-4 w-4" />}
@@ -83,7 +85,7 @@ export default function ResetPassword() {
         />
 
         <Button type="submit" loading={isSubmitting} className="w-full">
-          Parolni yangilash
+          {t("auth.resetPassword.submit")}
         </Button>
       </form>
 
@@ -92,7 +94,7 @@ export default function ResetPassword() {
           to={ROUTES.login}
           className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
         >
-          Kirish sahifasiga qaytish
+          {t("auth.resetPassword.backToLogin")}
         </Link>
       </p>
     </div>
