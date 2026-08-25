@@ -7,20 +7,27 @@ import { mockResults } from "../data/mockResults";
 import { STORAGE_KEYS } from "../constants/config";
 
 const HISTORY_KEY = STORAGE_KEYS.history;
+let inMemoryHistory: TestResultDetail[] = [];
 
 function readHistory(): TestResultDetail[] {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch {
-    return [];
+  if (typeof localStorage !== "undefined") {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    } catch {
+      return inMemoryHistory;
+    }
   }
+  return inMemoryHistory;
 }
 
 function writeHistory(list: TestResultDetail[]) {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-  } catch {
-    // ignore
+  inMemoryHistory = list;
+  if (typeof localStorage !== "undefined") {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+    } catch {
+      // ignore
+    }
   }
 }
 

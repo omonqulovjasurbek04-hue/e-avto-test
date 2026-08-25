@@ -31,12 +31,13 @@ Autentizatsiya: `Authorization: Bearer <token>` sarlavhasi (himoyalangan yo‘ll
 
 | Metod | Yo‘l | Body | Izoh |
 |-------|------|------|------|
-| POST | `/api/tests/start` | `{ courseId?, count? }` | `{ test:{id,totalQuestions}, questions:[{id,text,options,order}] }` |
+| POST | `/api/tests/start` | `{ courseId?, count?, topicId? }` | `{ test:{id,totalQuestions}, questions:[{id,text,options,order}] }` |
 | POST | `/api/tests/:id/answer` | `{ questionId, selectedIndex }` | `{ success:true }` |
 | POST | `/api/tests/:id/finish` | `{ timeSpent? }` | `TestResult` (server hisoblaydi) |
 
-`count` odatda 20, mavjud savollar sonigacha cheklanadi. To‘g‘ri javoblar frontend’ga
-berilmaydi; natija faqat `/finish` chaqirilganda hisoblanadi. O‘tish chegarasi: **70%**.
+`count` odatda 50 ta savol (davlat imtihoni standarti), ixtiyoriy 20 yoki 100 ta qilib ham chaqirilishi mumkin.
+To‘g‘ri javoblar frontend’ga berilmaydi; natija faqat `/finish` chaqirilganda hisoblanadi. O‘tish chegarasi: **70%**.
+Har bir yangi test boshlanganda savollar va variantlar dinamik aralashtiriladi (Fisher-Yates random shuffle).
 
 ## Natijalar
 
@@ -58,20 +59,4 @@ berilmaydi; natija faqat `/finish` chaqirilganda hisoblanadi. O‘tish chegarasi
 |-------|------|------|
 | GET | `/api/progress` | Kurslar kesimida foydalanuvchi progressi |
 | GET | `/api/progress/:lessonId` | Bitta darsning progressi |
-| PUT | `/api/progress/:lessonId` | `{ percent: 0..100 }` — progress faqat oshadi |
-| GET | `/api/statistics` | Joriy foydalanuvchi statistikasi |
-| GET | `/api/leaderboard` | Ballar bo‘yicha reyting |
-
-## Sog‘liq tekshiruvi
-
-`GET /api/health` API va PostgreSQL ulanishi holatini qaytaradi. Bu endpoint
-autentifikatsiyasiz bo‘lib, deployment platformasining health-check’i uchun mo‘ljallangan.
-
-## Admin (faqat `ADMIN`)
-
-| Metod | Yo‘l | Izoh |
-|-------|------|------|
-| GET | `/api/admin/users` | Foydalanuvchilar |
-| GET/POST/PUT/DELETE | `/api/admin/courses` | Kurslar CRUD |
-| GET/POST/PUT/DELETE | `/api/admin/questions` | Savollar CRUD (`options: string[]`) |
-| GET | `/api/admin/statistics` | `{ totalUsers, totalCourses, totalQuestions, totalTests, averageScore, passRate }` |
+| GET | `/api/leaderboard` | Foydalanuvchilar reytingi (top 50) |
