@@ -2,6 +2,7 @@ import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import { Car, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 export const AuthLayout: React.FC = () => {
   const { t } = useTranslation();
@@ -52,6 +53,9 @@ export const AuthLayout: React.FC = () => {
       </div>
 
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-16 xl:px-24">
+        <div className="absolute top-4 right-4 z-10">
+          <LanguageSwitcher variant="pills" />
+        </div>
         <div className="mx-auto w-full max-w-md">
           <Outlet />
         </div>

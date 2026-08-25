@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
 import { Button } from "../components/ui";
@@ -57,6 +58,7 @@ export const MainLayout: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="pills" />
             <button onClick={toggleTheme} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition" title={theme === "light" ? t("settings.darkMode") : t("settings.lightMode")}>
               {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>

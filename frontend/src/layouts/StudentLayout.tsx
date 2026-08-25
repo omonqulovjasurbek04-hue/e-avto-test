@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
 import {
@@ -118,6 +119,7 @@ export const StudentLayout: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="pills" />
             <Link to="/tests" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 border border-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800 hover:bg-brand-100 transition">
               <CheckSquare className="h-4 w-4" />
               <span>{t("nav.tests")}</span>

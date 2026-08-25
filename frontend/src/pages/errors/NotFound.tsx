@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +11,9 @@ export default function NotFound() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher variant="pills" />
+      </div>
       <p className="text-8xl font-extrabold text-brand-600">404</p>
       <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
         {t("errors.notFound.title")}
