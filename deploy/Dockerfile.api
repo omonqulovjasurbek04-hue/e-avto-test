@@ -1,0 +1,28 @@
+# Backend image. Build from the repository root:  docker build -f deploy/Dockerfile.api -t eavto-api .
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci
+COPY backend/prisma ./prisma
+RUN npx prisma generate
+COPY backend/tsconfig.json ./
+COPY backend/src ./src
+RUN npm run build
+
+# Used as the one-off "migrate" job (needs the Prisma CLI, which lives in devDependencies).
+FROM build AS migrate
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+FROM node:20-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/dist ./dist
+# Private media lives outside the image (mount a volume on MEDIA_DIR when uploads are enabled).
+RUN addgroup -S app && adduser -S app -G app && mkdir -p /app/storage/private && chown -R app:app /app/storage
+USER app
+EXPOSE 5000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD wget -qO- http://127.0.0.1:5000/api/health/live || exit 1
+CMD ["node", "dist/server.js"]

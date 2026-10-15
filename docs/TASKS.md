@@ -1,68 +1,43 @@
-# E-AVTO TEST TASK BOARD
+# E-AVTO TEST — vazifalar holati
 
-## PHASE 1 — FOUNDATION & AI
-[x] TASK-001 Project structure setup
-[x] TASK-002 .ai context configuration
-[x] TASK-003 Skills router and guidelines
+Batafsil bosqichma-bosqich holat: **`IMPLEMENTATION_PLAN.md`** (har bosqichda nima bor va nima yo‘q).
+Test natijalari va qanday ishga tushirish: **`TESTING.md`**. Xavfsizlik: **`SECURITY.md`**. Deploy: **`DEPLOYMENT.md`**.
 
-## PHASE 2 — FRONTEND ARCHITECTURE & DESIGN SYSTEM
-[x] TASK-010 TypeScript interfaces (User, Course, Lesson, Question, Test, Result)
-[x] TASK-011 Utilities (cn, formatters, storage, helpers)
-[x] TASK-012 Zustand Stores (AuthStore, TestStore, UIStore)
-[x] TASK-013 Service Layer & Axios Client with mock/live fallback
-[x] TASK-014 Mock Data Bank (Uzbekistan Traffic Rules, questions, media, tests)
-[x] TASK-015 Core UI Component Library (Buttons, Cards, Inputs, Modals, Progress, Badges, etc.)
+Belgilar: `[x]` bajarilgan va tekshirilgan, `[~]` qisman, `[ ]` bajarilmagan.
 
-## PHASE 3 — LAYOUTS & ROUTING
-[x] TASK-020 MainLayout (Header, Footer, Navigation, Dark Mode toggle)
-[x] TASK-021 AuthLayout (Split-screen vehicle aesthetics)
-[x] TASK-022 StudentLayout (Sidebar, Stats Bar, Breadcrumbs)
-[x] TASK-023 AdminLayout (Sidebar, CRUD Header, Operations)
-[x] TASK-024 Router Configuration (Public, Protected, Admin, Error 404/403/500)
+## Tayyor va tekshirilgan (haqiqiy PostgreSQL + haqiqiy brauzer)
+[x] Auth, rollar (6 ta), ruxsat matritsasi, rol eskalatsiyasidan himoya, hisob blokirovkasi, audit jurnali
+[x] Kurslar, darslar, testlar (serverda baholash, vaqt, urinishlar, o‘tish bali, import/eksport)
+[x] Katalog: paket, narx, chegirma, promo-kod (poygadan himoyalangan)
+[x] Buyurtma, to‘lov oqimi (imzolangan callback, idempotent), buyurtma muddati, refund — **mock provayder bilan**
+[x] Kursga kirish nazorati (video, matn, test) — `ENFORCE_ENROLLMENT`
+[x] Guruh, jadval (to‘qnashuv tekshiruvi), davomat (tahrir tarixi, hisobot, CSV)
+[x] CMS: sahifalar, yangiliklar, FAQ, sayt sozlamalari, aloqa formasi; XSS himoyasi
+[x] Bildirishnomalar: sayt ichida + email, sozlamalar, e’lonlar
+[x] Private media (imzolangan URL, Range) + admin sahifasi
+[x] Rolga qarab admin panel, o‘qituvchi kabineti, o‘quvchi kabineti
+[x] Test topshirish oqimi (brauzerda: boshlash → javob → natija → tahlil; javob kaliti sahifada yo‘q)
+[x] ESLint, production build qo‘riqchisi, production smoke test, telefon maketi testlari
 
-## PHASE 4 — PUBLIC & AUTH PAGES
-[x] TASK-030 Home Landing Page (Hero, Features, Stats, Testimonials, FAQ, CTA)
-[x] TASK-031 Courses Catalog & Course Detail Page
-[x] TASK-032 About, Contact, and FAQ pages
-[x] TASK-033 Authentication (Login, Register, Forgot Password, Reset Password)
+## Qisman
+[~] Ko‘p tillilik: o‘quvchi/ochiq sahifalar uz/uz-kirill/ru (kirill va rus matnlarini ona tilida so‘zlashuvchi tekshirsin); admin va o‘qituvchi sahifalari faqat o‘zbekcha. Dark mode yangi sahifalarda tekshirilgan
+[~] Deploy: `deploy/` fayllari (Docker, nginx, backup) yozilgan, lekin **sinalmagan** (Docker/pg_dump yo‘q)
+[~] Email: real SMTP serverda sinalmagan
 
-## PHASE 5 — STUDENT LEARNING & VIDEO
-[x] TASK-040 Student Dashboard (Metrics, quick start, progress ring)
-[x] TASK-041 Lessons List & Topic Details
-[x] TASK-042 Video Lesson Player with chapters & auto-progress
+## Bajarilmagan
+[ ] Real to‘lov provayderi (Payme / Click) — merchant ma’lumotlari kerak
+[ ] SMS / messenjer, refresh token, 2FA, email tasdiqlash
+[ ] Rate limit uchun umumiy store (Redis)
+[ ] Antivirus (fayl yuklash), watermark, S3/R2
+[ ] Xato kuzatuvchisi (Sentry), monitoring, backup tiklashni sinash
+[ ] Mustaqil xavfsizlik auditi
+[ ] Kontent: seeddagi savollar soni kam; YHQ savollarining to‘g‘riligini mutaxassis tasdiqlashi kerak
+[ ] Kategoriya/mavzu modeli (hozir kurs kategoriya vazifasini bajaradi)
 
-## PHASE 6 — TEST ENGINE, TIMER & REVIEW
-[x] TASK-050 Tests Hub (50 questions standard, 150 topics selector, 20 questions, marathon, mistakes)
-[x] TASK-051 Active Test Screen (Real-time timer, 50-question matrix, options, flagged questions)
-[x] TASK-052 Test Result Screen (Score calculation, passed/failed badge, time spent)
-[x] TASK-053 Mistakes Review Screen (Step-by-step review with official rule explanations)
-[x] TASK-054 History & Statistics (Recharts analytics, progress tracking)
-[x] TASK-055 Leaderboard (Weekly, Monthly, All-time rankings)
-[x] TASK-056 User Profile & Account Settings
+## Server yuklash vaqtida eslatiladi
+[ ] **Real to‘lov (Payme / Click)** — loyiha egasi qarori bilan oxirgi bosqichga qoldirilgan; yuklash paytida avval shu qilinadi (`DEPLOYMENT.md`, 11-bo‘lim)
 
-## PHASE 7 — ADMIN PANEL
-[x] TASK-060 Admin Dashboard (KPI metrics, active users, test pass rates)
-[x] TASK-061 Course & Lesson Management (Create, Edit, Delete)
-[x] TASK-062 Questions Bank Management (Image upload, options, correct answer, rules)
-[x] TASK-063 Users & Subscriptions Management
-
-## PHASE 8 — BACKEND HARMONY & FULLSTACK INTEGRATION
-[x] TASK-070 API contracts validation
-[x] TASK-071 Security hardening & test integrity verification
-[x] TASK-072 Database seeding & migration verification
-
-## PHASE 9 — VERIFICATION & BUILD
-[x] TASK-080 Frontend typecheck & production build (Passed: 0 errors)
-[x] TASK-081 Backend typecheck & production build (Passed: 0 errors)
-[x] TASK-082 Documentation & README update
-
-## PHASE 10 — 150 TOPICS & 50-QUESTION RANDOM SHUFFLE ENGINE
-[x] TASK-090 150-topic curriculum structure in mockTopics.ts
-[x] TASK-091 100+ realistic traffic questions in mockQuestions.ts
-[x] TASK-092 Fisher-Yates dynamic random shuffle engine in test.service.ts
-[x] TASK-093 Verification script verify_shuffle.ts (Passed 100%)
-
-## PHASE 11 — SKILLS APPLICATION
-[x] TASK-100 Fullstack Guardian security & rate limiting
-[x] TASK-101 UI/UX Pro Max aesthetic design system
-[x] TASK-102 Postgres Pro schema & seed data
+## Loyiha egasi hal qilishi kerak
+Haqiqiy narx va valyuta; to‘lov provayderi va merchant ma’lumotlari; refund siyosati; davomat foizi formulasi (hozir vaqtinchalik,
+`backend/src/lib/attendance.ts`); test vaqti/urinishlar/o‘tish bali; video joylashuvi (tashqi CDN yoki o‘z serveri);
+email/SMS provayder; domen va hosting; brend; maxfiylik siyosati va ma’lumotni saqlash muddati.

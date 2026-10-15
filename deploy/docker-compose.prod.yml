@@ -1,0 +1,62 @@
+# Production stack: PostgreSQL (private network only), one-off migration job, API, static web.
+# TLS is terminated in front of this stack (Caddy/Traefik/host nginx/Cloudflare) - see docs/DEPLOYMENT.md.
+# Usage (from the repository root):
+#   cp deploy/.env.production.example deploy/.env.production   # then fill in real values
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+name: eavto
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # No "ports": the database is reachable only from this compose network.
+
+  migrate:
+    build: { context: .., dockerfile: deploy/Dockerfile.api, target: migrate }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    build: { context: .., dockerfile: deploy/Dockerfile.api, target: runtime }
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    volumes:
+      - media:/app/storage/private
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    ports:
+      - "127.0.0.1:5000:5000" # only the local reverse proxy can reach it
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+      args: { VITE_API_URL: "${PUBLIC_API_URL}" }
+    restart: unless-stopped
+    environment:
+      API_ORIGIN: ${PUBLIC_API_ORIGIN}
+      API_UPSTREAM: http://api:5000
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  pgdata:
+  media:

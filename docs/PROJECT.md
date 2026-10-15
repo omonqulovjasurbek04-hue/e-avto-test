@@ -11,7 +11,7 @@ E-Avto Test — onlayn avtomobil haydash nazariyasini o'rganish, mavzulashtirilg
 - `frontend/` — Foydalanuvchi va Admin interfeysi
 - `backend/` — REST API va ma'lumotlar bazasi ORM
 - `docs/` — API, Ma'lumotlar bazasi va o'rnatish qo'llanmalari
-- `skills/` — Loyiha uchun ixtisoslashgan AI skillari
+- `skills/` — (hozircha repoda mavjud emas)
 
 ## Important Invariants
 1. Backend test topshirilayotgan paytda to'g'ri javoblarni frontendga chiqarmasligi shart.

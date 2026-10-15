@@ -2,9 +2,8 @@
 
 ## Skilllar
 
-Loyihaga kerak bo‘ladigan skilllar to‘liq `skills/` katalogida saqlanadi.
-Har qanday ishni boshlashdan oldin vazifaga mos bitta yoki bir nechta
-`SKILL.md` faylini oxirigacha o‘qing. Skillni ko‘rmasdan uning ko‘rsatmalarini
+Agar repoda `skills/` katalogi bo‘lsa (hozir yo‘q), har qanday ishni boshlashdan oldin
+vazifaga mos `SKILL.md` faylini oxirigacha o‘qing. Skillni ko‘rmasdan uning ko‘rsatmalarini
 taxmin qilmang; bog‘langan `references/`dan faqat ayni ish uchun keraklisini
 o‘qing. Vazifalar xaritasi `skills/PROJECT_SKILLS.md`da.
 

@@ -1,5 +1,7 @@
 # 🚗 E-Avto Test — Vazifalar Ro'yxati (Task Tracker)
 
+> ⚠️ Bu eski reja: fayl nomlari (`HomePage.tsx` va h.k.) haqiqiy kodga mos kelmaydi. Joriy holat: [TASKS.md](../TASKS.md).
+
 Barcha asosiy bosqichlar to'liq ishlab chiqildi va muvaffaqiyatli sinovdan o'tkazildi.
 
 ---

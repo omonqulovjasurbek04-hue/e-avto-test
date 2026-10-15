@@ -22,13 +22,13 @@
                                v
 +-------------------------------------------------------------+
 |                     DATABASE (PostgreSQL)                   |
-|  Tables: User, Course, Lesson, Question, Option,            |
-|          TestAttempt, UserAnswer, Result, Progress          |
+|  Tables: User, Course, Lesson, Video, Question, Test,       |
+|          UserAnswer, Progress, LessonProgress, PasswordReset|
 +-------------------------------------------------------------+
 ```
 
 ## Security Invariants
 - Passwords hashed with `bcryptjs` (min 10 salt rounds).
-- JWT stored in localStorage or secure headers.
+- JWT stored in localStorage and sent in the Authorization header (no cookies, so no CSRF surface; XSS must be prevented).
 - Test answers evaluated only on server side.
 - Media hosted on external CDN/Object Storage (URLs in database).

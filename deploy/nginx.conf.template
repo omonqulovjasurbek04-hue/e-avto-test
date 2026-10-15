@@ -1,0 +1,33 @@
+# Static frontend + the security headers the API cannot set for HTML.
+# Rendered by the nginx image: ${API_ORIGIN} e.g. https://api.example.uz, ${API_UPSTREAM} e.g. http://api:5000
+# (nginx variables such as $uri are left alone: the image only substitutes variables that exist in the environment.)
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+  server_tokens off;
+
+  # Crawler files are generated from the database by the API.
+  location = /sitemap.xml { proxy_pass ${API_UPSTREAM}/sitemap.xml; }
+  location = /robots.txt  { proxy_pass ${API_UPSTREAM}/robots.txt; }
+
+  # Hashed build assets can be cached forever.
+  location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    add_header X-Content-Type-Options "nosniff" always;
+  }
+
+  # The HTML shell is always revalidated. add_header in a location replaces the server-level ones,
+  # so the full security set is repeated here.
+  location / {
+    try_files $uri /index.html;
+    add_header Cache-Control "no-cache";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self' ${API_ORIGIN}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  }
+}

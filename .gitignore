@@ -14,3 +14,13 @@ Thumbs.db
 # Build artifacts
 coverage/
 *.tsbuildinfo
+
+# Debug output
+*.err
+
+storage/
+
+# Deployment secrets and backups
+deploy/.env.production
+backups/
+*.dump

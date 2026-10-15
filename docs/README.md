@@ -26,17 +26,30 @@ Node.js · Express.js · TypeScript · PostgreSQL · Prisma (ORM) · JWT · bcry
 e-avto-test/
 ├── frontend/        # React ilovasi
 ├── backend/         # Express API + Prisma
-├── docs/            # Qo'shimcha hujjatlar
+├── docs/            # Hujjatlar (docs/archive — eski rejalar va promptlar)
 ├── docker-compose.yml
 ├── .gitignore
 └── README.md
 ```
 
-## 🤖 AI skilllar bilan ishlash
+## 📚 Hujjatlar xaritasi
 
-Loyihaga tegishli AI skilllar `skills/` katalogiga to‘liq kiritilgan. Vazifaga
-mos skillni tanlash va qo‘llash tartibi [skills/PROJECT_SKILLS.md](skills/PROJECT_SKILLS.md)
-hamda [AGENTS.md](AGENTS.md) fayllarida yozilgan.
+| Hujjat | Nima haqida |
+|---|---|
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | 18 bosqich bo‘yicha holat: nima tayyor, nima yo‘q, qarorlar |
+| [TASKS.md](TASKS.md) | Qisqa vazifalar ro‘yxati va egasi hal qiladigan masalalar |
+| [installation.md](installation.md) | Dev muhitni o‘rnatish |
+| [TESTING.md](TESTING.md) | Testlar, ularni ishga tushirish, ogohlantirishlar |
+| [PERFORMANCE.md](PERFORMANCE.md) | Katta hajmda so‘rov tezligi, topilgan va tuzatilgan sekinliklar |
+| [SECURITY.md](SECURITY.md) | Xavfsizlik auditi, ochiq xavflar |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Productionga chiqarish, backup, rollback |
+| [api.md](api.md) / [database.md](database.md) | API va ma’lumotlar bazasi |
+
+## 🤖 AI agentlar bilan ishlash
+
+Agentlar uchun qoidalar [AGENTS.md](AGENTS.md), [RULES.md](RULES.md) va
+[PROJECT.md](PROJECT.md) fayllarida. Eslatma: bu fayllar `skills/` katalogini
+tilga oladi, ammo u repoda mavjud emas — paydo bo‘lmaguncha e'tiborsiz qoldiring.
 
 ---
 
@@ -92,9 +105,13 @@ NODE_ENV="development"
 Migratsiya va seed:
 
 ```bash
-npm run prisma:migrate
+npm run prisma:migrate -- --name init
 npm run prisma:seed
 ```
+
+Parol qoidasi: kamida 8 belgi, harf va raqam. `JWT_SECRET` productionda kamida 32 belgili
+tasodifiy qiymat bo‘lishi shart (aks holda server ishga tushmaydi). `CLIENT_URL` bir nechta
+originni vergul bilan qabul qiladi.
 
 Backend ishga tushirish (dev):
 
@@ -111,18 +128,24 @@ cp .env.example .env     # VITE_API_URL="http://localhost:5000/api"
 npm run dev
 ```
 
+Frontend **doim haqiqiy API** bilan ishlaydi. Backendsiz demo uchun `.env` ga
+`VITE_USE_MOCK=true` qo‘ying (natija brauzerda hisoblanadi, ma'lumotlar saqlanmaydi);
+production build’da bu o‘zgaruvchini yoqmang.
+
 Frontend `http://localhost:5173`, backend esa `http://localhost:5000/api` manzilida ishlaydi.
 
 ---
 
-## 👤 Admin kirish ma’lumotlari (seed)
+## 👤 Demo hisoblar (faqat lokal seed)
 
 | Rol   | Email            | Parol     |
 |-------|------------------|-----------|
 | Admin | admin@eavto.uz   | admin123  |
 | User  | user@eavto.uz    | user123   |
 
-Admin panelga `/admin` orqali kiring.
+Admin panel: `/admin` (dashboard, kurslar, savollar, foydalanuvchilar). Ruxsat serverda har
+so‘rovda tekshiriladi. Parollarni `SEED_ADMIN_PASSWORD` / `SEED_USER_PASSWORD` bilan o‘zgartiring;
+seed productionda ishlamaydi.
 
 ---
 
@@ -151,14 +174,28 @@ Barcha javoblar bir xil formatda:
 | GET   | `/api/profile`        | Profil progressi |
 | PUT   | `/api/profile`        | Profilni tahrirlash |
 | GET/PUT | `/api/progress/*` | Dars va kurs progressi |
+| POST | `/api/auth/forgot-password`, `/api/auth/reset-password` | Parolni tiklash (email provayderi ulanmagan) |
 | GET | `/api/statistics` | Shaxsiy statistika |
 | GET | `/api/leaderboard` | Reyting |
 | GET | `/api/health` | API va baza holati |
 | GET/POST/PUT/DELETE | `/api/admin/*` | Faqat admin (kurslar, savollar, statistika, foydalanuvchilar) |
 
-Batafsil: `docs/api.md`.
+Batafsil: [api.md](api.md). Ma'lumotlar modeli: [database.md](database.md).
 
 ---
+
+## 🧪 Testlar
+
+Backend uchun integratsiya testlari haqiqiy PostgreSQL talab qiladi (alohida bo'sh baza oling, **dev bazangizni ishlatmang**):
+
+```bash
+cd backend
+DATABASE_URL=<test-baza-url> npx prisma migrate deploy
+TEST_DATABASE_URL=<test-baza-url> npm test
+```
+
+`TEST_DATABASE_URL` berilmasa testlar o'tkazib yuboriladi. Testlar ro'yxatdan o'tish, rollar, test oqimi (baholash,
+vaqt chegarasi, idempotentlik), tokenlarni bekor qilish, Telegram kirishi va tozalash ishini qamrab oladi.
 
 ## 📜 NPM skriptlari
 
@@ -171,6 +208,7 @@ npm run prisma:generate
 npm run prisma:migrate
 npm run prisma:seed
 npm run typecheck      # tsc --noEmit
+npm test               # vitest (TEST_DATABASE_URL kerak)
 ```
 
 **Frontend**
@@ -186,7 +224,15 @@ npm run typecheck
 ## 🔒 Xavfsizlik
 
 Helmet · CORS · JWT · bcryptjs · Zod validatsiya · rate limiting ·
-markaziy xato handler. Admin yo‘nalishlari server tomonida ham tekshiriladi.
+markaziy xato handler (production’da ichki xatolar yashiriladi).
+
+- Test javoblari, ball va vaqt chegarasi serverda; test davomida to‘g‘ri javob mijozga berilmaydi.
+- Admin ruxsati har so‘rovda bazadan tekshiriladi.
+- Token bekor qilinadi: parol almashtirilsa/tiklansa, "hamma joydan chiqish" bosilsa yoki foydalanuvchi bloklansa (`tokenVersion`).
+- Parolni tiklash havolasi SMTP (`SMTP_*`) sozlangan bo‘lsa email bilan yuboriladi; aks holda faqat development konsoliga chiqadi.
+- Ishlatilmagan tugallanmagan testlar va eskirgan bir martalik yozuvlar har 6 soatda avtomatik tozalanadi.
+- Hozircha yo‘q: 2FA, refresh token, audit log. Token `Authorization`
+  sarlavhasida (cookie yo‘q, shuning uchun CSRF yuzasi yo‘q), lekin XSS dan himoya muhim.
 
 ---
 
