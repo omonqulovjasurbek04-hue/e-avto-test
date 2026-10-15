@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -6,8 +7,14 @@ const prisma = new PrismaClient();
 const SAMPLE_VIDEO = "https://www.w3schools.com/html/mov_bbb.mp4";
 
 async function main() {
-  const adminHash = await bcrypt.hash("admin123", 10);
-  const userHash = await bcrypt.hash("user123", 10);
+  // The seed wipes content tables, so it must never run against a production database.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run the demo seed with NODE_ENV=production");
+  }
+
+  // Demo credentials are for local development only; override them via the environment.
+  const adminHash = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD || "admin123", 10);
+  const userHash = await bcrypt.hash(process.env.SEED_USER_PASSWORD || "user123", 10);
 
   await prisma.user.upsert({
     where: { email: "admin@eavto.uz" },
@@ -51,7 +58,7 @@ async function main() {
     },
   });
 
-  const course2 = await prisma.course.create({
+  await prisma.course.create({
     data: {
       title: "A Toifa — Mototsikl va Mopedlar",
       description:
@@ -62,7 +69,7 @@ async function main() {
     },
   });
 
-  const course3 = await prisma.course.create({
+  await prisma.course.create({
     data: {
       title: "C Toifa — Yuk Avtomobillari",
       description:
