@@ -1,6 +1,8 @@
 import app from "./app";
 import { env } from "./config/env";
 import { prisma } from "./config/database";
+import { startBot, stopBot } from "./services/telegram.service";
+import { startCleanupJob } from "./services/cleanup.service";
 
 const PORT = parseInt(env.PORT, 10) || 5000;
 
@@ -8,11 +10,22 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT} [${env.NODE_ENV}]`);
 });
 
-const shutdown = async () => {
-  console.log("Shutting down...");
-  await prisma.$disconnect();
-  server.close(() => process.exit(0));
+const shutdown = async (signal: string) => {
+  stopBot();
+  console.log(`${signal} received, shutting down...`);
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+  // Force exit if connections do not close in time.
+  setTimeout(() => process.exit(1), 10_000).unref();
 };
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+startBot();
+startCleanupJob();
+
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason instanceof Error ? reason.message : reason);
+});

@@ -5,12 +5,12 @@ import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
-router.get("/profile", authMiddleware, asyncHandler(userController.getProfile));
-router.put("/profile", authMiddleware, asyncHandler(userController.updateProfile));
-router.get("/users/me", authMiddleware, asyncHandler(userController.getProfile));
-router.put("/users/me", authMiddleware, asyncHandler(userController.updateProfile));
-router.get("/users/me/statistics", authMiddleware, asyncHandler(userController.getStatistics));
-router.get("/statistics", authMiddleware, asyncHandler(userController.getStatistics));
+router.get("/profile", asyncHandler(authMiddleware), asyncHandler(userController.getProfile));
+router.put("/profile", asyncHandler(authMiddleware), asyncHandler(userController.updateProfile));
+router.get("/users/me", asyncHandler(authMiddleware), asyncHandler(userController.getProfile));
+router.put("/users/me", asyncHandler(authMiddleware), asyncHandler(userController.updateProfile));
+router.get("/users/me/statistics", asyncHandler(authMiddleware), asyncHandler(userController.getStatistics));
+router.get("/statistics", asyncHandler(authMiddleware), asyncHandler(userController.getStatistics));
 router.get("/leaderboard", asyncHandler(userController.getLeaderboard));
 
 export default router;

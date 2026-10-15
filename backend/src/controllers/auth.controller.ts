@@ -4,54 +4,47 @@ import {
   registerSchema,
   loginSchema,
   updateProfileSchema,
+  changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from "../validators/auth";
-import { success, error } from "../utils/apiResponse";
-import { AuthRequest } from "../middleware/auth.middleware";
+import { success } from "../utils/apiResponse";
+import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const input = registerSchema.parse(req.body);
-  const result = await authService.register(input);
+  const result = await authService.register(registerSchema.parse(req.body));
   success(res, result, 201);
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  const input = loginSchema.parse(req.body);
-  const result = await authService.login(input);
-  success(res, result, 200);
+  success(res, await authService.login(loginSchema.parse(req.body)));
 };
 
 export const me = async (req: AuthRequest, res: Response): Promise<void> => {
-  if (!req.user) {
-    error(res, "Authentication required", 401);
-    return;
-  }
-  const user = await authService.getMe(req.user.userId);
-  success(res, user);
+  success(res, await authService.getMe(requireUserId(req)));
 };
 
-export const getProfile = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  if (!req.user) {
-    error(res, "Authentication required", 401);
-    return;
-  }
-  const user = await authService.getMe(req.user.userId);
-  success(res, { user });
-};
-
-export const updateProfile = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  if (!req.user) {
-    error(res, "Authentication required", 401);
-    return;
-  }
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   const input = updateProfileSchema.parse(req.body);
-  const user = await authService.updateProfile(req.user.userId, input);
-  success(res, { user });
+  success(res, await authService.updateProfile(requireUserId(req), input));
 };
 
-export default { register, login, me, getProfile, updateProfile };
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  const input = changePasswordSchema.parse(req.body);
+  success(res, await authService.changePassword(requireUserId(req), input));
+};
+
+export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await authService.logoutEverywhere(requireUserId(req)));
+};
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  await authService.requestPasswordReset(email);
+  // Same answer whether or not the account exists.
+  success(res, { sent: true });
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  success(res, await authService.resetPassword(resetPasswordSchema.parse(req.body)));
+};

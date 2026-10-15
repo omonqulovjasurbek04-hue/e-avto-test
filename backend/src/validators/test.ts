@@ -2,16 +2,18 @@ import { z } from "zod";
 
 export const testStartSchema = z.object({
   courseId: z.string().uuid().optional().nullable(),
+  lessonId: z.string().uuid().optional().nullable(),
   count: z.number().int().min(1).max(100).optional(),
 });
 
 export const testAnswerSchema = z.object({
   questionId: z.string().uuid(),
-  selectedIndex: z.number().int().min(0),
+  selectedIndex: z.number().int().min(0).max(7),
 });
 
 export const testFinishSchema = z.object({
-  timeSpent: z.number().int().min(0).optional(),
+  // Optional batch of answers collected on the client; validated and graded on the server.
+  answers: z.array(testAnswerSchema).max(100).optional(),
 });
 
 export type TestStartInput = z.infer<typeof testStartSchema>;

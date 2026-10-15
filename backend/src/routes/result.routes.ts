@@ -5,8 +5,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
 
-router.use(authMiddleware);
-
+router.use("/results", asyncHandler(authMiddleware));
 router.get("/results", asyncHandler(resultController.listResults));
 router.get("/results/:id", asyncHandler(resultController.getResult));
 

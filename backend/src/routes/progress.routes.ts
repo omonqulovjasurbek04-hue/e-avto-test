@@ -4,8 +4,10 @@ import { authMiddleware } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
 
 const router = Router();
-router.use(authMiddleware);
+
+router.use("/progress", asyncHandler(authMiddleware));
 router.get("/progress", asyncHandler(progressController.listProgress));
+router.get("/progress/completed", asyncHandler(progressController.listCompleted));
 router.get("/progress/:lessonId", asyncHandler(progressController.getLessonProgress));
 router.put("/progress/:lessonId", asyncHandler(progressController.updateLessonProgress));
 

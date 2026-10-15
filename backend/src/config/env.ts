@@ -1,11 +1,68 @@
 import { config } from "dotenv";
 
-config();
+// In development the project .env wins over machine-wide variables (e.g. a DATABASE_URL left by another project).
+// In production the hosting platform's environment is authoritative.
+config({ override: !process.env.NODE_ENV || process.env.NODE_ENV === "development" });
+
+const DEV_SECRET = "change_this_long_random_secret";
+const nodeEnv = process.env.NODE_ENV || "development";
+
+if (nodeEnv === "production") {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret === DEV_SECRET || secret.length < 32) {
+    throw new Error("JWT_SECRET must be set to a random value of at least 32 characters in production");
+  }
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL must be set in production");
+  }
+  // CORS allow-list: only real https origins (no localhost, no plain http, no wildcard).
+  const origins = (process.env.CLIENT_URL ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+  if (origins.length === 0 || origins.some((o) => !/^https:\/\/[^*\s]+$/i.test(o) || /localhost|127\.0\.0\.1/i.test(o))) {
+    throw new Error("CLIENT_URL must list the public https origin(s) of the site in production (no localhost, http or wildcard)");
+  }
+  if (process.env.MEDIA_UPLOAD_ENABLED === "true" && (process.env.MEDIA_SIGNING_SECRET ?? "").length < 32) {
+    throw new Error("MEDIA_SIGNING_SECRET (32+ chars) is required in production when MEDIA_UPLOAD_ENABLED=true");
+  }
+}
+
+if (nodeEnv === "production" && process.env.PAYMENT_PROVIDER === "mock") {
+  throw new Error("PAYMENT_PROVIDER=mock is not allowed in production");
+}
 
 export const env = {
   PORT: process.env.PORT || "5000",
   DATABASE_URL: process.env.DATABASE_URL || "",
-  JWT_SECRET: process.env.JWT_SECRET || "change_this_long_random_secret",
+  JWT_SECRET: process.env.JWT_SECRET || DEV_SECRET,
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
+  // Comma separated list of allowed browser origins.
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
-  NODE_ENV: process.env.NODE_ENV || "development",
+  NODE_ENV: nodeEnv,
+  // SMTP for password-reset e-mails (optional).
+  SMTP_HOST: process.env.SMTP_HOST || "",
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASS: process.env.SMTP_PASS || "",
+  MAIL_FROM: process.env.MAIL_FROM || "E-Avto Test <no-reply@localhost>",
+  // Telegram login bot (optional). Create the bot with @BotFather.
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
+  TELEGRAM_BOT_USERNAME: (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, ""),
+  // If set, updates are received on POST /api/telegram/webhook/<secret> instead of long polling.
+  TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || "",
+  // Payments. Only "mock" exists (no real gateway is integrated). Empty = payments disabled.
+  PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || "",
+  PAYMENT_MOCK_SECRET: process.env.PAYMENT_MOCK_SECRET || "",
+  // true = lesson video/content require an active enrollment (paid access). false = everything published is open.
+  ENFORCE_ENROLLMENT: process.env.ENFORCE_ENROLLMENT === "true",
+  // Private media. Uploads are OFF by default: the project rule is that videos live on an external CDN.
+  MEDIA_UPLOAD_ENABLED: process.env.MEDIA_UPLOAD_ENABLED === "true",
+  MEDIA_DIR: process.env.MEDIA_DIR || "storage/private",
+  // Falls back to a value derived from JWT_SECRET; set explicitly in production.
+  MEDIA_SIGNING_SECRET: process.env.MEDIA_SIGNING_SECRET || "",
+  MEDIA_URL_TTL_SECONDS: parseInt(process.env.MEDIA_URL_TTL_SECONDS || "300", 10),
+  MAX_VIDEO_MB: parseInt(process.env.MAX_VIDEO_MB || "500", 10),
+  MAX_FILE_MB: parseInt(process.env.MAX_FILE_MB || "20", 10),
+  // How long the public leaderboard / landing statistics may be served from memory (0 = no caching).
+  LEADERBOARD_CACHE_SECONDS: parseInt(process.env.LEADERBOARD_CACHE_SECONDS || "60", 10),
+  // Unpaid orders expire after this many minutes.
+  ORDER_TTL_MINUTES: parseInt(process.env.ORDER_TTL_MINUTES || "60", 10),
 };

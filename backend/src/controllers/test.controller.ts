@@ -1,49 +1,20 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import * as testService from "../services/test.service";
-import {
-  testStartSchema,
-  testAnswerSchema,
-  testFinishSchema,
-} from "../validators/test";
+import { testStartSchema, testAnswerSchema, testFinishSchema } from "../validators/test";
 import { success } from "../utils/apiResponse";
-import { AuthRequest } from "../middleware/auth.middleware";
+import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
 
-export const startTest = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  if (!req.user) return;
+export const startTest = async (req: AuthRequest, res: Response): Promise<void> => {
   const input = testStartSchema.parse(req.body);
-  const result = await testService.startTest(req.user.userId, input);
-  success(res, result, 201);
+  success(res, await testService.startTest(requireUserId(req), input, req.user!.role), 201);
 };
 
-export const answerQuestion = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  if (!req.user) return;
+export const answerQuestion = async (req: AuthRequest, res: Response): Promise<void> => {
   const input = testAnswerSchema.parse(req.body);
-  const result = await testService.answerQuestion(
-    req.params.id,
-    req.user.userId,
-    input
-  );
-  success(res, result);
+  success(res, await testService.answerQuestion(req.params.id, requireUserId(req), input));
 };
 
-export const finishTest = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  if (!req.user) return;
-  const input = testFinishSchema.parse(req.body);
-  const result = await testService.finishTest(
-    req.params.id,
-    req.user.userId,
-    input
-  );
-  success(res, result);
+export const finishTest = async (req: AuthRequest, res: Response): Promise<void> => {
+  const input = testFinishSchema.parse(req.body ?? {});
+  success(res, await testService.finishTest(req.params.id, requireUserId(req), input));
 };
-
-export default { startTest, answerQuestion, finishTest };

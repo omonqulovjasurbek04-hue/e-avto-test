@@ -1,52 +1,71 @@
 import { prisma } from "../config/database";
+import { notFound } from "../utils/errors";
+import { accessibleCourseIds, canAccessCourse } from "./access.service";
 
-export const getLesson = async (id: string) => {
-  const lesson = await prisma.lesson.findUnique({
-    where: { id },
-    include: {
-      video: {
-        select: {
-          url: true,
-          title: true,
-          duration: true,
-        },
-      },
-      questions: {
-        orderBy: { order: "asc" },
-        select: {
-          id: true,
-          text: true,
-          options: true,
-          explanation: true,
-          order: true,
-        },
-      },
+export type Viewer = { userId: string; role: string } | undefined;
+
+export const listLessons = async (viewer?: Viewer) => {
+  const allowed = await accessibleCourseIds(viewer);
+  const lessons = await prisma.lesson.findMany({
+    where: { isPublished: true, course: { isPublished: true } },
+    orderBy: [{ course: { order: "asc" } }, { order: "asc" }],
+    select: {
+      id: true,
+      courseId: true,
+      title: true,
+      description: true,
+      thumbnail: true,
+      videoUrl: true,
+      duration: true,
+      order: true,
+      course: { select: { title: true } },
+      _count: { select: { questions: true } },
     },
   });
+  return lessons.map(({ course, _count, ...lesson }) => {
+    const locked = allowed !== "all" && !allowed.has(lesson.courseId);
+    return {
+    ...lesson,
+    // Locked lessons expose metadata only; the video URL is withheld.
+    videoUrl: locked ? "" : lesson.videoUrl,
+    locked,
+    category: course.title,
+    questionCount: _count.questions,
+    };
+  });
+};
 
-  if (!lesson) {
-    const err: any = new Error("Lesson not found");
-    err.status = 404;
-    throw err;
-  }
+export const getLesson = async (id: string, viewer?: Viewer) => {
+  const lesson = await prisma.lesson.findFirst({
+    where: { id, isPublished: true, course: { isPublished: true } },
+    include: {
+      video: { select: { url: true, title: true, duration: true } },
+      course: { select: { title: true } },
+      _count: { select: { questions: true } },
+    },
+  });
+  if (!lesson) throw notFound("Lesson not found");
 
+  const locked = !(await canAccessCourse(viewer, lesson.courseId));
+  // A video uploaded to private storage is streamed through the signed-URL endpoints, never exposed as a link here.
+  const privateVideo = locked ? null : await prisma.videoAsset.findFirst({ where: { lessonId: lesson.id, isArchived: false }, orderBy: { createdAt: "desc" }, select: { id: true } });
+
+  // Questions (and their explanations) are only delivered through the test flow.
   return {
     id: lesson.id,
     courseId: lesson.courseId,
     title: lesson.title,
     description: lesson.description,
+    content: locked ? null : lesson.content,
+    locked,
+    privateVideoId: privateVideo?.id ?? null,
     thumbnail: lesson.thumbnail,
     duration: lesson.duration,
     order: lesson.order,
-    videoUrl: lesson.videoUrl || lesson.video?.url || "",
-    questions: lesson.questions.map((q) => ({
-      id: q.id,
-      text: q.text,
-      options: q.options as unknown as string[],
-      explanation: q.explanation ?? undefined,
-      order: q.order,
-    })),
+    videoUrl: locked ? "" : lesson.videoUrl || lesson.video?.url || "",
+    category: lesson.course.title,
+    questionCount: lesson._count.questions,
   };
 };
 
-export default { getLesson };
+export default { listLessons, getLesson };

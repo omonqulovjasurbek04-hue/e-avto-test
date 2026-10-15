@@ -1,108 +1,99 @@
+import crypto from "crypto";
+import { User } from "@prisma/client";
 import { prisma } from "../config/database";
+import { env } from "../config/env";
 import { hashPassword, comparePassword } from "../utils/password";
 import { generateToken } from "../utils/jwt";
-import { RegisterInput, LoginInput, UpdateProfileInput } from "../validators/auth";
+import { conflict, notFound, unauthorized, badRequest, forbidden, HttpError } from "../utils/errors";
+import { sendMail } from "./mail.service";
+import {
+  RegisterInput,
+  LoginInput,
+  UpdateProfileInput,
+  ChangePasswordInput,
+  ResetPasswordInput,
+} from "../validators/auth";
+
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+// Per-account lockout: this many wrong passwords in a row lock the account for LOCK_MINUTES.
+export const MAX_FAILED_LOGINS = 8;
+export const LOCK_MINUTES = 15;
+
+// A valid bcrypt hash used to keep login timing similar when the email is unknown.
+const DUMMY_HASH = "$2a$10$TZK7Qn8z/lHkDkzQvNVyau.gMZm6zXZqoAfJcbE3ylYXyu9wop4Li";
+
+export const toPublicUser = (user: User) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email ?? undefined,
+  phone: user.phone ?? undefined,
+  avatarUrl: user.avatarUrl ?? undefined,
+  role: user.role,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
+export const issueToken = (user: User): string =>
+  generateToken({ userId: user.id, role: user.role, tv: user.tokenVersion });
 
 export const register = async (input: RegisterInput) => {
-  const existing = await prisma.user.findUnique({
-    where: { email: input.email },
-  });
-
-  if (existing) {
-    const err: any = new Error("Email already registered");
-    err.status = 409;
-    throw err;
-  }
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
+  if (existing) throw conflict("Email already registered");
 
   const passwordHash = await hashPassword(input.password);
-
   const user = await prisma.user.create({
     data: {
       name: input.name,
       email: input.email,
+      phone: input.phone,
       passwordHash,
-      role: "USER",
+      role: "USER", // roles can never be chosen by the client
     },
   });
 
-  const token = generateToken({ userId: user.id, role: user.role });
-
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role.toLowerCase(),
-    },
-    token,
-  };
+  return { user: toPublicUser(user), token: issueToken(user) };
 };
 
 export const login = async (input: LoginInput) => {
-  const user = await prisma.user.findUnique({
-    where: { email: input.email },
-  });
+  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  // Telegram-only accounts have no password, so password login is never possible for them.
+  const valid = await comparePassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
-  if (!user) {
-    const err: any = new Error("Invalid credentials");
-    err.status = 401;
-    throw err;
+  // While locked, even the correct password is refused (so the lock cannot be probed with guesses).
+  if (user?.lockedUntil && user.lockedUntil > new Date()) {
+    throw new HttpError(429, "Too many failed attempts, try again in a few minutes");
   }
 
-  const valid = await comparePassword(input.password, user.passwordHash);
-  if (!valid) {
-    const err: any = new Error("Invalid credentials");
-    err.status = 401;
-    throw err;
+  if (!user || !user.passwordHash || !valid) {
+    if (user) {
+      // Atomic increment; the account locks itself once the limit is reached.
+      const updated = await prisma.user.update({ where: { id: user.id }, data: { failedLogins: { increment: 1 } }, select: { failedLogins: true } });
+      if (updated.failedLogins >= MAX_FAILED_LOGINS) {
+        await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } });
+      }
+    }
+    throw unauthorized("Invalid credentials");
+  }
+  if (!user.isActive) throw forbidden("Account is disabled");
+  if (user.failedLogins > 0 || user.lockedUntil) {
+    await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
   }
 
-  const token = generateToken({ userId: user.id, role: user.role });
-
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role.toLowerCase(),
-    },
-    token,
-  };
+  return { user: toPublicUser(user), token: issueToken(user) };
 };
 
 export const getMe = async (userId: string) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user) {
-    const err: any = new Error("User not found");
-    err.status = 404;
-    throw err;
-  }
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role.toLowerCase(),
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw notFound("User not found");
+  return toPublicUser(user);
 };
 
-export const updateProfile = async (
-  userId: string,
-  input: UpdateProfileInput
-) => {
+export const updateProfile = async (userId: string, input: UpdateProfileInput) => {
   if (input.email) {
     const existing = await prisma.user.findFirst({
       where: { email: input.email, NOT: { id: userId } },
     });
-    if (existing) {
-      const err: any = new Error("Email already in use");
-      err.status = 409;
-      throw err;
-    }
+    if (existing) throw conflict("Email already in use");
   }
 
   const user = await prisma.user.update({
@@ -110,17 +101,93 @@ export const updateProfile = async (
     data: {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.email !== undefined ? { email: input.email } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone } : {}),
+      ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
+    },
+  });
+  return toPublicUser(user);
+};
+
+export const changePassword = async (userId: string, input: ChangePasswordInput) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw notFound("User not found");
+  if (!user.passwordHash) throw badRequest("This account has no password; sign in with Telegram");
+  if (!(await comparePassword(input.currentPassword, user.passwordHash))) {
+    throw badRequest("Current password is incorrect");
+  }
+  // Bumping tokenVersion signs the user out everywhere else; the caller gets a fresh token.
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(input.newPassword), tokenVersion: { increment: 1 } },
+  });
+  return { changed: true, token: issueToken(updated) };
+};
+
+export const logoutEverywhere = async (userId: string) => {
+  await prisma.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } });
+  return { loggedOut: true };
+};
+
+const hashToken = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
+
+/**
+ * Creates a one-time reset token. No e-mail provider is configured yet, so the token is only
+ * logged outside production; the response never reveals whether the account exists.
+ */
+export const requestPasswordReset = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return;
+
+  const token = crypto.randomBytes(32).toString("hex");
+  await prisma.passwordReset.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
     },
   });
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role.toLowerCase(),
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
+  const link = `${env.CLIENT_URL.split(",")[0].trim()}/reset-password?token=${token}`;
+  const sent = await sendMail({
+    to: email,
+    subject: "E-Avto Test: parolni tiklash",
+    text: `Parolni tiklash uchun havola (30 daqiqa amal qiladi):
+${link}
+
+Agar bu so'rovni siz yubormagan bo'lsangiz, xatni e'tiborsiz qoldiring.`,
+  });
+  // Without SMTP the link is only printed outside production, never returned to the caller.
+  if (!sent && env.NODE_ENV !== "production") {
+    console.log(`[dev] password reset link for ${email}: ${link}`);
+  }
 };
 
-export default { register, login, getMe, updateProfile };
+export const resetPassword = async (input: ResetPasswordInput) => {
+  const record = await prisma.passwordReset.findUnique({
+    where: { tokenHash: hashToken(input.token) },
+  });
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    throw badRequest("Reset token is invalid or expired");
+  }
+
+  const passwordHash = await hashPassword(input.password);
+  await prisma.$transaction(async (tx) => {
+    // Claim the token first: of two simultaneous requests with the same token only one can win.
+    const claimed = await tx.passwordReset.updateMany({ where: { id: record.id, usedAt: null }, data: { usedAt: new Date() } });
+    if (claimed.count !== 1) throw badRequest("Reset token is invalid or expired");
+    await tx.user.update({ where: { id: record.userId }, data: { passwordHash, tokenVersion: { increment: 1 } } });
+    // Any other outstanding reset link for this account stops working too.
+    await tx.passwordReset.updateMany({ where: { userId: record.userId, usedAt: null }, data: { usedAt: new Date() } });
+  });
+  return { reset: true };
+};
+
+export default {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  changePassword,
+  requestPasswordReset,
+  resetPassword,
+};
