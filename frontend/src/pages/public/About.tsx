@@ -1,8 +1,28 @@
 import { motion } from "framer-motion";
 import { Target, Heart, Lightbulb, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { siteService } from "@/services/site.service";
+import { useLoad } from "@/hooks/useLoad";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import SafeHtml from "@/components/common/SafeHtml";
 
 export default function About() {
+  const cms = useLoad(() => siteService.page("about").catch(() => null), []);
+  useDocumentMeta(cms.data?.seoTitle || cms.data?.title, cms.data?.seoDescription);
+  if (cms.loading) return <div className="container-page py-10" />;
+  // A published CMS page with the slug "about" replaces the built-in text.
+  if (cms.data) {
+    return (
+      <div className="container-page max-w-3xl py-10">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{cms.data.title}</h1>
+        <SafeHtml html={cms.data.content} className="mt-6 space-y-3 text-slate-700 dark:text-slate-300" />
+      </div>
+    );
+  }
+  return <AboutDefault />;
+}
+
+function AboutDefault() {
   const { t } = useTranslation();
 
   const values = [

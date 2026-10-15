@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, MinusCircle, Clock, RotateCcw, AlertTriangle } from "lucide-react";
@@ -22,7 +22,7 @@ export default function TestResult() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!testId) return;
     setLoading(true);
     setError(false);
@@ -34,11 +34,11 @@ export default function TestResult() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testId]);
 
   useEffect(() => {
     void load();
-  }, [testId]);
+  }, [load]);
 
   if (loading) {
     return (
@@ -120,7 +120,7 @@ export default function TestResult() {
             <CardContent className="flex flex-col items-center gap-1 py-4">
               <MinusCircle className="h-6 w-6 text-slate-400" />
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                {detail.skipped}
+                {detail.skippedAnswers ?? detail.skipped ?? 0}
               </span>
               <span className="text-xs text-slate-500">{t("common.skipped")}</span>
             </CardContent>

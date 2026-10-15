@@ -8,12 +8,14 @@ import {
   Lightbulb,
   Star,
   ChevronDown,
-  Clock,
   GraduationCap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/constants/routes";
 import { courseService } from "@/services/course.service";
+import { siteService } from "@/services/site.service";
+import { useLoad } from "@/hooks/useLoad";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import type { Course } from "@/types/course";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -29,6 +31,7 @@ const MotionCard = motion(Card);
 
 export default function Home() {
   const { t } = useTranslation();
+  const site = useSiteSettings();
   const navigate = useNavigate();
   const [popular, setPopular] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -66,11 +69,14 @@ export default function Home() {
     { n: 4, title: t("home.howItWorks.steps.learn.title"), desc: t("home.howItWorks.steps.learn.description") },
   ];
 
+  // Real numbers from the database (no marketing placeholders). A pass rate is shown only once tests exist.
+  const live = useLoad(() => siteService.stats(), []);
+  const fmt = (n: number | undefined) => (n === undefined ? "—" : new Intl.NumberFormat("uz-UZ").format(n));
   const stats = [
-    { icon: Users, value: "15 000+", label: t("home.stats.users") },
-    { icon: BookOpen, value: "120+", label: t("home.stats.questions") },
-    { icon: Trophy, value: "94%", label: t("home.stats.passRate") },
-    { icon: Star, value: "4.9", label: t("home.stats.tests") },
+    { icon: Users, value: fmt(live.data?.users), label: t("home.stats.users") },
+    { icon: BookOpen, value: fmt(live.data?.questions), label: t("home.stats.questions") },
+    { icon: Trophy, value: live.data?.passRate == null ? "—" : `${live.data.passRate}%`, label: t("home.stats.passRate") },
+    { icon: Star, value: fmt(live.data?.testsTaken), label: t("home.stats.tests") },
   ];
 
   const whyUs = [
@@ -95,13 +101,13 @@ export default function Home() {
           <motion.div initial="hidden" animate="show" variants={fadeUp} className="max-w-2xl text-left space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-md text-xs font-bold text-white shadow-lg">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{t("home.heroTitle")}</span>
+              <span>{site.heroTitle || t("home.heroTitle")}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight drop-shadow-md">
-              E-AVTO TEST
+              {(site.siteName || "E-AVTO TEST").toUpperCase()}
             </h1>
             <p className="text-base sm:text-lg text-slate-200/90 max-w-xl leading-relaxed">
-              {t("home.heroSubtitle")}
+              {site.heroSubtitle || t("home.heroSubtitle")}
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Button size="lg" variant="primary" className="font-bold shadow-xl shadow-brand-500/30 px-7 py-3.5" onClick={() => navigate(ROUTES.tests)}>

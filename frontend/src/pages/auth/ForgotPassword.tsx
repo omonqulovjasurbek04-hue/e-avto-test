@@ -5,7 +5,7 @@ import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
-import { ROUTES } from "@/constants/routes";
+import { authService } from "@/services/auth.service";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -26,9 +26,9 @@ export default function ForgotPassword() {
     defaultValues: { email: "" },
   });
 
-  const onSubmit = async (_values: ForgotFormValues) => {
+  const onSubmit = async (values: ForgotFormValues) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await authService.forgotPassword(values.email);
       toast.success(t("auth.forgotPassword.success"));
     } catch {
       toast.error(t("auth.forgotPassword.error"));

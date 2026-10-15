@@ -22,5 +22,6 @@ export const ROUTES = {
   leaderboard: "/leaderboard",
   profile: "/profile",
   settings: "/settings",
+  admin: "/admin",
   notFound: "/404",
 } as const;

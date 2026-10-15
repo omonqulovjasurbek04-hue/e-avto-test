@@ -1,8 +1,9 @@
-export type UserRole = "ADMIN" | "USER";
+export type UserRole = "USER" | "TEACHER" | "MODERATOR" | "FINANCE" | "ADMIN" | "SUPERADMIN";
 
 export interface User {
   id: string;
-  email: string;
+  /** Absent for accounts created through Telegram. */
+  email?: string;
   name: string;
   phone?: string;
   role: UserRole;

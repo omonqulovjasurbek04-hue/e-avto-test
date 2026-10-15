@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
@@ -13,6 +13,11 @@ import {
   TrendingUp,
   Trophy,
   User as UserIcon,
+  ShoppingBag,
+  CalendarDays,
+  ClipboardCheck,
+  Bell,
+  GraduationCap,
   LogOut,
   Moon,
   Sun,
@@ -20,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "../utils/cn";
+import { studentService } from "../services/platform.service";
 
 export const StudentLayout: React.FC = () => {
   const { t } = useTranslation();
@@ -27,6 +33,19 @@ export const StudentLayout: React.FC = () => {
   const { theme, toggleTheme } = useUIStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const [unread, setUnread] = useState(0);
+
+  // Unread counter for the bell; a failed refresh just keeps the last number.
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => studentService.notifications().then((r) => alive && setUnread(r.unread)).catch(() => undefined);
+    void refresh();
+    const t = setInterval(refresh, 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -40,6 +59,13 @@ export const StudentLayout: React.FC = () => {
     { to: "/history", label: t("nav.history"), icon: <History className="h-5 w-5" /> },
     { to: "/progress", label: t("nav.progress"), icon: <TrendingUp className="h-5 w-5" /> },
     { to: "/leaderboard", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
+    { to: "/orders", label: t("nav.orders"), icon: <ShoppingBag className="h-5 w-5" /> },
+    { to: "/schedule", label: t("nav.schedule"), icon: <CalendarDays className="h-5 w-5" /> },
+    { to: "/attendance", label: t("nav.attendance"), icon: <ClipboardCheck className="h-5 w-5" /> },
+    { to: "/notifications", label: t("nav.notifications"), icon: <Bell className="h-5 w-5" /> },
+    ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
+      ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
+      : []),
     { to: "/profile", label: t("nav.profile"), icon: <UserIcon className="h-5 w-5" /> },
   ];
 
@@ -90,6 +116,9 @@ export const StudentLayout: React.FC = () => {
             >
               {item.icon}
               <span>{item.label}</span>
+              {item.to === "/notifications" && unread > 0 && (
+                <span aria-label={t("notifications.unreadAria", { count: unread })} className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -111,7 +140,7 @@ export const StudentLayout: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-x-hidden">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 sm:px-8 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+            <button aria-label={t("nav.menu")} onClick={() => setSidebarOpen(true)} className="lg:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
               <Menu className="h-6 w-6" />
             </button>
             <span className="max-w-[10rem] truncate text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline-block">

@@ -34,7 +34,6 @@ export const useUIStore = create<UIState>((set, get) => ({
 }));
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
 
   useEffect(() => {

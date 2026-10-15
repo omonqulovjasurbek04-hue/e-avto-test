@@ -5,6 +5,7 @@ import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
 import { Button } from "../components/ui";
+import { useSiteSettings } from "../hooks/useSiteSettings";
 import {
   Car,
   Moon,
@@ -17,6 +18,8 @@ import {
 
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
+  const site = useSiteSettings();
+  const siteName = site.siteName || "E-Avto Test";
   const { user, isAuthenticated, logout } = useAuthStore();
   const { theme, toggleTheme } = useUIStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,6 +29,15 @@ export const MainLayout: React.FC = () => {
     logout();
     navigate("/login");
   };
+
+  const publicLinks = [
+    { to: "/courses", label: t("nav.courses") },
+    { to: "/pricing", label: t("nav.pricing") },
+    { to: "/tests", label: t("nav.tests") },
+    { to: "/news", label: t("nav.news") },
+    { to: "/leaderboard", label: t("nav.leaderboard") },
+    { to: "/faq", label: t("nav.faq") },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
@@ -37,28 +49,22 @@ export const MainLayout: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black tracking-tight bg-gradient-to-r from-brand-600 to-blue-700 bg-clip-text text-transparent dark:from-brand-400 dark:to-blue-300">
-                E-AVTO<span className="text-slate-900 dark:text-white">.TEST</span>
+                {site.siteName ? site.siteName : <>E-AVTO<span className="text-slate-900 dark:text-white">.TEST</span></>}
               </span>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7">
-            <Link to="/courses" className="text-sm font-medium text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 transition">
-              {t("nav.courses")}
-            </Link>
-            <Link to="/tests" className="text-sm font-medium text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 transition">
-              {t("nav.tests")}
-            </Link>
-            <Link to="/leaderboard" className="text-sm font-medium text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 transition">
-              {t("nav.leaderboard")}
-            </Link>
-            <Link to="/faq" className="text-sm font-medium text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 transition">
-              {t("nav.faq")}
-            </Link>
+          <nav className="hidden md:flex items-center gap-6">
+            {publicLinks.map((l) => (
+              <Link key={l.to} to={l.to} className="text-sm font-medium text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 transition">
+                {l.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="pills" />
+            {/* On a phone the three language pills push the menu button off screen; they live in the menu there. */}
+            <div className="hidden sm:block"><LanguageSwitcher variant="pills" /></div>
             <button onClick={toggleTheme} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition" title={theme === "light" ? t("settings.darkMode") : t("settings.lightMode")}>
               {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
@@ -81,7 +87,7 @@ export const MainLayout: React.FC = () => {
               </div>
             )}
 
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+            <button aria-label={t("nav.menu")} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden rounded-xl p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -89,10 +95,10 @@ export const MainLayout: React.FC = () => {
 
         {mobileMenuOpen && (
           <div className="md:hidden border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 space-y-3 animate-fade-in">
-            <Link to="/courses" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.courses")}</Link>
-            <Link to="/tests" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.tests")}</Link>
-            <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.leaderboard")}</Link>
-            <Link to="/faq" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.faq")}</Link>
+            <div className="sm:hidden pb-1"><LanguageSwitcher variant="pills" /></div>
+            {publicLinks.map((l) => (
+              <Link key={l.to} to={l.to} onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{l.label}</Link>
+            ))}
             {!isAuthenticated && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}><Button variant="outline" className="w-full">{t("nav.login")}</Button></Link>
@@ -113,9 +119,9 @@ export const MainLayout: React.FC = () => {
             <div className="space-y-3 md:col-span-1">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"><Car className="h-4 w-4" /></div>
-                <span className="font-extrabold text-slate-900 dark:text-white tracking-tight">E-AVTO TEST</span>
+                <span className="font-extrabold text-slate-900 dark:text-white tracking-tight">{siteName.toUpperCase()}</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{t("home.heroSubtitle")}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{site.tagline || t("home.heroSubtitle")}</p>
             </div>
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-3">{t("nav.courses")}</h4>
@@ -132,15 +138,21 @@ export const MainLayout: React.FC = () => {
                 <li><Link to="/about" className="hover:text-brand-600 transition">{t("nav.about")}</Link></li>
                 <li><Link to="/faq" className="hover:text-brand-600 transition">{t("nav.faq")}</Link></li>
                 <li><Link to="/contact" className="hover:text-brand-600 transition">{t("nav.contact")}</Link></li>
+                <li><Link to="/news" className="hover:text-brand-600 transition">{t("nav.news")}</Link></li>
+                <li><Link to="/privacy" className="hover:text-brand-600 transition">{t("nav.privacy")}</Link></li>
+                <li><Link to="/terms" className="hover:text-brand-600 transition">{t("nav.terms")}</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-3">{t("nav.contact")}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Toshkent, O'zbekiston</p>
+              <ul className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                {[site.phone, site.email, site.address, site.workingHours].filter(Boolean).map((v) => <li key={v}>{v}</li>)}
+                {!site.phone && !site.email && !site.address && <li>Toshkent, O'zbekiston</li>}
+              </ul>
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
-            © {new Date().getFullYear()} E-Avto Test.
+            © {new Date().getFullYear()} {siteName}.
           </div>
         </div>
       </footer>

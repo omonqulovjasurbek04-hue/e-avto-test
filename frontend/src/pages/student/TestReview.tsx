@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
@@ -21,7 +21,7 @@ export default function TestReview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!testId) return;
     setLoading(true);
     setError(false);
@@ -33,11 +33,11 @@ export default function TestReview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testId]);
 
   useEffect(() => {
     void load();
-  }, [testId]);
+  }, [load]);
 
   if (loading) {
     return (

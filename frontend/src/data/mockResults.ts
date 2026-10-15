@@ -13,7 +13,7 @@ function buildResult(opts: {
   const questions = mockQuestions.slice(0, opts.total);
   let correct = 0;
   let wrong = 0;
-  let skipped = 0;
+  const skipped = 0;
 
   const answers = questions.map((q, idx) => {
     const isWrong = opts.wrongIndices.includes(idx);

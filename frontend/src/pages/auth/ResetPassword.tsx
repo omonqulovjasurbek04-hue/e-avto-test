@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,13 +8,18 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants/routes";
+import { authService } from "@/services/auth.service";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 
 const resetSchema = z
   .object({
-    newPassword: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+    newPassword: z
+      .string()
+      .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
+      .regex(/[A-Za-z]/, "Parolda kamida bitta harf bo'lishi kerak")
+      .regex(/\d/, "Parolda kamida bitta raqam bo'lishi kerak"),
     confirmPassword: z.string().min(6, "Parolni tasdiqlang"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -27,6 +32,8 @@ type ResetFormValues = z.infer<typeof resetSchema>;
 export default function ResetPassword() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -41,7 +48,8 @@ export default function ResetPassword() {
   const onSubmit = async (values: ResetFormValues) => {
     setServerError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      if (!token) throw new Error(t("auth.resetPassword.error"));
+      await authService.resetPassword(token, values.newPassword);
       toast.success(t("auth.resetPassword.success"));
       navigate(ROUTES.login);
     } catch (err) {

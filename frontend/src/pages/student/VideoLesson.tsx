@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { PlayCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
-import { testService } from "@/services/test.service";
+import { mediaService } from "@/services/platform.service";
+import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Lesson } from "@/types/lesson";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
@@ -12,17 +13,38 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import VideoPlayer from "@/components/video/VideoPlayer";
+import { Alert } from "@/components/ui/Alert";
+
+/** Plays a video from private storage through short-lived signed URLs (renewed while watching). */
+function PrivateVideo({ videoId, onProgress }: { videoId: string; onProgress: (pct: number) => void }) {
+  const { t } = useTranslation();
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setSrc(null);
+    setFailed(false);
+    mediaService.streamUrl("video", videoId).then((u) => alive && setSrc(u)).catch(() => alive && setFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [videoId]);
+
+  if (failed) return <Alert variant="danger">{t("lock.privateFail")}</Alert>;
+  if (!src) return <Skeleton className="aspect-video w-full" />;
+  return <VideoPlayer src={src} onProgress={onProgress} refreshSrc={() => mediaService.streamUrl("video", videoId)} />;
+}
 
 export default function VideoLesson() {
   const { t } = useTranslation();
   const { lessonId } = useParams<{ lessonId: string }>();
-  const navigate = useNavigate();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [starting, setStarting] = useState(false);
+  const { startTest, starting } = useStartTest();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!lessonId) return;
     setLoading(true);
     setError(false);
@@ -34,21 +56,14 @@ export default function VideoLesson() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lessonId]);
 
   useEffect(() => {
     void load();
-  }, [lessonId]);
+  }, [load]);
 
-  const handleStartTest = async () => {
-    if (!lesson) return;
-    setStarting(true);
-    try {
-      const res = await testService.start(lesson.courseId);
-      navigate(ROUTES.testPage(res.test.id));
-    } finally {
-      setStarting(false);
-    }
+  const handleStartTest = () => {
+    if (lesson) void startTest(lesson.courseId);
   };
 
   if (loading) {
@@ -90,7 +105,18 @@ export default function VideoLesson() {
       />
 
       <div className="mt-4">
-        <VideoPlayer src={lesson.videoUrl || ""} />
+        {lesson.locked ? (
+          <Alert variant="warning" title={t("lock.title")}>
+            {t("lock.watch")}{" "}
+            <Link to="/pricing" className="font-semibold underline">{t("lock.link")}</Link>
+          </Alert>
+        ) : lesson.privateVideoId ? (
+          <PrivateVideo videoId={lesson.privateVideoId} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
+        ) : lesson.videoUrl ? (
+          <VideoPlayer src={lesson.videoUrl} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
+        ) : (
+          <Alert variant="info">{t("lock.noVideo")}</Alert>
+        )}
       </div>
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">

@@ -4,6 +4,7 @@ import { Car, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
@@ -11,6 +12,7 @@ import { cn } from "@/utils/cn";
 
 export default function Navbar() {
   const { t } = useTranslation();
+  const site = useSiteSettings();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -18,6 +20,8 @@ export default function Navbar() {
   const publicLinks = [
     { to: ROUTES.home, label: t("nav.home") },
     { to: ROUTES.courses, label: t("nav.courses") },
+    { to: "/pricing", label: "Narxlar" },
+    { to: "/news", label: "Yangiliklar" },
     { to: ROUTES.tests, label: t("nav.tests") },
     { to: ROUTES.leaderboard, label: t("nav.leaderboard") },
     { to: ROUTES.about, label: t("nav.about") },
@@ -38,7 +42,7 @@ export default function Navbar() {
       <div className="container-page flex h-16 items-center justify-between">
         <Link to={ROUTES.home} className="flex items-center gap-2 font-bold text-brand-700 dark:text-brand-400">
           <Car className="h-6 w-6" />
-          <span className="text-lg">E-Avto Test</span>
+          <span className="text-lg">{site.siteName || "E-Avto Test"}</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -64,6 +68,11 @@ export default function Navbar() {
           <LanguageSwitcher />
           {isAuthenticated ? (
             <>
+              {(user?.role === "ADMIN" || user?.role === "SUPERADMIN") && (
+                <Link to={ROUTES.admin}>
+                  <Button variant="ghost" size="sm">Admin</Button>
+                </Link>
+              )}
               <Link to={ROUTES.dashboard}>
                 <Button variant="ghost" size="sm">
                   <LayoutDashboard className="h-4 w-4" /> {t("nav.dashboard")}
@@ -114,9 +123,16 @@ export default function Navbar() {
             </div>
             <div className="mt-2 flex gap-2">
               {isAuthenticated ? (
-                <Button variant="outline" size="sm" onClick={() => { logout(); navigate(ROUTES.home); setOpen(false); }}>
-                  {t("nav.logout")}
-                </Button>
+                <>
+                  {(user?.role === "ADMIN" || user?.role === "SUPERADMIN") && (
+                    <Link to={ROUTES.admin} onClick={() => setOpen(false)}>
+                      <Button variant="outline" size="sm">Admin</Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => { logout(); navigate(ROUTES.home); setOpen(false); }}>
+                    {t("nav.logout")}
+                  </Button>
+                </>
               ) : (
                 <>
                   <Link to={ROUTES.login} onClick={() => setOpen(false)} className="flex-1">

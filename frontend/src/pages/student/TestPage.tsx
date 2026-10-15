@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTest } from "@/hooks/useTest";
@@ -14,19 +15,17 @@ import QuestionNavigator from "@/components/test/QuestionNavigator";
 export default function TestPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const courseId = searchParams.get("courseId") ?? undefined;
+  const { testId } = useParams<{ testId: string }>();
   const test = useTest();
-  const startedRef = useRef(false);
   const navRef = useRef(false);
 
+  // The attempt is created on the tests/lesson screens; opening a stale URL goes back to the hub.
+  const hasActiveTest = test.status === "active" && test.id === testId;
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-    if (test.status !== "active") {
-      void test.start(courseId || undefined);
+    if (!hasActiveTest && !(test.status === "finished" && test.result)) {
+      navigate(ROUTES.tests, { replace: true });
     }
-  }, []);
+  }, [hasActiveTest, test.status, test.result, navigate]);
 
   useEffect(() => {
     if (test.status === "finished" && test.result) {
@@ -37,10 +36,14 @@ export default function TestPage() {
   }, [test.status, test.result, navigate]);
 
   const handleFinish = async () => {
-    const r = await test.finish();
-    if (r && !navRef.current) {
-      navRef.current = true;
-      navigate(ROUTES.testResult(r.id));
+    try {
+      const r = await test.finish();
+      if (r && !navRef.current) {
+        navRef.current = true;
+        navigate(ROUTES.testResult(r.id));
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Testni yuborishda xatolik");
     }
   };
 
@@ -102,7 +105,7 @@ export default function TestPage() {
           <div className="mt-6 flex justify-end">
             <Button
               variant="success"
-              loading={test.status === "finished"}
+              loading={test.finishing}
               onClick={handleFinish}
             >
               <Flag className="h-4 w-4" /> {t("testPage.finish")}

@@ -52,7 +52,17 @@
     "history": "Tarix",
     "progress": "Rivojlanish",
     "leaderboard": "Reyting",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "pricing": "Narxlar",
+    "news": "Yangiliklar",
+    "orders": "Buyurtmalar",
+    "schedule": "Dars jadvali",
+    "attendance": "Davomat",
+    "notifications": "Bildirishnomalar",
+    "teacher": "O'qituvchi",
+    "menu": "Menyu",
+    "privacy": "Maxfiylik siyosati",
+    "terms": "Foydalanish shartlari"
   },
   "home": {
     "heroTitle": "Haydovchilik testiga tayyorlang",
@@ -62,10 +72,22 @@
     "features": {
       "title": "Nima uchun bizni tanlash kerak",
       "items": {
-        "test": { "title": "Interaktiv testlar", "description": "150 ta mavzu va 100 ta savol bankidan 50 ta savol aralashtirib tanlanadi" },
-        "results": { "title": "Batafsil natijalar", "description": "Har bir javobning to'g'ri yoki noto'g'riligini tushuntirib beradi" },
-        "progress": { "title": "Rivojlanish kuzatuvi", "description": "O'z progresslaringizni kuzatib boring" },
-        "access": { "title": "24/7 kirish", "description": "Istalgan vaqtda va istalgan joyda o'rganing" }
+        "test": {
+          "title": "Interaktiv testlar",
+          "description": "150 ta mavzu va 100 ta savol bankidan 50 ta savol aralashtirib tanlanadi"
+        },
+        "results": {
+          "title": "Batafsil natijalar",
+          "description": "Har bir javobning to'g'ri yoki noto'g'riligini tushuntirib beradi"
+        },
+        "progress": {
+          "title": "Rivojlanish kuzatuvi",
+          "description": "O'z progresslaringizni kuzatib boring"
+        },
+        "access": {
+          "title": "24/7 kirish",
+          "description": "Istalgan vaqtda va istalgan joyda o'rganing"
+        }
       }
     },
     "courses": {
@@ -76,10 +98,22 @@
     "howItWorks": {
       "title": "Qanday ishlaydi",
       "steps": {
-        "register": { "title": "Ro'yxatdan o'ting", "description": "Bepul hisob yarating" },
-        "choose": { "title": "Kursni tanlang", "description": "Mavzu bo'yicha kursni tanlang" },
-        "learn": { "title": "O'rganing", "description": "Darslarni o'rganing" },
-        "test": { "title": "Test topshiring", "description": "Bilimingizni sinang" }
+        "register": {
+          "title": "Ro'yxatdan o'ting",
+          "description": "Bepul hisob yarating"
+        },
+        "choose": {
+          "title": "Kursni tanlang",
+          "description": "Mavzu bo'yicha kursni tanlang"
+        },
+        "learn": {
+          "title": "O'rganing",
+          "description": "Darslarni o'rganing"
+        },
+        "test": {
+          "title": "Test topshiring",
+          "description": "Bilimingizni sinang"
+        }
       }
     },
     "stats": {
@@ -143,9 +177,18 @@
     },
     "values": {
       "title": "Bizning qadriyatlarimiz",
-      "quality": { "title": "Sifat", "description": "Yuqori sifatli kontent va xizmat" },
-      "accessibility": { "title": "Ochiqlik", "description": "Hammaga ochiq va bepul" },
-      "innovation": { "title": "Innovatsiya", "description": "Zamonaviy texnologiyalar" }
+      "quality": {
+        "title": "Sifat",
+        "description": "Yuqori sifatli kontent va xizmat"
+      },
+      "accessibility": {
+        "title": "Ochiqlik",
+        "description": "Hammaga ochiq va bepul"
+      },
+      "innovation": {
+        "title": "Innovatsiya",
+        "description": "Zamonaviy texnologiyalar"
+      }
     },
     "team": {
       "title": "Jamoa",
@@ -179,11 +222,26 @@
     "title": "Ko'p beriladigan savollar",
     "description": "Eng ko'p beriladigan savollarga javoblar",
     "questions": {
-      "q1": { "q": "Platforma bepulmi?", "a": "Ha, E-Avto Test platformasi to'liq bepul." },
-      "q2": { "q": "Qancha vaqtda test topshirish mumkin?", "a": "Har bir test uchun 25 daqiqa vaqt beriladi." },
-      "q3": { "q": "Nechta savol beriladi?", "a": "Har bir testda 50 ta savol beriladi." },
-      "q4": { "q": "O'tish bali necha?", "a": "O'tish bali 70% dan boshlanadi." },
-      "q5": { "q": "Qayta topshirish mumkinmi?", "a": "Ha, istalgan vaqtda qayta topshirish mumkin." }
+      "q1": {
+        "q": "Platforma bepulmi?",
+        "a": "Ha, E-Avto Test platformasi to'liq bepul."
+      },
+      "q2": {
+        "q": "Qancha vaqtda test topshirish mumkin?",
+        "a": "Har bir test uchun 25 daqiqa vaqt beriladi."
+      },
+      "q3": {
+        "q": "Nechta savol beriladi?",
+        "a": "Har bir testda 50 ta savol beriladi."
+      },
+      "q4": {
+        "q": "O'tish bali necha?",
+        "a": "O'tish bali 70% dan boshlanadi."
+      },
+      "q5": {
+        "q": "Qayta topshirish mumkinmi?",
+        "a": "Ha, istalgan vaqtda qayta topshirish mumkin."
+      }
     }
   },
   "auth": {
@@ -411,5 +469,116 @@
       "tryAgain": "Qayta urinib ko'rish",
       "backHome": "Bosh sahifaga qaytish"
     }
+  },
+  "pricing": {
+    "title": "Narxlar va paketlar",
+    "subtitle": "Kursni tanlang. Yakuniy narx buyurtma paytida serverda hisoblanadi.",
+    "emptyTitle": "Hozircha paketlar yo'q",
+    "emptyDesc": "Tez orada yangi paketlar qo'shiladi.",
+    "sample": "Namuna narx",
+    "buy": "Sotib olish",
+    "coupon": "Promo-kod",
+    "couponPlaceholder": "Masalan: YOZ2026",
+    "apply": "Qo'llash",
+    "price": "Narx",
+    "discount": "Chegirma",
+    "total": "Jami",
+    "order": "Buyurtma berish",
+    "close": "Yopish",
+    "loginPrefix": "Buyurtma berish uchun",
+    "loginLink": "tizimga kiring",
+    "days": "{{count}} kun kirish",
+    "unlimited": "Cheklovsiz kirish",
+    "created": "Buyurtma yaratildi",
+    "quoteError": "Narxni hisoblab bo'lmadi",
+    "orderError": "Buyurtma yaratib bo'lmadi",
+    "reasons": {
+      "inactive": "Promo-kod topilmadi yoki faol emas",
+      "not_started": "Promo-kod hali boshlanmagan",
+      "expired": "Promo-kod muddati tugagan",
+      "exhausted": "Promo-kod limiti tugagan",
+      "below_minimum": "Buyurtma summasi promo-kod uchun yetarli emas",
+      "wrong_package": "Promo-kod bu paketga mos emas",
+      "generic": "Promo-kod qo'llanmadi"
+    }
+  },
+  "orders": {
+    "title": "Buyurtmalar va to'lovlar",
+    "emptyTitle": "Buyurtmalar yo'q",
+    "emptyDesc": "Kurs sotib olish uchun narxlar sahifasiga o'ting.",
+    "toPricing": "Narxlar",
+    "waiting": "To'lov provayder tomonidan tasdiqlangach kursga kirish avtomatik ochiladi. Sahifa o'zi yangilanadi.",
+    "discount": "Chegirma",
+    "status": {
+      "PENDING": "To'lov kutilmoqda",
+      "PAID": "To'langan",
+      "CANCELLED": "Bekor qilingan",
+      "EXPIRED": "Muddati tugagan",
+      "REFUNDED": "Qaytarilgan"
+    }
+  },
+  "schedule": {
+    "title": "Dars jadvali",
+    "tz": "Vaqtlar Toshkent vaqti (UTC+5) bo'yicha.",
+    "emptyTitle": "Jadval bo'sh",
+    "emptyDesc": "Siz hali guruhga qo'shilmagansiz yoki darslar rejalashtirilmagan.",
+    "lesson": "Dars",
+    "online": "Onlayn havola",
+    "status": {
+      "PLANNED": "Rejalashtirilgan",
+      "DONE": "O'tkazilgan",
+      "CANCELLED": "Bekor qilingan"
+    }
+  },
+  "attendance": {
+    "title": "Davomat",
+    "emptyTitle": "Davomat yozuvlari yo'q",
+    "emptyDesc": "Darslar o'tkazilgach natijalar shu yerda ko'rinadi.",
+    "lesson": "Dars",
+    "percent": "Davomat",
+    "attended": "Qatnashdi",
+    "absent": "Kelmadi",
+    "excused": "Uzrli",
+    "status": {
+      "PRESENT": "Qatnashdi",
+      "ABSENT": "Kelmadi",
+      "LATE": "Kechikdi",
+      "EXCUSED": "Uzrli",
+      "ONLINE": "Onlayn"
+    }
+  },
+  "notifications": {
+    "title": "Bildirishnomalar",
+    "readAll": "Hammasini o'qildi",
+    "markRead": "O'qildi",
+    "emptyTitle": "Bildirishnomalar yo'q",
+    "emptyDesc": "Yangi xabarlar shu yerda ko'rinadi.",
+    "unreadAria": "{{count}} ta o'qilmagan",
+    "prefs": {
+      "title": "Bildirishnomalar",
+      "saved": "O'zgarishlar darhol saqlanadi.",
+      "saveError": "Saqlab bo'lmadi",
+      "loadError": "Yuklab bo'lmadi",
+      "inApp": "Sayt ichidagi xabarlar",
+      "inAppDesc": "To'lov, jadval o'zgarishi, test natijasi va e'lonlar Bildirishnomalar bo'limida ko'rinadi.",
+      "email": "Email orqali xabar",
+      "emailDesc": "Muhim xabarlar elektron pochtangizga ham yuboriladi (server pochta xizmati sozlangan bo'lsa).",
+      "attendance": "Davomat xabarlari",
+      "attendanceDesc": "Darsga kelmaganingiz haqida eslatma."
+    }
+  },
+  "news": {
+    "title": "Yangiliklar",
+    "emptyTitle": "Hozircha yangiliklar yo'q",
+    "back": "Yangiliklar"
+  },
+  "lock": {
+    "title": "Bu dars yopiq",
+    "watch": "Darsni ko'rish uchun kursni sotib oling.",
+    "details": "Video va matn kursni sotib olgandan keyin ochiladi.",
+    "link": "Narxlar va paketlar",
+    "noVideo": "Bu dars uchun video hali qo'shilmagan.",
+    "privateFail": "Videoni ochib bo'lmadi. Kursga kirish huquqingizni tekshiring yoki keyinroq urinib ko'ring.",
+    "locked": "Yopiq dars"
   }
 }

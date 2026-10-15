@@ -12,12 +12,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
+import TelegramLogin from "@/components/auth/TelegramLogin";
 
 const registerSchema = z
   .object({
     name: z.string().min(2, "Ism kamida 2 ta belgidan iborat bo'lishi kerak"),
     email: z.string().min(1, "Email kiritilishi shart").email("Noto'g'ri email formati"),
-    password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+    password: z
+      .string()
+      .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
+      .regex(/[A-Za-z]/, "Parolda kamida bitta harf bo'lishi kerak")
+      .regex(/\d/, "Parolda kamida bitta raqam bo'lishi kerak"),
     confirmPassword: z.string().min(6, "Parolni tasdiqlang"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -113,6 +118,8 @@ export default function Register() {
           {t("auth.register.submit")}
         </Button>
       </form>
+
+      <TelegramLogin />
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
         {t("auth.register.hasAccount")}{" "}

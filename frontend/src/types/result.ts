@@ -1,8 +1,9 @@
-import type { Question } from "./question";
+import type { TestQuestion } from "./question";
 
 export interface AnswerReview {
   questionId: string;
   text: string;
+  imageUrl?: string;
   options: string[];
   correctIndex: number;
   selectedIndex: number | null;
@@ -30,12 +31,13 @@ export interface TestResultDetail extends TestResultSummary {
 }
 
 export interface StartTestResponse {
-  test: { id: string; totalQuestions: number };
-  questions: Question[];
+  test: { id: string; totalQuestions: number; duration?: number; startedAt?: string };
+  questions: TestQuestion[];
 }
 
 export interface LeaderboardEntry {
   id: string;
+  rank?: number;
   name: string;
   points: number;
   tests: number;

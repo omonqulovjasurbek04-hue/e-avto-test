@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, Circle, PlayCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { CheckCircle2, Circle, Lock, PlayCircle } from "lucide-react";
 import type { Lesson } from "@/types/lesson";
 import { ROUTES } from "@/constants/routes";
 import { formatDuration } from "@/utils/formatTime";
@@ -7,12 +8,12 @@ import { formatDuration } from "@/utils/formatTime";
 export default function LessonCard({
   lesson,
   index,
-  courseId,
 }: {
   lesson: Lesson;
   index: number;
   courseId: string;
 }) {
+  const { t } = useTranslation();
   const duration = lesson.duration || lesson.durationMinutes || 0;
 
   return (
@@ -35,7 +36,11 @@ export default function LessonCard({
         ) : (
           <Circle className="h-5 w-5 text-slate-300" />
         )}
-        <PlayCircle className="h-5 w-5 text-brand-600" />
+        {lesson.locked ? (
+          <Lock className="h-5 w-5 text-slate-400" aria-label={t("lock.locked")} />
+        ) : (
+          <PlayCircle className="h-5 w-5 text-brand-600" />
+        )}
       </div>
     </Link>
   );

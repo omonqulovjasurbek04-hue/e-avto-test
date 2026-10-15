@@ -8,16 +8,15 @@ import {
   Sun,
   Moon,
   Languages,
-  Bell,
   Shield,
   LogOut,
   Check,
-  Globe,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUIStore } from "@/store/ui.store";
 import { ROUTES } from "@/constants/routes";
 import { toast } from "sonner";
+import { authService } from "@/services/auth.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -25,6 +24,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import NotificationPreferences from "@/components/settings/NotificationPreferences";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
@@ -32,16 +32,11 @@ export default function Settings() {
   const { logout } = useAuth();
   const { theme, setTheme } = useUIStore();
   const [tab, setTab] = useState<"appearance" | "language" | "notifications" | "security">("appearance");
-  const [notifications, setNotifications] = useState({
-    results: true,
-    reminders: false,
-    promotions: false,
-  });
 
   const passwordSchema = z
     .object({
       current: z.string().min(6, t("validation.minLength", { min: 6 })),
-      next: z.string().min(6, t("validation.minLength", { min: 6 })),
+      next: z.string().min(8, t("validation.minLength", { min: 8 })),
       confirm: z.string().min(6, t("validation.minLength", { min: 6 })),
     })
     .refine((v) => v.next === v.confirm, {
@@ -61,10 +56,14 @@ export default function Settings() {
     defaultValues: { current: "", next: "", confirm: "" },
   });
 
-  const onPassword = async (_values: PasswordValues) => {
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success(t("profile.updatePassword") + " " + t("contact.form.success"));
-    reset();
+  const onPassword = async (values: PasswordValues) => {
+    try {
+      await authService.changePassword(values.current, values.next);
+      toast.success(t("profile.updatePassword") + " " + t("contact.form.success"));
+      reset();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("common.error"));
+    }
   };
 
   const handleLogout = () => {
@@ -182,44 +181,7 @@ export default function Settings() {
         </Card>
       )}
 
-      {tab === "notifications" && (
-        <Card className="rounded-3xl border border-slate-200 dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Bell className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("settings.notifications")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 max-w-xl">
-            {(
-              [
-                { key: "results", label: t("testResult.title"), desc: t("settings.emailNotifications") },
-                { key: "reminders", label: t("settings.notifications"), desc: t("settings.pushNotifications") },
-                { key: "promotions", label: t("nav.home"), desc: t("settings.notifications") },
-              ] as const
-            ).map((item) => (
-              <label
-                key={item.key}
-                className="flex cursor-pointer items-center justify-between rounded-2xl border border-slate-200 p-4 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60"
-              >
-                <span>
-                  <span className="block font-bold text-sm text-slate-800 dark:text-slate-100">
-                    {item.label}
-                  </span>
-                  <span className="block text-xs text-slate-500">{item.desc}</span>
-                </span>
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 accent-brand-600 rounded"
-                  checked={notifications[item.key]}
-                  onChange={(e) =>
-                    setNotifications((s) => ({ ...s, [item.key]: e.target.checked }))
-                  }
-                />
-              </label>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {tab === "notifications" && <NotificationPreferences />}
 
       {tab === "security" && (
         <Card className="rounded-3xl border border-slate-200 dark:border-slate-800">

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { PlayCircle, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { resultService } from "@/services/result.service";
-import { testService } from "@/services/test.service";
+import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Course } from "@/types/course";
 import type { TestResultSummary } from "@/types/result";
@@ -18,11 +18,11 @@ import { formatTime } from "@/utils/formatTime";
 
 export default function Tests() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [results, setResults] = useState<TestResultSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { startTest, starting } = useStartTest();
   const [startingId, setStartingId] = useState<string | null>(null);
 
   const load = async () => {
@@ -48,12 +48,8 @@ export default function Tests() {
 
   const handleStart = async (courseId: string) => {
     setStartingId(courseId);
-    try {
-      const res = await testService.start(courseId);
-      navigate(ROUTES.testPage(res.test.id));
-    } finally {
-      setStartingId(null);
-    }
+    await startTest(courseId);
+    setStartingId(null);
   };
 
   return (
@@ -89,7 +85,7 @@ export default function Tests() {
                   <p className="mt-1 line-clamp-2 text-sm text-slate-500">{c.description}</p>
                   <Button
                     className="mt-4"
-                    loading={startingId === c.id}
+                    loading={starting && startingId === c.id}
                     leftIcon={<PlayCircle className="h-5 w-5" />}
                     onClick={() => handleStart(c.id)}
                   >

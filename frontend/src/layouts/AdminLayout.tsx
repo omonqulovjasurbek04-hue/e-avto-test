@@ -1,25 +1,30 @@
 import React, { useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
-import { useUIStore } from "../store/ui.store";
 import {
   Shield,
   LayoutDashboard,
   BookOpen,
   HelpCircle,
+  PlayCircle,
   Users,
   LogOut,
-  Moon,
-  Sun,
   Menu,
   X,
   ArrowLeft,
+  BadgeDollarSign,
+  Receipt,
+  CalendarRange,
+  Newspaper,
+  ClipboardList,
+  ScrollText,
+  Film,
 } from "lucide-react";
 import { cn } from "../utils/cn";
+import { can, ROLE_LABEL, type Permission } from "../lib/permissions";
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme } = useUIStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -28,15 +33,25 @@ export const AdminLayout: React.FC = () => {
     navigate("/login");
   };
 
-  const navItems = [
-    { to: "/admin", label: "Dashboard (Statistika)", icon: <LayoutDashboard className="h-5 w-5" />, end: true },
-    { to: "/admin/courses", label: "Kurslar & Modullar", icon: <BookOpen className="h-5 w-5" /> },
-    { to: "/admin/questions", label: "Savollar Banki", icon: <HelpCircle className="h-5 w-5" /> },
-    { to: "/admin/users", label: "Foydalanuvchilar", icon: <Users className="h-5 w-5" /> },
+  const allItems: { to: string; label: string; icon: React.ReactNode; perm: Permission; end?: boolean }[] = [
+    { to: "/admin", label: "Dashboard (Statistika)", icon: <LayoutDashboard className="h-5 w-5" />, end: true, perm: "users:manage" },
+    { to: "/admin/courses", label: "Kurslar & Modullar", icon: <BookOpen className="h-5 w-5" />, perm: "catalog:manage" },
+    { to: "/admin/lessons", label: "Darslar", icon: <PlayCircle className="h-5 w-5" />, perm: "catalog:manage" },
+    { to: "/admin/questions", label: "Savollar Banki", icon: <HelpCircle className="h-5 w-5" />, perm: "tests:manage" },
+    { to: "/admin/catalog", label: "Paketlar & Narxlar", icon: <BadgeDollarSign className="h-5 w-5" />, perm: "catalog:manage" },
+    { to: "/admin/orders", label: "Buyurtmalar & Tushum", icon: <Receipt className="h-5 w-5" />, perm: "orders:read" },
+    { to: "/admin/groups", label: "Guruhlar & Jadval", icon: <CalendarRange className="h-5 w-5" />, perm: "groups:manage" },
+    { to: "/admin/exam", label: "Imtihon sozlamalari", icon: <ClipboardList className="h-5 w-5" />, perm: "tests:manage" },
+    { to: "/admin/cms", label: "Sayt kontenti", icon: <Newspaper className="h-5 w-5" />, perm: "content:manage" },
+    { to: "/admin/users", label: "Foydalanuvchilar", icon: <Users className="h-5 w-5" />, perm: "users:manage" },
+    { to: "/admin/media", label: "Video va fayllar", icon: <Film className="h-5 w-5" />, perm: "media:manage" },
+    { to: "/admin/audit", label: "Audit jurnali", icon: <ScrollText className="h-5 w-5" />, perm: "audit:read" },
   ];
+  // Only what this role can actually use; the API still refuses anything else.
+  const navItems = allItems.filter((i) => can(user?.role, i.perm));
 
   return (
-    <div className="flex min-h-screen bg-slate-900 text-slate-100 antialiased">
+    <div className="dark flex min-h-screen bg-slate-900 text-slate-100 antialiased">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -113,7 +128,7 @@ export const AdminLayout: React.FC = () => {
         <div className="p-4 border-t border-slate-800 space-y-2">
           <div className="flex items-center gap-3 px-2 py-1 text-xs text-slate-400">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Admin Rejimi Faol</span>
+            <span>{user?.role ? ROLE_LABEL[user.role] : "Admin"} rejimi</span>
           </div>
           <button
             onClick={handleLogout}
@@ -131,6 +146,7 @@ export const AdminLayout: React.FC = () => {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/80 px-4 sm:px-8 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
+              aria-label="Menyu"
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden rounded-lg p-2 text-slate-400 hover:bg-slate-800"
             >

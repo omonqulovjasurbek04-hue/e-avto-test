@@ -1,4 +1,4 @@
-import type { Question } from "./question";
+import type { TestQuestion } from "./question";
 import type { TestResultDetail } from "./result";
 
 export type TestStatus = "idle" | "active" | "finished";
@@ -6,7 +6,7 @@ export type TestStatus = "idle" | "active" | "finished";
 export interface TestSession {
   id: string;
   courseId?: string;
-  questions: Question[];
+  questions: TestQuestion[];
   answers: Record<string, number>;
   currentIndex: number;
   marked: string[];

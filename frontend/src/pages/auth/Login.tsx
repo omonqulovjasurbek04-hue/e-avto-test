@@ -12,10 +12,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
+import TelegramLogin from "@/components/auth/TelegramLogin";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email kiritilishi shart").email("Noto'g'ri email formati"),
-  password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+  password: z.string().min(1, "Parol kiritilishi shart"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -95,6 +96,8 @@ export default function Login() {
           {t("auth.login.submit")}
         </Button>
       </form>
+
+      <TelegramLogin />
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
         {t("auth.login.noAccount")}{" "}

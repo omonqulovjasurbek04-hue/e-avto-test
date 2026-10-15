@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PlayCircle, FileText, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
-import { testService } from "@/services/test.service";
+import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Lesson } from "@/types/lesson";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -23,9 +24,9 @@ export default function LessonDetails() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [starting, setStarting] = useState(false);
+  const { startTest, starting } = useStartTest();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!lessonId) return;
     setLoading(true);
     setError(false);
@@ -37,21 +38,14 @@ export default function LessonDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lessonId]);
 
   useEffect(() => {
     void load();
-  }, [lessonId]);
+  }, [load]);
 
-  const handleStartTest = async () => {
-    if (!lesson) return;
-    setStarting(true);
-    try {
-      const res = await testService.start(lesson.courseId);
-      navigate(ROUTES.testPage(res.test.id));
-    } finally {
-      setStarting(false);
-    }
+  const handleStartTest = () => {
+    if (lesson) void startTest(lesson.courseId);
   };
 
   if (loading) {
@@ -121,11 +115,17 @@ export default function LessonDetails() {
             >
               {t("videoLesson.title")}
             </Button>
-            <Button loading={starting} onClick={handleStartTest}>
+            <Button loading={starting} disabled={lesson.locked} title={lesson.locked ? t("lock.title") : undefined} onClick={handleStartTest}>
               {t("tests.startTest")}
             </Button>
           </div>
         </div>
+
+        {lesson.locked && (
+          <Alert variant="warning" title={t("lock.title")} className="mt-6">
+            {t("lock.details")} <Link to="/pricing" className="font-semibold underline">{t("lock.link")}</Link>
+          </Alert>
+        )}
 
         <Card className="mt-6">
           <CardContent>

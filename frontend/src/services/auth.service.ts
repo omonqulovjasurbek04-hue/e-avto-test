@@ -1,75 +1,69 @@
-import { apiClient } from "./api";
+import { apiGet, apiPost, apiPut } from "./api";
+import { env } from "../config/env";
+import { storage } from "../utils/storage";
 import { AuthResponse, LoginPayload, RegisterPayload, UpdateProfilePayload, User } from "../types/user";
-import { mockCurrentUserProfile, mockUsers } from "../data/mockUsers";
 
 export const authService = {
   async login(payload: LoginPayload): Promise<AuthResponse> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data: AuthResponse }>("/auth/login", payload);
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      console.warn("Backend unavailable, using local mock auth fallback.");
+    if (env.useMock) {
+      const { mockUsers } = await import("../data/mockUsers");
+      const user = payload.email === "admin@eavto.uz" ? mockUsers[1] : mockUsers[0];
+      return { user: { ...user, email: payload.email }, token: "demo-token-" + Date.now() };
     }
-
-    // Demo/Mock fallback
-    const matchedUser =
-      payload.email === "admin@eavto.uz" ? mockUsers[1] : mockUsers[0];
-
-    return {
-      user: { ...matchedUser, email: payload.email },
-      token: "demo-jwt-token-" + Date.now(),
-    };
+    return apiPost<AuthResponse>("/auth/login", payload);
   },
 
   async register(payload: RegisterPayload): Promise<AuthResponse> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data: AuthResponse }>("/auth/register", payload);
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      console.warn("Backend unavailable, using local mock register fallback.");
+    if (env.useMock) {
+      const now = new Date().toISOString();
+      const user: User = {
+        id: "user-" + Date.now(),
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        role: "USER",
+        createdAt: now,
+        updatedAt: now,
+      };
+      return { user, token: "demo-token-" + Date.now() };
     }
+    return apiPost<AuthResponse>("/auth/register", payload);
+  },
 
-    const newUser: User = {
-      id: "user-" + Date.now(),
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone,
-      role: "USER",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  /** Telegram login, step 1: returns the bot link to open (the bot then sends a one-time code). */
+  async telegramStart(): Promise<{ sessionId: string; botUrl: string; expiresInSeconds: number }> {
+    return apiPost("/auth/telegram/start");
+  },
 
-    return {
-      user: newUser,
-      token: "demo-jwt-token-" + Date.now(),
-    };
+  /** Telegram login, step 3: exchange the code from the bot for a session. */
+  async telegramVerify(sessionId: string, code: string): Promise<AuthResponse> {
+    return apiPost<AuthResponse>("/auth/telegram/verify", { sessionId, code });
   },
 
   async getCurrentUser(): Promise<User> {
-    try {
-      const response = await apiClient.get<{ success: boolean; data: User }>("/auth/me");
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // fallback
-    }
-    return mockCurrentUserProfile;
+    if (env.useMock) return (await import("../data/mockUsers")).mockCurrentUserProfile;
+    return apiGet<User>("/auth/me");
   },
 
   async updateProfile(payload: UpdateProfilePayload): Promise<User> {
-    try {
-      const response = await apiClient.put<{ success: boolean; data: User }>("/profile", payload);
-      if (response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // fallback
-    }
-    return { ...mockCurrentUserProfile, ...payload };
+    if (env.useMock) return { ...(await import("../data/mockUsers")).mockCurrentUserProfile, ...payload };
+    const res = await apiPut<{ user: User }>("/profile", payload);
+    return res.user;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    if (env.useMock) return;
+    const res = await apiPut<{ token: string }>("/auth/password", { currentPassword, newPassword });
+    storage.setToken(res.token);
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    if (env.useMock) return;
+    await apiPost<unknown>("/auth/forgot-password", { email });
+  },
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    if (env.useMock) return;
+    await apiPost<unknown>("/auth/reset-password", { token, password });
   },
 };

@@ -11,3 +11,6 @@ export interface Question {
   lessonId?: string | null;
   order?: number;
 }
+
+/** A question as delivered during an active test: no correct answer, no explanation. */
+export type TestQuestion = Omit<Question, "correctIndex" | "explanation" | "ruleClause">;

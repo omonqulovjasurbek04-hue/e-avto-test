@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { formatTime } from "@/utils/formatTime";
 
@@ -7,11 +7,22 @@ interface VideoPlayerProps {
   src: string;
   poster?: string;
   className?: string;
+  /** Called with the watched percentage (0-100) roughly every 10% and on completion. */
+  onProgress?: (percent: number) => void;
+  /**
+   * For short-lived signed URLs: called shortly before the link expires; the returned URL replaces the source
+   * while keeping the playback position and play/pause state.
+   */
+  refreshSrc?: () => Promise<string>;
+  refreshAfterMs?: number;
 }
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 
-export default function VideoPlayer({ src, poster, className }: VideoPlayerProps) {
+export default function VideoPlayer({ src, poster, className, onProgress, refreshSrc, refreshAfterMs = 240_000 }: VideoPlayerProps) {
+  const [activeSrc, setActiveSrc] = useState(src);
+  const resume = useRef<{ time: number; play: boolean } | null>(null);
+  useEffect(() => setActiveSrc(src), [src]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -20,13 +31,36 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [error, setError] = useState(false);
+  const reported = useRef(0);
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const onTime = () => setCurrent(v.currentTime);
-    const onLoaded = () => setDuration(v.duration || 0);
-    const onEnded = () => setPlaying(false);
+    const onTime = () => {
+      setCurrent(v.currentTime);
+      if (!v.duration) return;
+      const pct = Math.floor((v.currentTime / v.duration) * 100);
+      if (pct >= reported.current + 10) {
+        reported.current = pct;
+        onProgressRef.current?.(pct);
+      }
+    };
+    const onLoaded = () => {
+      setDuration(v.duration || 0);
+      // After a link refresh, continue exactly where the viewer was.
+      if (resume.current) {
+        v.currentTime = resume.current.time;
+        if (resume.current.play) void v.play().catch(() => undefined);
+        resume.current = null;
+      }
+    };
+    const onEnded = () => {
+      setPlaying(false);
+      reported.current = 100;
+      onProgressRef.current?.(100);
+    };
     v.addEventListener("timeupdate", onTime);
     v.addEventListener("loadedmetadata", onLoaded);
     v.addEventListener("ended", onEnded);
@@ -36,6 +70,20 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
       v.removeEventListener("ended", onEnded);
     };
   }, []);
+
+  useEffect(() => {
+    if (!refreshSrc) return;
+    const timer = setInterval(() => {
+      void refreshSrc()
+        .then((next) => {
+          const v = videoRef.current;
+          resume.current = { time: v?.currentTime ?? 0, play: v ? !v.paused : false };
+          setActiveSrc(next);
+        })
+        .catch(() => undefined); // keep the current link; an expired one shows the normal error state
+    }, refreshAfterMs);
+    return () => clearInterval(timer);
+  }, [refreshSrc, refreshAfterMs]);
 
   const toggle = () => {
     const v = videoRef.current;
@@ -92,7 +140,7 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
     <div className={cn("overflow-hidden rounded-xl bg-black", className)}>
       <video
         ref={videoRef}
-        src={src}
+        src={activeSrc}
         poster={poster}
         className="aspect-video w-full"
         onClick={toggle}

@@ -1,79 +1,47 @@
-import { apiClient } from "./api";
-import type {
-  TestResultDetail,
-  TestResultSummary,
-} from "../types/result";
-import { mockResults } from "../data/mockResults";
+import { apiGet } from "./api";
+import { env } from "../config/env";
+import type { TestResultDetail, TestResultSummary } from "../types/result";
 import { STORAGE_KEYS } from "../constants/config";
 
-const HISTORY_KEY = STORAGE_KEYS.history;
-let inMemoryHistory: TestResultDetail[] = [];
-
-function readHistory(): TestResultDetail[] {
-  if (typeof localStorage !== "undefined") {
-    try {
-      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    } catch {
-      return inMemoryHistory;
-    }
-  }
-  return inMemoryHistory;
-}
-
-function writeHistory(list: TestResultDetail[]) {
-  inMemoryHistory = list;
-  if (typeof localStorage !== "undefined") {
-    try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-    } catch {
-      // ignore
-    }
+// Mock-mode history (localStorage). The real app reads results from the API only.
+function readMockHistory(): TestResultDetail[] {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.history) || "[]");
+  } catch {
+    return [];
   }
 }
 
 function toSummary(r: TestResultDetail): TestResultSummary {
-  const { answers, ...rest } = r;
+  const { answers: _answers, questionsReview: _review, ...rest } = r;
   return rest;
 }
 
 export const resultService = {
   async list(): Promise<TestResultSummary[]> {
-    try {
-      const response = await apiClient.get<{
-        success: boolean;
-        data: TestResultSummary[];
-      }>("/results");
-      if (response.data?.data) return response.data.data;
-    } catch {
-      // mock fallback
+    if (env.useMock) {
+      const { mockResults } = await import("../data/mockResults");
+      return [...readMockHistory(), ...mockResults].map(toSummary);
     }
-    const history = readHistory().map(toSummary);
-    const mock = mockResults.map(toSummary);
-    return [...history, ...mock];
-  },
-
-  async getUserResults(): Promise<TestResultSummary[]> {
-    return resultService.list();
+    return apiGet<TestResultSummary[]>("/results");
   },
 
   async get(id: string): Promise<TestResultDetail | null> {
-    try {
-      const response = await apiClient.get<{
-        success: boolean;
-        data: TestResultDetail;
-      }>(`/results/${id}`);
-      if (response.data?.data) return response.data.data;
-    } catch {
-      // mock fallback
+    if (env.useMock) {
+      const { mockResults } = await import("../data/mockResults");
+      return [...readMockHistory(), ...mockResults].find((r) => r.id === id) ?? null;
     }
-    const all = [...readHistory(), ...mockResults];
-    return all.find((r) => r.id === id) ?? null;
+    return apiGet<TestResultDetail>(`/results/${id}`);
   },
 
-  async saveResult(detail: TestResultDetail): Promise<TestResultDetail> {
-    const history = readHistory();
+  /** Mock mode only. */
+  async saveMockResult(detail: TestResultDetail): Promise<void> {
+    const history = readMockHistory();
     history.unshift(detail);
-    writeHistory(history);
-    return detail;
+    try {
+      localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
+    } catch {
+      // storage full or unavailable: the result simply is not kept in the demo history
+    }
   },
 };

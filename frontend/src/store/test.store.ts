@@ -1,28 +1,25 @@
 import { create } from "zustand";
-import type { Question } from "../types/question";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { TestQuestion } from "../types/question";
 import type { TestResultDetail } from "../types/result";
 import { testService } from "../services/test.service";
-import { resultService } from "../services/result.service";
-import { DEFAULT_TEST_DURATION, DEFAULT_QUESTION_COUNT } from "../constants/config";
+import { DEFAULT_QUESTION_COUNT } from "../constants/config";
 
 interface TestState {
   id: string | null;
   courseId?: string;
-  topicId?: string;
-  questions: Question[];
+  questions: TestQuestion[];
   answers: Record<string, number>;
   currentIndex: number;
   marked: string[];
   timeLeft: number;
   duration: number;
+  /** Local clock reference; the server enforces the real deadline. */
+  startedAtMs: number;
   status: "idle" | "active" | "finished";
+  finishing: boolean;
   result: TestResultDetail | null;
-  start: (
-    courseId?: string,
-    count?: number,
-    duration?: number,
-    topicId?: string
-  ) => Promise<void>;
+  start: (courseId?: string, count?: number, topicId?: string) => Promise<string>;
   setAnswer: (qid: string, idx: number) => void;
   next: () => void;
   prev: () => void;
@@ -33,97 +30,105 @@ interface TestState {
   reset: () => void;
 }
 
-export const useTestStore = create<TestState>((set, get) => ({
+const initial = {
   id: null,
   courseId: undefined,
-  topicId: undefined,
   questions: [],
   answers: {},
   currentIndex: 0,
   marked: [],
   timeLeft: 0,
   duration: 0,
-  status: "idle",
+  startedAtMs: 0,
+  status: "idle" as const,
+  finishing: false,
   result: null,
+};
 
-  start: async (courseId, count, duration, topicId) => {
-    const qCount = count ?? DEFAULT_QUESTION_COUNT;
-    const dur = duration ?? (qCount === 20 ? 20 * 60 : DEFAULT_TEST_DURATION);
-    const res = await testService.start(courseId, qCount, topicId);
+export const useTestStore = create<TestState>()(
+  persist(
+    (set, get) => ({
+      ...initial,
 
-    set({
-      id: res.test.id,
-      courseId,
-      topicId,
-      questions: res.questions,
-      answers: {},
-      currentIndex: 0,
-      marked: [],
-      timeLeft: dur,
-      duration: dur,
-      status: "active",
-      result: null,
-    });
-  },
+      start: async (courseId, count = DEFAULT_QUESTION_COUNT, topicId) => {
+        const res = await testService.start({ courseId, count, topicId });
+        const duration = res.test.duration ?? 45 * 60;
+        set({
+          ...initial,
+          id: res.test.id,
+          courseId,
+          questions: res.questions,
+          timeLeft: duration,
+          duration,
+          startedAtMs: Date.now(),
+          status: "active",
+        });
+        return res.test.id;
+      },
 
-  setAnswer: (qid, idx) =>
-    set((s) => ({ answers: { ...s.answers, [qid]: idx } })),
+      setAnswer: (qid, idx) => {
+        set((s) => ({ answers: { ...s.answers, [qid]: idx } }));
+        // Survives a closed tab; /finish still sends every answer again.
+        const id = get().id;
+        if (id) testService.saveAnswer(id, qid, idx);
+      },
 
-  next: () =>
-    set((s) => ({
-      currentIndex: Math.min(s.currentIndex + 1, s.questions.length - 1),
-    })),
+      next: () => set((s) => ({ currentIndex: Math.min(s.currentIndex + 1, s.questions.length - 1) })),
 
-  prev: () =>
-    set((s) => ({ currentIndex: Math.max(s.currentIndex - 1, 0) })),
+      prev: () => set((s) => ({ currentIndex: Math.max(s.currentIndex - 1, 0) })),
 
-  goTo: (i) =>
-    set((s) => ({
-      currentIndex: Math.max(0, Math.min(i, s.questions.length - 1)),
-    })),
+      goTo: (i) =>
+        set((s) => ({ currentIndex: Math.max(0, Math.min(i, s.questions.length - 1)) })),
 
-  toggleMark: (qid) =>
-    set((s) => ({
-      marked: s.marked.includes(qid)
-        ? s.marked.filter((x) => x !== qid)
-        : [...s.marked, qid],
-    })),
+      toggleMark: (qid) =>
+        set((s) => ({
+          marked: s.marked.includes(qid) ? s.marked.filter((x) => x !== qid) : [...s.marked, qid],
+        })),
 
-  tick: () =>
-    set((s) => {
-      if (s.status !== "active") return s;
-      if (s.timeLeft <= 1) return { ...s, timeLeft: 0 };
-      return { ...s, timeLeft: s.timeLeft - 1 };
+      // Derived from the wall clock so throttled background tabs and page reloads stay accurate.
+      tick: () =>
+        set((s) => {
+          if (s.status !== "active") return s;
+          const elapsed = Math.floor((Date.now() - s.startedAtMs) / 1000);
+          return { timeLeft: Math.max(0, s.duration - elapsed) };
+        }),
+
+      finish: async () => {
+        const { id, answers, duration, startedAtMs, finishing, status } = get();
+        if (!id || finishing || status === "finished") return get().result;
+
+        set({ finishing: true });
+        try {
+          const timeSpent = Math.min(duration, Math.floor((Date.now() - startedAtMs) / 1000));
+          const result = await testService.finish(id, answers, timeSpent);
+          set({ result, status: "finished", finishing: false });
+          return result;
+        } catch (e) {
+          set({ finishing: false });
+          throw e;
+        }
+      },
+
+      reset: () => set({ ...initial }),
     }),
-
-  finish: async () => {
-    const { id, questions, answers, duration, timeLeft, courseId } = get();
-    if (!id) return null;
-    const timeSpent = Math.max(0, duration - timeLeft);
-    const detail = testService.computeResult(
-      id,
-      questions,
-      answers,
-      timeSpent,
-      courseId
-    );
-    await resultService.saveResult(detail);
-    set({ result: detail, status: "finished" });
-    return detail;
-  },
-
-  reset: () =>
-    set({
-      id: null,
-      courseId: undefined,
-      topicId: undefined,
-      questions: [],
-      answers: {},
-      currentIndex: 0,
-      marked: [],
-      timeLeft: 0,
-      duration: 0,
-      status: "idle",
-      result: null,
-    }),
-}));
+    {
+      name: "ea_active_test",
+      storage: createJSONStorage(() => sessionStorage),
+      // Keep an unfinished attempt across reloads; the server still owns grading and the deadline.
+      partialize: (s) => ({
+        id: s.id,
+        courseId: s.courseId,
+        questions: s.questions,
+        answers: s.answers,
+        currentIndex: s.currentIndex,
+        marked: s.marked,
+        duration: s.duration,
+        startedAtMs: s.startedAtMs,
+        status: s.status === "active" ? s.status : "idle",
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.tick();
+      },
+    }
+  )
+);

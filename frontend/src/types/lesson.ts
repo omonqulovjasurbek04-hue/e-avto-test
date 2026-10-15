@@ -6,6 +6,10 @@ export interface Lesson {
   description?: string;
   content?: string;
   videoUrl?: string;
+  /** True when the course is not unlocked for this viewer (no video or text is delivered). */
+  locked?: boolean;
+  /** Id of a video stored in private storage; played through short-lived signed URLs. */
+  privateVideoId?: string | null;
   thumbnail?: string;
   duration?: number;
   durationMinutes?: number;
