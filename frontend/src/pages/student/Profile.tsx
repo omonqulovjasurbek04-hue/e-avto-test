@@ -13,12 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
+import { ROLE_LABEL } from "@/lib/permissions";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 const schema = z.object({
   name: z.string().min(2, "Ism juda qisqa"),
-  email: z.string().email("Noto'g'ri email manzil"),
+  // Read-only here: Telegram accounts may have none, and changing it is not supported on this page.
+  email: z.string().optional(),
   phone: z
     .string()
     .optional()
@@ -78,11 +80,7 @@ export default function Profile() {
         name: values.name,
         phone: values.phone,
       });
-      updateUser({
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-      });
+      updateUser({ name: values.name, phone: values.phone });
       toast.success("Profil muvaffaqiyatli yangilandi");
     } catch {
       toast.error("Profilni yangilashda xatolik");
@@ -123,7 +121,7 @@ export default function Profile() {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
             <span className="mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
-              {user.role === "ADMIN" ? "Administrator" : "O'quvchi"}
+              {ROLE_LABEL[user.role] ?? user.role}
             </span>
 
             <div className="mt-6 grid w-full grid-cols-2 gap-3">
@@ -167,6 +165,8 @@ export default function Profile() {
                   type="email"
                   leftIcon={<Mail className="h-4 w-4" />}
                   error={errors.email?.message}
+                  readOnly
+                  disabled
                   {...register("email")}
                 />
                 <Input

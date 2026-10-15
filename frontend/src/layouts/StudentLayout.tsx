@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Bell,
   GraduationCap,
+  Shield,
   LogOut,
   Moon,
   Sun,
@@ -25,6 +26,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "../utils/cn";
+import { can } from "../lib/permissions";
+import { env } from "../config/env";
 import { studentService } from "../services/platform.service";
 
 export const StudentLayout: React.FC = () => {
@@ -37,6 +40,7 @@ export const StudentLayout: React.FC = () => {
 
   // Unread counter for the bell; a failed refresh just keeps the last number.
   useEffect(() => {
+    if (env.useMock) return;
     let alive = true;
     const refresh = () => studentService.notifications().then((r) => alive && setUnread(r.unread)).catch(() => undefined);
     void refresh();
@@ -66,6 +70,7 @@ export const StudentLayout: React.FC = () => {
     ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
       ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
       : []),
+    ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
     { to: "/profile", label: t("nav.profile"), icon: <UserIcon className="h-5 w-5" /> },
   ];
 

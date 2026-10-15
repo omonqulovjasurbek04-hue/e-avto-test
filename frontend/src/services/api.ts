@@ -28,6 +28,9 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/courses", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/terms", "/p/", "/403", "/404", "/500"];
+const isPublicPath = (path: string) => path === "/" || PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p.endsWith("/") ? p : `${p}/`));
+
 const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/password", "/auth/reset-password"];
 
 apiClient.interceptors.response.use(
@@ -36,11 +39,12 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     const url = error.config?.url ?? "";
 
-    // Expired/invalid session: clear it and send the user to the login page.
+    // Expired/invalid session: clear it. Only pages that need an account send the user to /login;
+    // a visitor reading a public page (home, courses, news...) simply continues as a guest.
     if (status === 401 && !AUTH_ENDPOINTS.some((p) => url.includes(p))) {
       storage.removeToken();
       storage.removeUser();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      if (typeof window !== "undefined" && !isPublicPath(window.location.pathname)) {
         window.location.assign("/login");
       }
     }

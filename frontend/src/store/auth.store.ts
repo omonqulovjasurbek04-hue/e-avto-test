@@ -77,6 +77,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     storage.removeToken();
     storage.removeUser();
+    // The next person on this browser must not inherit an unfinished test.
+    sessionStorage.removeItem("ea_active_test");
     set({ user: null, isAuthenticated: false, loading: false });
   },
 

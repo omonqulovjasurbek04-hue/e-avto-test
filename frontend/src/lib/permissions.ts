@@ -20,7 +20,7 @@ const MATRIX: Record<UserRole, Permission[]> = {
   SUPERADMIN: [...ADMIN, "roles:manage", "payments:manage"],
 };
 
-export const can = (role: UserRole | undefined, permission: Permission): boolean => (role ? MATRIX[role] : []).includes(permission);
+export const can = (role: UserRole | undefined, permission: Permission): boolean => ((role && MATRIX[role]) || []).includes(permission);
 
 export const ROLE_LABEL: Record<UserRole, string> = {
   USER: "O'quvchi",

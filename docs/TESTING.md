@@ -3,7 +3,7 @@
 | Qatlam | Qayerda | Soni | Buyruq |
 |---|---|---:|---|
 | Backend unit + integratsiya (haqiqiy PostgreSQL) | `backend/tests` | 190 | `cd backend` → `DATABASE_URL=$U TEST_DATABASE_URL=$U npx vitest run` |
-| E2E (haqiqiy brauzer: Microsoft Edge) | `e2e/tests` (desktop 36 + telefon 6) | 42 | `cd e2e` → `npx playwright test` |
+| E2E (haqiqiy brauzer: Microsoft Edge) | `e2e/tests` (desktop 40 + telefon 6) | 46 | `cd e2e` → `npx playwright test` |
 | Production smoke (kompilyatsiya qilingan server) | `backend/scripts/prod-smoke.mjs` | 13 | `npm run build` → `SMOKE_DATABASE_URL=<scratch> npm run smoke` |
 | Lint (ESLint) | backend, frontend | — | `npm run lint` |
 | Samaradorlik (katta hajm) | `backend/scripts/perf-*` | — | `docs/PERFORMANCE.md` |

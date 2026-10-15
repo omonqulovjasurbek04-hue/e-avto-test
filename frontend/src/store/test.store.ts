@@ -45,6 +45,20 @@ const initial = {
   result: null,
 };
 
+const lastWritten = new Map<string, string>();
+const dedupedSessionStorage = {
+  getItem: (key: string) => sessionStorage.getItem(key),
+  setItem: (key: string, value: string) => {
+    if (lastWritten.get(key) === value) return;
+    lastWritten.set(key, value);
+    sessionStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    lastWritten.delete(key);
+    sessionStorage.removeItem(key);
+  },
+};
+
 export const useTestStore = create<TestState>()(
   persist(
     (set, get) => ({
@@ -113,7 +127,8 @@ export const useTestStore = create<TestState>()(
     }),
     {
       name: "ea_active_test",
-      storage: createJSONStorage(() => sessionStorage),
+      // tick() runs every second but only changes timeLeft (not persisted): skip identical writes.
+      storage: createJSONStorage(() => dedupedSessionStorage),
       // Keep an unfinished attempt across reloads; the server still owns grading and the deadline.
       partialize: (s) => ({
         id: s.id,

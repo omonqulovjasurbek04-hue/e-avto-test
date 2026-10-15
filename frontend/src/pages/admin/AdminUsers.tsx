@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
@@ -41,12 +41,15 @@ export default function AdminUsers() {
     }
   };
 
+  const requestId = useRef(0);
   const load = () => {
+    const id = ++requestId.current;
     setLoading(true);
     setError(null);
     adminService
       .listUsers({ page, search: debounced || undefined, role: roleFilter || undefined })
       .then((res) => {
+        if (id !== requestId.current) return; // a newer request is on its way
         setItems(res.items);
         setMeta(res.pagination);
       })

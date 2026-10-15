@@ -68,8 +68,13 @@ export default function Pricing() {
     setMessage(null);
     try {
       // Only the package id and coupon code are sent; the server recomputes every amount.
-      await shopService.createOrder(selected.id, quote?.couponApplied ? coupon.trim() : undefined);
+      const order = await shopService.createOrder(selected.id, quote?.couponApplied ? coupon.trim() : undefined);
       toast.success(t("pricing.created"));
+      // A real provider returns its checkout page; only https links are followed.
+      if (order.redirectUrl && /^https:\/\//i.test(order.redirectUrl)) {
+        window.location.assign(order.redirectUrl);
+        return;
+      }
       navigate("/orders");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : t("pricing.orderError"));

@@ -30,6 +30,8 @@ export default function VideoPlayer({ src, poster, className, onProgress, refres
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
+  const speedRef = useRef(1);
+  speedRef.current = speed;
   const [error, setError] = useState(false);
   const reported = useRef(0);
   const onProgressRef = useRef(onProgress);
@@ -50,6 +52,8 @@ export default function VideoPlayer({ src, poster, className, onProgress, refres
     const onLoaded = () => {
       setDuration(v.duration || 0);
       // After a link refresh, continue exactly where the viewer was.
+      // A new source resets playbackRate to 1; keep the speed the viewer chose.
+      v.playbackRate = speedRef.current;
       if (resume.current) {
         v.currentTime = resume.current.time;
         if (resume.current.play) void v.play().catch(() => undefined);
