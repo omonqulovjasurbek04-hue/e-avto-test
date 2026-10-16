@@ -16,6 +16,8 @@ export default {
           700: "#1d4ed8",
           800: "#1e40af",
           900: "#1e3a8a",
+          // Used by dark-mode surfaces (dark:bg-brand-950/60 etc.); without it those classes generate nothing.
+          950: "#172554",
         },
         accent: {
           50: "#fffbeb",
@@ -28,6 +30,7 @@ export default {
           700: "#b45309",
           800: "#92400e",
           900: "#78350f",
+          950: "#451a03",
         },
       },
       fontFamily: {

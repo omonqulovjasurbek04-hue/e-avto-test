@@ -1,92 +1,105 @@
 import { create } from "zustand";
-import type { User } from "../types/user";
+import type { AuthResponse, LoginResult, User } from "../types/user";
 import { authService } from "../services/auth.service";
-import { storage } from "../utils/storage";
 import { env } from "../config/env";
-import { ApiError } from "../services/api";
+import { setSessionLostHandler } from "../services/api";
+import { endSession, hadSession, refreshSession, setAccessToken } from "../services/session";
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  /** True until the start-up session check has finished (route guards wait for it). */
   loading: boolean;
+  /** Set when the password (or Telegram) step succeeded and the account needs a 2FA code. */
+  twoFactorChallenge: string | null;
   init: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  register: (input: { name: string; email: string; password: string }) => Promise<void>;
-  loginWithSession: (user: User, token: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  completeTwoFactor: (code: string) => Promise<void>;
+  cancelTwoFactor: () => void;
+  register: (input: { name: string; email: string; password: string }) => Promise<AuthResponse>;
+  /** Applies the result of any login method: a session, or the 2FA step. */
+  applyLoginResult: (result: LoginResult) => void;
+  logout: () => Promise<void>;
   updateUser: (u: Partial<User>) => void;
 }
 
+const isSession = (r: LoginResult): r is AuthResponse => "token" in r && Boolean((r as AuthResponse).token);
+
+// Demo mode keeps its fake session in sessionStorage (there is no server to refresh against).
+const MOCK_KEY = "e_avto_mock_user";
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: storage.getUser<User>(),
-  isAuthenticated: !!storage.getToken(),
-  loading: false,
+  user: null,
+  isAuthenticated: false,
+  loading: true,
+  twoFactorChallenge: null,
 
   init: async () => {
-    const token = storage.getToken();
-    const user = storage.getUser<User>();
-    set({ isAuthenticated: !!(token && user), user: user ?? null });
-    if (!token || env.useMock) return;
-
-    // Refresh the user (role, profile) from the server; drop the session if it is no longer valid.
-    try {
-      const fresh = await authService.getCurrentUser();
-      storage.setUser(fresh);
-      set({ user: fresh, isAuthenticated: true });
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        storage.removeToken();
-        storage.removeUser();
-        set({ user: null, isAuthenticated: false });
-      }
+    if (env.useMock) {
+      const cached = sessionStorage.getItem(MOCK_KEY);
+      const user = cached ? (JSON.parse(cached) as User) : null;
+      set({ user, isAuthenticated: !!user, loading: false });
+      return;
     }
+    setSessionLostHandler(() => set({ user: null, isAuthenticated: false }));
+    if (!hadSession()) {
+      set({ loading: false });
+      return;
+    }
+    // The access token is not stored anywhere, so a reload starts with a silent refresh.
+    const session = await refreshSession();
+    set({ user: session?.user ?? null, isAuthenticated: !!session, loading: false });
+  },
+
+  applyLoginResult: (result) => {
+    if (!isSession(result)) {
+      set({ twoFactorChallenge: result.challengeToken, loading: false });
+      return;
+    }
+    if (env.useMock) sessionStorage.setItem(MOCK_KEY, JSON.stringify(result.user));
+    else setAccessToken(result.token);
+    set({ user: result.user, isAuthenticated: true, loading: false, twoFactorChallenge: null });
   },
 
   login: async (email, password) => {
-    set({ loading: true });
+    const result = await authService.login({ email, password });
+    get().applyLoginResult(result);
+    return result;
+  },
+
+  completeTwoFactor: async (code) => {
+    const challenge = get().twoFactorChallenge;
+    if (!challenge) throw new Error("No sign-in in progress");
     try {
-      const { user, token } = await authService.login({ email, password });
-      storage.setToken(token);
-      storage.setUser(user);
-      set({ user, isAuthenticated: true, loading: false });
+      get().applyLoginResult(await authService.twoFactorLogin(challenge, code));
     } catch (e) {
-      set({ loading: false });
+      // An expired challenge cannot be retried; the user starts again with the password.
+      if (e instanceof Error && "status" in e && (e as { status?: number }).status === 401 && /expired/i.test(e.message)) {
+        set({ twoFactorChallenge: null });
+      }
       throw e;
     }
   },
+
+  cancelTwoFactor: () => set({ twoFactorChallenge: null }),
 
   register: async (input) => {
-    set({ loading: true });
-    try {
-      const { user, token } = await authService.register(input);
-      storage.setToken(token);
-      storage.setUser(user);
-      set({ user, isAuthenticated: true, loading: false });
-    } catch (e) {
-      set({ loading: false });
-      throw e;
-    }
+    const result = await authService.register(input);
+    get().applyLoginResult(result);
+    return result;
   },
 
-  loginWithSession: (user, token) => {
-    storage.setToken(token);
-    storage.setUser(user);
-    set({ user, isAuthenticated: true, loading: false });
-  },
-
-  logout: () => {
-    storage.removeToken();
-    storage.removeUser();
+  logout: async () => {
     // The next person on this browser must not inherit an unfinished test.
     sessionStorage.removeItem("ea_active_test");
-    set({ user: null, isAuthenticated: false, loading: false });
+    sessionStorage.removeItem(MOCK_KEY);
+    set({ user: null, isAuthenticated: false, loading: false, twoFactorChallenge: null });
+    if (!env.useMock) await endSession();
   },
 
   updateUser: (u) => {
     const current = get().user;
     if (!current) return;
-    const updated = { ...current, ...u };
-    storage.setUser(updated);
-    set({ user: updated });
+    set({ user: { ...current, ...u } });
   },
 }));

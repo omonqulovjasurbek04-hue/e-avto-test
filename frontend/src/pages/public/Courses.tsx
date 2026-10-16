@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Search, BookOpen, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { CATEGORIES, DIFFICULTIES } from "@/constants/categories";
-import { courseService } from "@/services/course.service";
+import { DIFFICULTIES } from "@/constants/categories";
+import { courseService, type PublicCategory } from "@/services/course.service";
 import type { Course } from "@/types/course";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,8 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import CourseCard from "@/components/course/CourseCard";
 
 export default function Courses() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
@@ -25,19 +26,24 @@ export default function Courses() {
 
   const debouncedSearch = useDebounce(search, 300);
 
+  // Category names come from the API in the visitor's language.
+  useEffect(() => {
+    courseService.getCategories().then(setCategories).catch(() => setCategories([]));
+  }, [i18n.language]);
+
   const categoryOptions = [
     { value: "all", label: t("courses.allCategories") },
-    ...CATEGORIES.map((c) => ({ value: c, label: c })),
+    ...categories.map((c) => ({ value: c.slug, label: `${c.name} (${c.courseCount})` })),
   ];
 
   const difficultyOptions = [
-    { value: "all", label: t("courses.allCategories") },
+    { value: "all", label: t("courses.allLevels") },
     ...DIFFICULTIES.map((d) => ({ value: d.value, label: t(`courses.difficulty.${d.value}`) })),
   ];
 
   const sortOptions = [
-    { value: "newest", label: "Eng yangi" },
-    { value: "title", label: "Nom bo'yicha" },
+    { value: "newest", label: t("courses.sortNewest") },
+    { value: "title", label: t("courses.sortTitle") },
   ];
 
   useEffect(() => {
@@ -63,7 +69,7 @@ export default function Courses() {
     return () => {
       active = false;
     };
-  }, [debouncedSearch, category, difficulty, sort, t]);
+  }, [debouncedSearch, category, difficulty, sort, t, i18n.language]);
 
   const hasFilters = search !== "" || category !== "all" || difficulty !== "all" || sort !== "newest";
 
@@ -107,19 +113,19 @@ export default function Courses() {
             leftIcon={<Search className="h-4 w-4" />}
           />
           <Select
-            label={t("courses.allCategories")}
+            label={t("courses.category")}
             options={categoryOptions}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
           <Select
-            label={t("common.general")}
+            label={t("courses.level")}
             options={difficultyOptions}
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
           />
           <Select
-            label={t("common.search")}
+            label={t("courses.sort")}
             options={sortOptions}
             value={sort}
             onChange={(e) => setSort(e.target.value)}

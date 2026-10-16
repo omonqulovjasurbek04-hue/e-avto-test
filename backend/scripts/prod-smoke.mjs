@@ -26,6 +26,7 @@ const baseEnv = {
   DATABASE_URL: dbUrl,
   JWT_SECRET: "smoke-test-secret-".padEnd(48, "x"),
   CLIENT_URL: ORIGIN,
+  PUBLIC_API_ORIGIN: "https://api.smoke.example.uz",
 };
 
 const results = [];

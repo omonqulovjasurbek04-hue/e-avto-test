@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
@@ -14,10 +15,12 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Pagination } from "@/components/ui/Pagination";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAssignRole, ROLE_LABEL } from "@/lib/permissions";
 import type { UserRole } from "@/types/user";
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const me = useAuthStore((s) => s.user);
   const [items, setItems] = useState<AdminUser[]>([]);
   const [meta, setMeta] = useState<PageMeta | null>(null);
@@ -30,14 +33,28 @@ export default function AdminUsers() {
   const [nextRole, setNextRole] = useState<UserRole>("USER");
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleFilter, setRoleFilter] = useState("");
+  const [resetting, setResetting] = useState<AdminUser | null>(null);
+
+  const resetTwoFactor = async () => {
+    const u = resetting;
+    setResetting(null);
+    if (!u) return;
+    try {
+      await adminService.resetUserTwoFactor(u.id);
+      toast.success(t("admin.users.reset2faDone"));
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("admin.users.reset2faError"));
+    }
+  };
 
   const toggleActive = async (u: AdminUser) => {
     try {
       await adminService.setUserActive(u.id, !u.isActive);
-      toast.success(u.isActive ? "Foydalanuvchi bloklandi" : "Foydalanuvchi faollashtirildi");
+      toast.success(u.isActive ? t("admin.users.blockedToast") : t("admin.users.activatedToast"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Holatni o'zgartirib bo'lmadi");
+      toast.error(e instanceof Error ? e.message : t("admin.users.statusError"));
     }
   };
 
@@ -70,11 +87,11 @@ export default function AdminUsers() {
     setRoleBusy(true);
     try {
       await adminService.setUserRole(changing.id, nextRole);
-      toast.success("Rol yangilandi; foydalanuvchi qayta kiradi");
+      toast.success(t("admin.users.roleUpdated"));
       setChanging(null);
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Rolni o'zgartirib bo'lmadi");
+      toast.error(e instanceof Error ? e.message : t("admin.users.roleError"));
     } finally {
       setRoleBusy(false);
     }
@@ -84,20 +101,20 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-white">Foydalanuvchilar</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">{t("admin.users.title")}</h1>
 
       <div className="mb-4 flex flex-wrap gap-3">
         <div className="w-full max-w-sm">
           <Input
-            placeholder="Ism yoki email bo'yicha qidirish"
+            placeholder={t("admin.users.searchPlaceholder")}
             leftIcon={<Search className="h-4 w-4" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Qidirish"
+            aria-label={t("admin.common.search")}
           />
         </div>
         <div className="w-48">
-          <Select aria-label="Rol bo'yicha" options={[{ value: "", label: "Barcha rollar" }, ...ALL_ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))]} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} />
+          <Select aria-label={t("admin.users.byRole")} options={[{ value: "", label: t("admin.users.allRoles") }, ...ALL_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} />
         </div>
       </div>
 
@@ -106,37 +123,43 @@ export default function AdminUsers() {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : items.length === 0 ? (
-        <EmptyState title="Foydalanuvchilar topilmadi" />
+        <EmptyState title={t("admin.users.empty")} />
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto rounded-2xl border border-slate-800">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-950 text-xs uppercase text-slate-400">
                 <tr>
-                  <th className="px-4 py-3">Ism</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Rol</th>
-                  <th className="px-4 py-3">Holat</th>
-                  <th className="px-4 py-3">Ro'yxatdan o'tgan</th>
-                  <th className="px-4 py-3 text-right">Amal</th>
+                  <th className="px-4 py-3">{t("admin.users.name")}</th>
+                  <th className="px-4 py-3">{t("admin.users.email")}</th>
+                  <th className="px-4 py-3">{t("admin.users.role")}</th>
+                  <th className="px-4 py-3">{t("admin.common.status")}</th>
+                  <th className="px-4 py-3">{t("admin.users.registered")}</th>
+                  <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {items.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-800/40">
                     <td className="px-4 py-3 font-medium text-white">{u.name}</td>
-                    <td className="px-4 py-3">{u.email ?? "Telegram"}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={u.role === "USER" ? "neutral" : u.role === "ADMIN" || u.role === "SUPERADMIN" ? "warning" : "primary"}>{ROLE_LABEL[u.role]}</Badge>
+                      {u.email ?? "Telegram"}
+                      {u.email && !u.emailVerifiedAt && <div className="text-xs text-amber-400">{t("admin.users.emailUnverified")}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={u.isActive ? "success" : "danger"}>{u.isActive ? "Faol" : "Bloklangan"}</Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge variant={u.role === "USER" ? "neutral" : u.role === "ADMIN" || u.role === "SUPERADMIN" ? "warning" : "primary"}>{t(`roles.${u.role}`)}</Badge>
+                        {u.totpEnabledAt && <Badge variant="success">{t("admin.users.twoFactor")}</Badge>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={u.isActive ? "success" : "danger"}>{u.isActive ? t("admin.common.active") : t("admin.users.blocked")}</Badge>
                     </td>
                     <td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="outline" disabled={u.id === me?.id || !ALL_ROLES.some((r) => r !== u.role && canAssignRole(me?.role, u.role, r))} onClick={() => openRole(u)}>
-                          Rolni o'zgartirish
+                          {t("admin.users.changeRole")}
                         </Button>
                         <Button
                           size="sm"
@@ -144,8 +167,13 @@ export default function AdminUsers() {
                           disabled={u.id === me?.id}
                           onClick={() => void toggleActive(u)}
                         >
-                          {u.isActive ? "Bloklash" : "Faollashtirish"}
+                          {u.isActive ? t("admin.users.block") : t("admin.users.activate")}
                         </Button>
+                        {me?.role === "SUPERADMIN" && u.totpEnabledAt && u.id !== me.id && (
+                          <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
+                            {t("admin.users.reset2fa")}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -157,19 +185,28 @@ export default function AdminUsers() {
         </div>
       )}
 
-      <Modal isOpen={changing !== null} onClose={() => setChanging(null)} title={`Rol: ${changing?.name ?? ""}`} maxWidth="md">
+      <ConfirmDialog
+        isOpen={resetting !== null}
+        title={t("admin.users.reset2faTitle", { name: resetting?.name ?? "" })}
+        message={t("admin.users.reset2faConfirm")}
+        confirmText={t("admin.users.reset2fa")}
+        onConfirm={() => void resetTwoFactor()}
+        onCancel={() => setResetting(null)}
+      />
+
+      <Modal isOpen={changing !== null} onClose={() => setChanging(null)} title={t("admin.users.roleTitle", { name: changing?.name ?? "" })} maxWidth="md">
         {changing && (
           <div className="space-y-4">
             <Select
-              label="Yangi rol"
-              options={ALL_ROLES.filter((r) => r === changing.role || canAssignRole(me?.role, changing.role, r)).map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+              label={t("admin.users.newRole")}
+              options={ALL_ROLES.filter((r) => r === changing.role || canAssignRole(me?.role, changing.role, r)).map((r) => ({ value: r, label: t(`roles.${r}`) }))}
               value={nextRole}
               onChange={(e) => setNextRole(e.target.value as UserRole)}
             />
-            <p className="text-xs text-slate-500">Rol o'zgargach foydalanuvchining joriy sessiyalari yopiladi. Administrator rollarini faqat superadmin bera oladi. Amal audit jurnaliga yoziladi.</p>
+            <p className="text-xs text-slate-500">{t("admin.users.roleHint")}</p>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setChanging(null)}>Bekor qilish</Button>
-              <Button loading={roleBusy} disabled={nextRole === changing.role} onClick={confirmRoleChange}>Saqlash</Button>
+              <Button variant="outline" onClick={() => setChanging(null)}>{t("admin.common.cancel")}</Button>
+              <Button loading={roleBusy} disabled={nextRole === changing.role} onClick={confirmRoleChange}>{t("admin.common.save")}</Button>
             </div>
           </div>
         )}

@@ -21,6 +21,15 @@ describe("sanitizeRichText", () => {
 
 describe("toPlainText / slugify", () => {
   it("strips all tags", () => expect(toPlainText("<b>Salom</b><script>x</script>")).toBe("Salom"));
+  it("keeps &, <, > and quotes as characters instead of HTML entities", () => {
+    expect(toPlainText("Savol & javob: 5 > 3, \"YHQ\" va O'zbekiston")).toBe("Savol & javob: 5 > 3, \"YHQ\" va O'zbekiston");
+    expect(toPlainText("Q&A <i>bo'limi</i>")).toBe("Q&A bo'limi");
+  });
+  it("turns typed entities into plain characters (shown as text, never run) and still strips real tags", () => {
+    expect(toPlainText("&lt;script&gt;")).toBe("<script>");
+    expect(toPlainText("&amp;lt;")).toBe("&lt;");
+    expect(toPlainText("<img src=x onerror=alert(1)>ok")).toBe("ok");
+  });
   it("creates url-safe slugs from Uzbek text", () => {
     expect(slugify("Yo'l harakati qoidalari!")).toBe("yol-harakati-qoidalari");
     expect(slugify("  --Ўзбек--  ")).toBe("");

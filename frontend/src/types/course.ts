@@ -4,7 +4,9 @@ export interface Course {
   id: string;
   title: string;
   description: string;
+  /** Category name in the visitor's language; empty when the course has no category. */
   category: string;
+  categorySlug?: string;
   difficulty?: Difficulty;
   thumbnail?: string;
   imageUrl?: string;

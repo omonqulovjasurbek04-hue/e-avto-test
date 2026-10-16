@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { siteService } from "@/services/site.service";
 import { useLoad } from "@/hooks/useLoad";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
@@ -52,7 +53,8 @@ export default function Legal() {
   const sections = isPrivacy ? PRIVACY : TERMS;
   // A published CMS page with slug "privacy" / "terms" replaces the built-in sample text.
   const slug = isPrivacy ? "privacy" : "terms";
-  const { data: cms, loading } = useLoad(() => siteService.page(slug).catch(() => null), [slug]);
+  const { i18n } = useTranslation();
+  const { data: cms, loading } = useLoad(() => siteService.page(slug).catch(() => null), [slug, i18n.language]);
   useDocumentMeta(cms?.seoTitle || cms?.title, cms?.seoDescription);
 
   if (loading) return <div className="container-page max-w-3xl py-10" />;

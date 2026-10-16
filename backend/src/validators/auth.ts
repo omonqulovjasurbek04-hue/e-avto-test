@@ -41,6 +41,27 @@ export const resetPasswordSchema = z.object({
   password,
 });
 
+export const verifyEmailSchema = z.object({
+  token: z.string().min(20).max(200),
+});
+
+// A 6-digit TOTP code or a recovery code (xxxxx-xxxxx).
+const secondFactorCode = z.string().trim().min(6).max(20);
+
+export const twoFactorLoginSchema = z.object({
+  challengeToken: z.string().min(20).max(2000),
+  code: secondFactorCode,
+});
+
+export const twoFactorCodeSchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
+export const twoFactorDisableSchema = z.object({
+  password: z.string().max(100).optional(),
+  code: secondFactorCode,
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -10,6 +10,7 @@ export const courseCreateSchema = z.object({
   level: z.string().max(100).optional(),
   order: z.number().int().optional(),
   isPublished: z.boolean().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
 });
 
 export const courseUpdateSchema = courseCreateSchema.partial();

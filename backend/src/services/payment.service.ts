@@ -36,7 +36,7 @@ export const fulfilOrder = async (paymentId: string, source: string): Promise<vo
     }
 
     emailId = await notify(
-      { userId: payment.order.userId, type: "PAYMENT_PAID", dedupeKey: `payment:${paymentId}`, title: "To'lov qabul qilindi", body: "Kursga kirish huquqi ochildi.", email: true },
+      { userId: payment.order.userId, type: "PAYMENT_PAID", dedupeKey: `payment:${paymentId}`, template: "PAYMENT_PAID", vars: { amount: Math.round(payment.amount / 100) }, email: true },
       tx
     );
     // A late confirmation of an order we had already expired: the coupon slot was released, so take it back

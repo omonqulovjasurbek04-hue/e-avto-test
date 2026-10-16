@@ -4,10 +4,11 @@ import { Prisma } from "@prisma/client";
 import { error } from "../utils/apiResponse";
 import { HttpError } from "../utils/errors";
 import { env } from "../config/env";
+import { captureError, routeLabel } from "../lib/monitoring";
 
 export const errorMiddleware = (
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
@@ -54,6 +55,7 @@ export const errorMiddleware = (
     return;
   }
 
+  captureError(err, { userId: (req as Request & { user?: { userId: string } }).user?.userId, method: req.method, route: routeLabel(req) });
   if (env.NODE_ENV !== "production") {
     console.error(err);
   } else {

@@ -58,6 +58,29 @@ test.describe("language switching", () => {
     await expect(page.getByText(/200 000 сўм/).first()).toBeVisible();
   });
 
+  test("Russian: the admin panel and the teacher cabinet are translated", async ({ page }) => {
+    await loginViaUi(page, state().emails.admin);
+    await page.evaluate(() => localStorage.setItem("i18nextLng", "ru"));
+    await page.goto("/admin/users");
+    await expect(page.getByRole("heading", { name: "Пользователи" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Журнал аудита" })).toBeVisible();
+    await page.goto("/admin/orders");
+    await expect(page.getByRole("heading", { name: "Заказы и выручка" })).toBeVisible();
+    await page.goto("/admin/cms");
+    await expect(page.getByRole("heading", { name: "Контент сайта" })).toBeVisible();
+
+    await page.evaluate(() => localStorage.setItem("i18nextLng", "uz_cyrl"));
+    await page.goto("/admin/groups");
+    await expect(page.getByRole("heading", { name: "Гуруҳлар ва жадвал" })).toBeVisible();
+  });
+
+  test("Russian: the teacher sees their groups translated", async ({ page }) => {
+    await loginViaUi(page, state().emails.teacher);
+    await page.evaluate(() => localStorage.setItem("i18nextLng", "ru"));
+    await page.goto("/teacher");
+    await expect(page.getByRole("heading", { name: "Мои группы" })).toBeVisible();
+  });
+
   test("Latin Uzbek stays the default", async ({ page }) => {
     await page.goto("/pricing");
     await expect(page.getByRole("heading", { name: "Narxlar va paketlar" })).toBeVisible();

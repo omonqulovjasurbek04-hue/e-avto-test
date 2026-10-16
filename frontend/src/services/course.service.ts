@@ -2,6 +2,7 @@ import { apiGet } from "./api";
 import { env } from "../config/env";
 import type { Course, Difficulty } from "../types/course";
 import type { Lesson } from "../types/lesson";
+import { contentLanguage } from "./site.service";
 
 export interface CourseFilters {
   search?: string;
@@ -22,6 +23,16 @@ interface ApiCourse {
   createdAt?: string;
   updatedAt?: string;
   lessons?: ApiLesson[];
+  category?: { id: string; slug: string; name: string } | null;
+}
+
+export interface PublicCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  order: number;
+  courseCount: number;
 }
 
 export interface ApiLesson {
@@ -73,7 +84,8 @@ function toCourse(c: ApiCourse): Course {
     id: c.id,
     title: c.title,
     description: c.description,
-    category: c.level ?? "Umumiy",
+    category: c.category?.name ?? "",
+    categorySlug: c.category?.slug,
     difficulty: c.level ? LEVEL_TO_DIFFICULTY[c.level] : undefined,
     thumbnail: c.thumbnail ?? undefined,
     lessonsCount: c.lessonCount ?? lessons?.length ?? 0,
@@ -92,9 +104,6 @@ function applyFilters(list: Course[], filters?: CourseFilters): Course[] {
     const q = filters.search.toLowerCase();
     result = result.filter((c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q));
   }
-  if (filters?.category && filters.category !== "all") {
-    result = result.filter((c) => c.category === filters.category);
-  }
   if (filters?.difficulty && filters.difficulty !== "all") {
     result = result.filter((c) => c.difficulty === filters.difficulty);
   }
@@ -109,8 +118,16 @@ function applyFilters(list: Course[], filters?: CourseFilters): Course[] {
 export const courseService = {
   async getCourses(filters?: CourseFilters): Promise<Course[]> {
     if (env.useMock) return applyFilters((await import("../data/mockCourses")).mockCourses, filters);
-    const courses = await apiGet<ApiCourse[]>("/courses");
+    // The category filter runs on the server (?category=<slug>); search/difficulty/sort stay client-side.
+    const params: Record<string, string> = { lang: contentLanguage() };
+    if (filters?.category && filters.category !== "all") params.category = filters.category;
+    const courses = await apiGet<ApiCourse[]>("/courses", params);
     return applyFilters(courses.map(toCourse), filters);
+  },
+
+  async getCategories(): Promise<PublicCategory[]> {
+    if (env.useMock) return [];
+    return apiGet<PublicCategory[]>("/categories", { lang: contentLanguage() });
   },
 
   async getCourse(id: string): Promise<Course | null> {

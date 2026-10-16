@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/auth.store";
 import { env } from "@/config/env";
 import { ROUTES } from "@/constants/routes";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,7 @@ type Step = "idle" | "code";
 /** Sign in with a one-time code that the Telegram bot sends after the user presses Start. */
 export default function TelegramLogin() {
   const navigate = useNavigate();
-  const { loginWithSession } = useAuth();
+  const applyLoginResult = useAuthStore((s) => s.applyLoginResult);
   const [step, setStep] = useState<Step>("idle");
   const [sessionId, setSessionId] = useState("");
   const [botUrl, setBotUrl] = useState("");
@@ -50,9 +50,11 @@ export default function TelegramLogin() {
     setBusy(true);
     setError(null);
     try {
-      const { user, token } = await authService.telegramVerify(sessionId, code);
-      loginWithSession(user, token);
-      navigate(ROUTES.dashboard);
+      const result = await authService.telegramVerify(sessionId, code);
+      applyLoginResult(result);
+      // With 2FA the login page switches to the code step instead.
+      if ("token" in result) navigate(ROUTES.dashboard);
+      else navigate(ROUTES.login);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kod noto'g'ri yoki muddati o'tgan");
     } finally {

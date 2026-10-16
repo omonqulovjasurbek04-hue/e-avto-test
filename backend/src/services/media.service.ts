@@ -6,6 +6,7 @@ import { env } from "../config/env";
 import { signMediaToken, verifyMediaToken, MediaKind } from "../lib/media/signing";
 import { detectType } from "../lib/media/sniff";
 import * as storage from "../lib/media/storage";
+import { scanFile, ScannerUnavailableError } from "../lib/media/antivirus";
 import { hasPermission } from "../lib/permissions";
 import { badRequest, forbidden, HttpError, notFound, unauthorized } from "../utils/errors";
 import { canAccessCourse } from "./access.service";
@@ -24,8 +25,8 @@ const safeFilename = (name: string) => path.basename(name).replace(/[^\w.\- ]+/g
 
 /**
  * Streams the request body to private storage. Declared type and extension are ignored: the real
- * type comes from the file's first bytes and must match the requested kind. No malware scanner is
- * integrated — see docs/SECURITY.md.
+ * type comes from the file's first bytes and must match the requested kind. With CLAMAV_HOST set, every
+ * file is scanned before it is stored (infected or unscannable files are rejected) — see docs/SECURITY.md.
  */
 export const uploadAsset = async (
   actor: Viewer,
@@ -56,7 +57,9 @@ export const uploadAsset = async (
     throw new HttpError(415, kind === "VIDEO" ? "Only MP4 or WebM video is accepted" : "Only PDF, PNG or JPEG files are accepted");
   }
 
-  const storageKey = await storage.commit(tmp.tmpPath, detected.ext);
+  await scanOrReject(actor, tmp.tmpPath, kind);
+
+  const storageKey = await storage.commit(tmp.tmpPath, detected.ext, detected.mime);
   try {
     const asset =
       kind === "VIDEO"
@@ -73,6 +76,113 @@ export const uploadAsset = async (
     await storage.removeObject(storageKey);
     throw err;
   }
+};
+
+/** Runs the antivirus scan; the temp file is removed when the upload is rejected. */
+const scanOrReject = async (actor: Viewer, tmpPath: string, kind: MediaKind | "IMAGE") => {
+  let result;
+  try {
+    result = await scanFile(tmpPath);
+  } catch (err) {
+    await storage.discard(tmpPath);
+    if (err instanceof ScannerUnavailableError) {
+      console.error(err.message);
+      throw new HttpError(503, "Antivirus check is unavailable, the file was not stored. Try again later");
+    }
+    throw err;
+  }
+  if (result.status === "infected") {
+    await storage.discard(tmpPath);
+    await writeAudit({ actorId: actor.userId, action: "media.rejected_malware", entity: kind === "VIDEO" ? "VideoAsset" : "FileAsset", after: { signature: result.signature } });
+    throw new HttpError(422, "The file failed the antivirus check and was not stored");
+  }
+};
+
+// ───────────── public images (CMS covers, page pictures, question images) ─────────────
+
+const IMAGE_EXT = /^([a-f0-9-]{36})\.(png|jpg|webp)$/;
+
+/**
+ * Small public images for CMS content. Stored like private files (same drivers, scanned), flagged
+ * isPublic, and served by GET /api/images/:id.:ext with a long cache. Not gated by MEDIA_UPLOAD_ENABLED:
+ * that switch is about large private video files.
+ */
+export const uploadImage = async (actor: Viewer, body: Readable, meta: { contentLength: number | undefined; filename?: string }) => {
+  const maxBytes = env.MAX_IMAGE_MB * 1024 * 1024;
+  if (!meta.contentLength) throw new HttpError(411, "Content-Length is required");
+  if (meta.contentLength > maxBytes) throw new HttpError(413, "Image is too large");
+
+  let tmp;
+  try {
+    tmp = await storage.writeTemp(body, maxBytes);
+  } catch (err) {
+    if (err instanceof storage.UploadTooLargeError) throw new HttpError(413, "Image is too large");
+    throw badRequest("Upload failed");
+  }
+  const detected = detectType(await storage.readHead(tmp.tmpPath));
+  if (!detected || detected.kind !== "image") {
+    await storage.discard(tmp.tmpPath);
+    throw new HttpError(415, "Only PNG, JPEG or WebP images are accepted");
+  }
+  await scanOrReject(actor, tmp.tmpPath, "IMAGE");
+
+  const storageKey = await storage.commit(tmp.tmpPath, detected.ext, detected.mime);
+  try {
+    const asset = await prisma.fileAsset.create({
+      data: { storageKey, filename: safeFilename(meta.filename ?? `image.${detected.ext}`), mimeType: detected.mime, sizeBytes: tmp.size, isPublic: true, createdById: actor.userId },
+    });
+    await writeAudit({ actorId: actor.userId, action: "media.image_upload", entity: "FileAsset", entityId: asset.id, after: { mime: detected.mime, size: tmp.size } });
+    const path = `/api/images/${asset.id}.${detected.ext}`;
+    return { id: asset.id, mimeType: asset.mimeType, sizeBytes: asset.sizeBytes, filename: asset.filename, path, url: `${env.PUBLIC_API_ORIGIN}${path}` };
+  } catch (err) {
+    await storage.removeObject(storageKey);
+    throw err;
+  }
+};
+
+export const listImages = async () => {
+  const rows = await prisma.fileAsset.findMany({
+    where: { isPublic: true, mimeType: { startsWith: "image/" } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: { id: true, filename: true, mimeType: true, sizeBytes: true, createdAt: true, storageKey: true },
+  });
+  return rows.map(({ storageKey, ...r }) => {
+    const path = `/api/images/${r.id}.${storageKey.split(".").pop()}`;
+    return { ...r, path, url: `${env.PUBLIC_API_ORIGIN}${path}` };
+  });
+};
+
+export const deleteImage = async (actor: Viewer, id: string) => {
+  const f = await prisma.fileAsset.findFirst({ where: { id, isPublic: true, mimeType: { startsWith: "image/" } } });
+  if (!f) throw notFound("Image not found");
+  await prisma.fileAsset.delete({ where: { id } });
+  await storage.removeObject(f.storageKey).catch(() => undefined);
+  await writeAudit({ actorId: actor.userId, action: "media.image_delete", entity: "FileAsset", entityId: id });
+  return { deleted: true };
+};
+
+/** Public, cacheable: only files explicitly flagged isPublic and of an image type are ever served here. */
+export const openPublicImage = async (name: string): Promise<StreamPlan> => {
+  const m = IMAGE_EXT.exec(name);
+  if (!m) throw notFound("Image not found");
+  const f = await prisma.fileAsset.findFirst({ where: { id: m[1], isPublic: true, mimeType: { startsWith: "image/" } } });
+  if (!f || !f.storageKey.endsWith(`.${m[2]}`)) throw notFound("Image not found");
+  const stat = await storage.statObject(f.storageKey);
+  if (!stat) throw notFound("Image not found");
+  return {
+    status: 200,
+    headers: {
+      "Content-Type": f.mimeType,
+      "Content-Length": String(stat.size),
+      // Keys never change content (a new upload gets a new id), so the image is immutable.
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    },
+    stream: await storage.openRange(f.storageKey, 0, Math.max(stat.size - 1, 0)),
+  };
 };
 
 export const archiveVideo = async (actor: Viewer, id: string) => {
@@ -180,5 +290,5 @@ export const openStream = async (token: string, rangeHeader: string | undefined)
     "Content-Disposition": `inline; filename="${asset.filename ? safeFilename(asset.filename) : "media"}"`,
   };
   if (status === 206) headers["Content-Range"] = `bytes ${start}-${end}/${stat.size}`;
-  return { status, headers, stream: storage.openRange(asset.storageKey, start, end) };
+  return { status, headers, stream: await storage.openRange(asset.storageKey, start, end) };
 };

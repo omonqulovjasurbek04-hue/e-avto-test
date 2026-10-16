@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BookOpen, Clock } from "lucide-react";
 import type { Course } from "@/types/course";
 import { ROUTES } from "@/constants/routes";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 
 export default function CourseCard({ course }: { course: Course }) {
+  const { t } = useTranslation();
   const lessonsCount = course.lessonsCount ?? course.totalLessons ?? 0;
   const durationHours = course.durationHours ?? Math.round((course.totalDurationMinutes || 0) / 60);
 
@@ -28,12 +30,14 @@ export default function CourseCard({ course }: { course: Course }) {
           </div>
         )}
         <div className="absolute top-3 left-3 flex gap-2">
-          <Badge variant="primary" className="bg-brand-600/90 text-white backdrop-blur font-bold shadow-sm">
-            {course.category}
-          </Badge>
+          {course.category && (
+            <Badge variant="primary" className="bg-brand-600/90 text-white backdrop-blur font-bold shadow-sm">
+              {course.category}
+            </Badge>
+          )}
           {course.difficulty && (
             <Badge variant="neutral" className="bg-black/40 text-white backdrop-blur border-white/20">
-              {course.difficulty}
+              {t(`courses.difficulty.${course.difficulty}`)}
             </Badge>
           )}
         </div>

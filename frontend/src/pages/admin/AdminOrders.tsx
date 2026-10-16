@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Banknote, Receipt, RotateCcw, Tag, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminPlatformService as api, type AdminOrder } from "@/services/platform.service";
@@ -18,21 +19,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDateTime, formatMoney, fromSom, toSom } from "@/utils/money";
 
-const STATUS: Record<AdminOrder["status"], { label: string; variant: "success" | "warning" | "danger" | "neutral" }> = {
-  PENDING: { label: "Kutilmoqda", variant: "warning" },
-  PAID: { label: "To'langan", variant: "success" },
-  CANCELLED: { label: "Bekor", variant: "danger" },
-  EXPIRED: { label: "Muddati tugagan", variant: "neutral" },
-  REFUNDED: { label: "Qaytarilgan", variant: "neutral" },
+const STATUS: Record<AdminOrder["status"], "success" | "warning" | "danger" | "neutral"> = {
+  PENDING: "warning",
+  PAID: "success",
+  CANCELLED: "danger",
+  EXPIRED: "neutral",
+  REFUNDED: "neutral",
 };
 
-const RANGES = [
-  { value: "7", label: "Oxirgi 7 kun" },
-  { value: "30", label: "Oxirgi 30 kun" },
-  { value: "365", label: "Oxirgi yil" },
-];
+const RANGES = ["7", "30", "365"];
 
 export default function AdminOrders() {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
@@ -55,19 +53,19 @@ export default function AdminOrders() {
     const pay = refunding && paidPayment(refunding);
     if (!pay) return;
     const amount = fromSom(Number(rf.som));
-    if (!Number.isFinite(amount) || amount <= 0) return setRfErr("Summani kiriting");
-    if (rf.reason.trim().length < 3) return setRfErr("Sababni yozing");
+    if (!Number.isFinite(amount) || amount <= 0) return setRfErr(t("admin.orders.enterAmount"));
+    if (rf.reason.trim().length < 3) return setRfErr(t("admin.orders.enterReason"));
     setRfBusy(true);
     setRfErr(null);
     try {
       await api.createRefund(pay.id, amount, rf.reason.trim());
-      toast.success("Qaytarish so'rovi yaratildi");
+      toast.success(t("admin.orders.refundCreated"));
       setRefunding(null);
       void orders.reload();
       void pendingRefunds.reload();
       void summary.reload();
     } catch (e) {
-      setRfErr(e instanceof Error ? e.message : "Xatolik");
+      setRfErr(e instanceof Error ? e.message : t("admin.common.error"));
     } finally {
       setRfBusy(false);
     }
@@ -77,7 +75,7 @@ export default function AdminOrders() {
     try {
       if (action === "complete") await api.completeRefund(id);
       else {
-        const reason = window.prompt("Rad etish sababi:");
+        const reason = window.prompt(t("admin.orders.rejectPrompt"));
         if (!reason || reason.trim().length < 3) return;
         await api.rejectRefund(id, reason.trim());
       }
@@ -85,40 +83,40 @@ export default function AdminOrders() {
       void orders.reload();
       void summary.reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Xatolik");
+      toast.error(e instanceof Error ? e.message : t("admin.common.error"));
     }
   };
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">Buyurtmalar va tushum</h1>
-        <div className="w-48"><Select aria-label="Davr" options={RANGES} value={days} onChange={(e) => setDays(e.target.value)} /></div>
+        <h1 className="text-2xl font-bold text-white">{t("admin.orders.title")}</h1>
+        <div className="w-48"><Select aria-label={t("admin.orders.period")} options={RANGES.map((value) => ({ value, label: t(`admin.orders.last${value}`) }))} value={days} onChange={(e) => setDays(e.target.value)} /></div>
       </div>
 
       {summary.error ? <ErrorState message={summary.error} onRetry={summary.reload} /> : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Tushum (sof)" value={s ? formatMoney(s.net) : "…"} icon={<Banknote className="h-5 w-5" />} color="green" />
-          <StatCard label="To'langan buyurtmalar" value={s ? s.paidOrders : "…"} icon={<Receipt className="h-5 w-5" />} />
-          <StatCard label="Qaytarilgan" value={s ? formatMoney(s.refunded) : "…"} icon={<RotateCcw className="h-5 w-5" />} color="amber" />
-          <StatCard label="Berilgan chegirmalar" value={s ? formatMoney(s.discountsGiven) : "…"} icon={<Tag className="h-5 w-5" />} color="slate" />
+          <StatCard label={t("admin.orders.net")} value={s ? formatMoney(s.net) : "…"} icon={<Banknote className="h-5 w-5" />} color="green" />
+          <StatCard label={t("admin.orders.paidOrders")} value={s ? s.paidOrders : "…"} icon={<Receipt className="h-5 w-5" />} />
+          <StatCard label={t("admin.orders.refunded")} value={s ? formatMoney(s.refunded) : "…"} icon={<RotateCcw className="h-5 w-5" />} color="amber" />
+          <StatCard label={t("admin.orders.discounts")} value={s ? formatMoney(s.discountsGiven) : "…"} icon={<Tag className="h-5 w-5" />} color="slate" />
         </div>
       )}
-      <p className="text-xs text-slate-500">Tushum faqat server tasdiqlagan (provayder callback'i orqali to'langan) buyurtmalardan hisoblanadi; qaytarilgan summa ayiriladi.</p>
+      <p className="text-xs text-slate-500">{t("admin.orders.netHint")}</p>
 
       <div className="flex flex-wrap gap-3">
-        <div className="min-w-64 flex-1"><Input aria-label="Qidirish" placeholder="Ism yoki email" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} /></div>
+        <div className="min-w-64 flex-1"><Input aria-label={t("admin.common.search")} placeholder={t("admin.orders.searchPlaceholder")} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} /></div>
         <div className="w-52">
-          <Select aria-label="Holat" options={[{ value: "", label: "Barcha holatlar" }, ...Object.entries(STATUS).map(([value, v]) => ({ value, label: v.label }))]} value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} />
+          <Select aria-label={t("admin.common.status")} options={[{ value: "", label: t("admin.orders.allStatuses") }, ...Object.keys(STATUS).map((value) => ({ value, label: t(`admin.orders.status${value}`) }))]} value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} />
         </div>
       </div>
 
       {orders.loading && !orders.data ? <Skeleton className="h-48 rounded-2xl" /> : orders.error ? <ErrorState message={orders.error} onRetry={orders.reload} /> : !orders.data || orders.data.items.length === 0 ? (
-        <EmptyState title="Buyurtmalar topilmadi" />
+        <EmptyState title={t("admin.orders.empty")} />
       ) : (
         <>
           <div className="overflow-x-auto rounded-2xl border border-slate-800">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Sana</th><th className="px-4 py-3">Foydalanuvchi</th><th className="px-4 py-3">Mahsulot</th><th className="px-4 py-3">Summa</th><th className="px-4 py-3">Holat</th>{canRefund && <th className="px-4 py-3 text-right">Amal</th>}</tr></thead>
+              <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">{t("admin.common.date")}</th><th className="px-4 py-3">{t("admin.common.user")}</th><th className="px-4 py-3">{t("admin.orders.product")}</th><th className="px-4 py-3">{t("admin.orders.amount")}</th><th className="px-4 py-3">{t("admin.common.status")}</th>{canRefund && <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>}</tr></thead>
               <tbody className="divide-y divide-slate-800">
                 {orders.data.items.map((o) => (
                   <tr key={o.id} className="hover:bg-slate-800/40">
@@ -126,12 +124,12 @@ export default function AdminOrders() {
                     <td className="px-4 py-3"><span className="font-medium text-white">{o.user.name}</span><br /><span className="text-xs text-slate-500">{o.user.email}</span></td>
                     <td className="px-4 py-3">{o.items.map((i) => i.title).join(", ")}</td>
                     <td className="px-4 py-3 font-semibold">{formatMoney(o.total, o.currency)}</td>
-                    <td className="px-4 py-3"><Badge variant={STATUS[o.status].variant}>{STATUS[o.status].label}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant={STATUS[o.status]}>{t(`admin.orders.status${o.status}`)}</Badge></td>
                     {canRefund && (
                       <td className="px-4 py-3 text-right">
                         {paidPayment(o) && (
                           <Button size="sm" variant="outline" leftIcon={<Undo2 className="h-4 w-4" />} onClick={() => { setRf({ som: String(toSom(paidPayment(o)!.amount)), reason: "" }); setRfErr(null); setRefunding(o); }}>
-                            Qaytarish
+                            {t("admin.orders.refund")}
                           </Button>
                         )}
                       </td>
@@ -147,8 +145,8 @@ export default function AdminOrders() {
 
       {canRefund && pendingRefunds.data && pendingRefunds.data.some((r) => r.status === "PENDING") && (
         <section className="space-y-3 rounded-2xl border border-amber-700/40 p-4">
-          <h2 className="font-semibold text-white">Kutilayotgan qaytarishlar</h2>
-          <p className="text-xs text-slate-500">Provayder avtomatik qaytarmagan so'rovlar. Pul provayder kabinetida qaytarilgach "Tasdiqlash" ni bosing; aks holda rad eting.</p>
+          <h2 className="font-semibold text-white">{t("admin.orders.pendingRefunds")}</h2>
+          <p className="text-xs text-slate-500">{t("admin.orders.pendingHint")}</p>
           {pendingRefunds.data.filter((r) => r.status === "PENDING").map((r) => (
             <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-sm">
               <div>
@@ -156,23 +154,23 @@ export default function AdminOrders() {
                 <p className="text-xs text-slate-500">{r.reason} · {formatDateTime(r.createdAt)}</p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => settle(r.id, "complete")}>Tasdiqlash</Button>
-                <Button size="sm" variant="danger" onClick={() => settle(r.id, "reject")}>Rad etish</Button>
+                <Button size="sm" onClick={() => settle(r.id, "complete")}>{t("admin.common.confirm")}</Button>
+                <Button size="sm" variant="danger" onClick={() => settle(r.id, "reject")}>{t("admin.common.reject")}</Button>
               </div>
             </div>
           ))}
         </section>
       )}
 
-      <Modal isOpen={refunding !== null} onClose={() => setRefunding(null)} title="Pulni qaytarish" maxWidth="md">
+      <Modal isOpen={refunding !== null} onClose={() => setRefunding(null)} title={t("admin.orders.refundTitle")} maxWidth="md">
         {refunding && (
           <div className="space-y-4">
             <p className="text-sm text-slate-400">{refunding.user.name} · {refunding.items.map((i) => i.title).join(", ")}</p>
-            <Input label="Qaytariladigan summa (so'm)" type="number" min={0} value={rf.som} onChange={(e) => setRf({ ...rf, som: e.target.value })} />
-            <Input label="Sabab" value={rf.reason} onChange={(e) => setRf({ ...rf, reason: e.target.value })} />
-            <p className="text-xs text-slate-500">To'liq qaytarilsa foydalanuvchining kursga kirishi bekor qilinadi. Amal audit jurnaliga yoziladi.</p>
+            <Input label={t("admin.orders.refundAmount")} type="number" min={0} value={rf.som} onChange={(e) => setRf({ ...rf, som: e.target.value })} />
+            <Input label={t("admin.common.reason")} value={rf.reason} onChange={(e) => setRf({ ...rf, reason: e.target.value })} />
+            <p className="text-xs text-slate-500">{t("admin.orders.refundHint")}</p>
             {rfErr && <p role="alert" className="text-sm text-red-400">{rfErr}</p>}
-            <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setRefunding(null)}>Bekor qilish</Button><Button loading={rfBusy} onClick={submitRefund}>Qaytarish</Button></div>
+            <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setRefunding(null)}>{t("admin.common.cancel")}</Button><Button loading={rfBusy} onClick={submitRefund}>{t("admin.orders.refund")}</Button></div>
           </div>
         )}
       </Modal>

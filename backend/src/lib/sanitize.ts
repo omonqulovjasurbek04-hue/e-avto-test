@@ -19,8 +19,17 @@ const OPTIONS: sanitizeHtml.IOptions = {
 
 export const sanitizeRichText = (html: string): string => sanitizeHtml(html, OPTIONS);
 
-/** Plain text only (titles, SEO fields, contact messages). */
-export const toPlainText = (text: string): string => sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }).trim();
+const ENTITIES: Record<string, string> = { "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&#x27;": "'", "&nbsp;": " ", "&amp;": "&" };
+
+/**
+ * Plain text only (titles, SEO fields, contact messages, notification texts). Tags are removed, and the
+ * entities sanitize-html adds are turned back into characters so "Q&A" is not stored as "Q&amp;A".
+ * Safe because plain-text fields are only ever rendered as text (React escapes them), never as HTML.
+ */
+export const toPlainText = (text: string): string =>
+  sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} })
+    .replace(/&(lt|gt|quot|#39|#x27|nbsp|amp);/g, (m) => ENTITIES[m])
+    .trim();
 
 export const slugify = (input: string): string =>
   input

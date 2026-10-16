@@ -6,7 +6,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.PERF_DB } } });
 const base = "http://localhost:5099";
 const secret = "change_this_long_random_secret";
-const sign = (userId, role) => jwt.sign({ userId, role, tv: 0 }, secret, { expiresIn: "1h" });
+const sign = (userId, role) => jwt.sign({ userId, role, tv: 0 }, secret, { expiresIn: "1h", audience: "access" });
 
 const heavy = await prisma.$queryRaw`SELECT "userId" AS id FROM tests GROUP BY "userId" ORDER BY count(*) DESC LIMIT 1`;
 const user = (await prisma.user.findFirst({ where: { email: "perf777@example.com" } })).id;

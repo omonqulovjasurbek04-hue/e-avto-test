@@ -30,6 +30,13 @@ mediaRoutes.get("/media/stream/:token", asyncHandler(async (req: Request, res: R
   await pipeline(plan.stream, res).catch(() => undefined); // client aborted (seeking) is normal
 }));
 
+/** Public CMS images: GET /api/images/<id>.<ext> */
+mediaRoutes.get("/images/:name", asyncHandler(async (req: Request, res: Response) => {
+  const plan = await media.openPublicImage(req.params.name);
+  res.status(plan.status).set(plan.headers);
+  await pipeline(plan.stream, res).catch(() => undefined);
+}));
+
 // ───────────── admin side (media:manage) ─────────────
 export const adminMediaRoutes = Router();
 adminMediaRoutes.use(asyncHandler(authMiddleware));
@@ -50,4 +57,17 @@ adminMediaRoutes.put("/:kind", h(async (req, res) => {
   const asset = await media.uploadAsset(viewer(req), kindOf(req.params.kind), req, { contentLength: Number.isFinite(length) && length > 0 ? length : undefined, ...q });
   success(res, asset, 201);
 }));
+/** CMS image library (content editors). Mounted under /api/admin/cms/images. */
+export const adminImageRoutes = Router();
+adminImageRoutes.use(asyncHandler(authMiddleware));
+adminImageRoutes.use(requirePermission("content:manage"));
+adminImageRoutes.get("/", h(async (_req, res) => success(res, await media.listImages())));
+adminImageRoutes.get("/config", h(async (_req, res) => success(res, { maxImageMb: env.MAX_IMAGE_MB })));
+adminImageRoutes.put("/", h(async (req, res) => {
+  const q = z.object({ filename: z.string().max(160).optional() }).parse(req.query);
+  const length = Number(req.headers["content-length"]);
+  success(res, await media.uploadImage(viewer(req), req, { contentLength: Number.isFinite(length) && length > 0 ? length : undefined, ...q }), 201);
+}));
+adminImageRoutes.delete("/:id", h(async (req, res) => success(res, await media.deleteImage(viewer(req), uuid.parse(req.params.id)))));
+
 adminMediaRoutes.delete("/video/:id", h(async (req, res) => success(res, await media.archiveVideo(viewer(req), uuid.parse(req.params.id)))));

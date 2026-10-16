@@ -2,35 +2,90 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
 import { toPlainText } from "../lib/sanitize";
-import { notFound } from "../utils/errors";
+import { badRequest, notFound } from "../utils/errors";
 import { isMailConfigured, sendMail } from "./mail.service";
 import { writeAudit } from "./audit.service";
+import { BASE_LANGUAGE, LANGUAGES, normalizeLanguage, type Language } from "../lib/languages";
+import { BUILTIN_TEMPLATES, TEMPLATE_DEFS, TEMPLATE_KEYS, renderTemplate, validateTemplate, type TemplateKey, type TemplateText, type TemplateVars } from "../lib/notificationTemplates";
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
-export interface NotifyInput {
+type NotifyText =
+  /** Admin-editable text in the recipient's language (built-in text when none is saved). */
+  | { template: TemplateKey; vars?: TemplateVars; title?: never; body?: never }
+  /** Literal text, as given. */
+  | { template?: never; vars?: never; title: string; body: string };
+
+export type NotifyInput = NotifyText & {
   userId: string;
   type: string;
-  title: string;
-  body: string;
   /** One notice per event: the same key for the same user never creates a second row. */
   dedupeKey: string;
   /** Does this event deserve an e-mail as well (still subject to the user's choice and SMTP)? */
   email?: boolean;
   /** "attendance" notices can be switched off by the student independently. */
   category?: "general" | "attendance";
-}
+};
 
 export const MAX_EMAIL_ATTEMPTS = 3;
 
+const userLanguage = (stored: string | null | undefined): Language => normalizeLanguage(stored) ?? BASE_LANGUAGE;
+
 export const getPreferences = async (userId: string) => {
   const p = await prisma.notificationPreference.findUnique({ where: { userId } });
-  return { inApp: p?.inApp ?? true, email: p?.email ?? true, attendance: p?.attendance ?? true };
+  return { inApp: p?.inApp ?? true, email: p?.email ?? true, attendance: p?.attendance ?? true, language: userLanguage(p?.language) };
 };
 
-export const savePreferences = async (userId: string, data: { inApp?: boolean; email?: boolean; attendance?: boolean }) => {
+export const savePreferences = async (userId: string, data: { inApp?: boolean; email?: boolean; attendance?: boolean; language?: Language }) => {
   const saved = await prisma.notificationPreference.upsert({ where: { userId }, create: { userId, ...data }, update: data });
-  return { inApp: saved.inApp, email: saved.email, attendance: saved.attendance };
+  return { inApp: saved.inApp, email: saved.email, attendance: saved.attendance, language: userLanguage(saved.language) };
+};
+
+// ───────────── templates ─────────────
+
+/** The admin's version for this language if saved, else the built-in one. */
+const templateText = async (db: Db, key: TemplateKey, language: Language): Promise<TemplateText> => {
+  const custom = await db.notificationTemplate.findUnique({ where: { key_language: { key, language } }, select: { subject: true, body: true } });
+  return custom ?? BUILTIN_TEMPLATES[key][language];
+};
+
+export const listTemplates = async () => {
+  const rows = await prisma.notificationTemplate.findMany();
+  return TEMPLATE_KEYS.map((key) => ({
+    key,
+    placeholders: TEMPLATE_DEFS[key].placeholders,
+    required: TEMPLATE_DEFS[key].required,
+    languages: Object.fromEntries(
+      LANGUAGES.map((language) => {
+        const row = rows.find((r) => r.key === key && r.language === language);
+        const builtin = BUILTIN_TEMPLATES[key][language];
+        return [language, { subject: row?.subject ?? builtin.subject, body: row?.body ?? builtin.body, custom: Boolean(row), updatedAt: row?.updatedAt ?? null, builtin }];
+      })
+    ),
+  }));
+};
+
+export const saveTemplate = async (actorId: string, key: TemplateKey, language: Language, input: TemplateText) => {
+  // Stored as typed (plain text); notify() cleans the rendered result like every other notice. Subjects are one line.
+  const text = { subject: input.subject.replace(/\s+/g, " ").trim(), body: input.body.trim() };
+  if (!text.subject || !text.body) throw badRequest("Subject and body are required");
+  const problems = validateTemplate(key, text);
+  if (problems.length > 0) throw Object.assign(badRequest(`Invalid template: ${problems.join("; ")}`), { details: problems });
+  const before = await prisma.notificationTemplate.findUnique({ where: { key_language: { key, language } } });
+  const saved = await prisma.notificationTemplate.upsert({
+    where: { key_language: { key, language } },
+    create: { key, language, ...text, updatedById: actorId },
+    update: { ...text, updatedById: actorId },
+  });
+  await writeAudit({ actorId, action: "notification.template.save", entity: "NotificationTemplate", entityId: `${key}:${language}`, before: before ? { subject: before.subject, body: before.body } : undefined, after: text });
+  return saved;
+};
+
+/** Back to the built-in text. */
+export const resetTemplate = async (actorId: string, key: TemplateKey, language: Language) => {
+  const res = await prisma.notificationTemplate.deleteMany({ where: { key, language } });
+  if (res.count > 0) await writeAudit({ actorId, action: "notification.template.reset", entity: "NotificationTemplate", entityId: `${key}:${language}` });
+  return { key, language, ...BUILTIN_TEMPLATES[key][language] };
 };
 
 /**
@@ -41,7 +96,7 @@ export const savePreferences = async (userId: string, data: { inApp?: boolean; e
 export const notify = async (input: NotifyInput, db: Db = prisma): Promise<string | null> => {
   const [prefs, user] = await Promise.all([
     db.notificationPreference.findUnique({ where: { userId: input.userId } }),
-    db.user.findUnique({ where: { id: input.userId }, select: { email: true, isActive: true } }),
+    db.user.findUnique({ where: { id: input.userId }, select: { email: true, isActive: true, name: true } }),
   ]);
   if (!user?.isActive) return null;
   if (input.category === "attendance" && prefs?.attendance === false) return null;
@@ -56,12 +111,17 @@ export const notify = async (input: NotifyInput, db: Db = prisma): Promise<strin
   const existing = await db.notification.findUnique({ where: { userId_dedupeKey: { userId: input.userId, dedupeKey: input.dedupeKey } }, select: { id: true } });
   if (existing) return null; // duplicate event: nothing new to show or send
 
+  // Rendered once, in the recipient's language: the in-app row and the e-mail show the same text.
+  const text = input.template
+    ? renderTemplate(await templateText(db, input.template, userLanguage(prefs?.language)), { name: user.name, ...input.vars })
+    : { subject: input.title, body: input.body };
+
   const row = await db.notification.create({
     data: {
       userId: input.userId,
       type: input.type,
-      title: toPlainText(input.title).slice(0, 160),
-      body: toPlainText(input.body).slice(0, 1000),
+      title: toPlainText(text.subject).slice(0, 160),
+      body: toPlainText(text.body).slice(0, 1000),
       dedupeKey: input.dedupeKey,
       inApp,
       emailStatus,
@@ -144,7 +204,7 @@ export const announce = async (actorId: string, input: { title: string; body: st
   let created = 0;
   let queuedEmails = 0;
   for (const userId of userIds) {
-    const emailId = await notify({ userId, type: "ANNOUNCEMENT", title: input.title, body: input.body, dedupeKey: `announce:${announcementId}`, email: true });
+    const emailId = await notify({ userId, type: "ANNOUNCEMENT", template: "ANNOUNCEMENT", vars: { title: input.title, body: input.body }, dedupeKey: `announce:${announcementId}`, email: true });
     created++;
     if (emailId) queuedEmails++;
   }

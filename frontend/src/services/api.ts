@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import { storage } from "../utils/storage";
 import { env } from "../config/env";
+import { getAccessToken, pendingRefresh, refreshSession, setAccessToken } from "./session";
 
 /** Error thrown by every failed API call, so pages can rely on `instanceof Error`. */
 export class ApiError extends Error {
@@ -17,33 +17,53 @@ export class ApiError extends Error {
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiUrl,
   timeout: 15000,
-  headers: { "Content-Type": "application/json" },
+  // The refresh cookie is only sent to /api/auth; other requests authenticate with the in-memory Bearer token.
+  withCredentials: true,
+  headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
 });
 
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = storage.getToken();
+apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  // Requests fired while the start-up refresh runs wait for it, so they carry the token.
+  const pending = pendingRefresh();
+  if (pending) await pending;
+  const token = getAccessToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/courses", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/terms", "/p/", "/403", "/404", "/500"];
+const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/courses", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/terms", "/p/", "/403", "/404", "/500"];
 const isPublicPath = (path: string) => path === "/" || PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p.endsWith("/") ? p : `${p}/`));
 
-const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/password", "/auth/reset-password"];
+const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/password", "/auth/reset-password", "/auth/2fa/login", "/auth/2fa/disable", "/auth/verify-email"];
+
+/** Lets the auth store drop the user when the session cannot be renewed (set by auth.store). */
+let onSessionLost: () => void = () => {};
+export const setSessionLostHandler = (fn: () => void) => {
+  onSessionLost = fn;
+};
+
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<{ message?: string; errors?: unknown }>) => {
+  async (error: AxiosError<{ message?: string; errors?: unknown }>) => {
     const status = error.response?.status;
-    const url = error.config?.url ?? "";
+    const config = error.config as RetriableConfig | undefined;
+    const url = config?.url ?? "";
 
-    // Expired/invalid session: clear it. Only pages that need an account send the user to /login;
-    // a visitor reading a public page (home, courses, news...) simply continues as a guest.
-    if (status === 401 && !AUTH_ENDPOINTS.some((p) => url.includes(p))) {
-      storage.removeToken();
-      storage.removeUser();
+    if (status === 401 && config && !AUTH_ENDPOINTS.some((p) => url.includes(p))) {
+      // The access token expired: renew it silently once and repeat the request.
+      if (!config._retried && getAccessToken()) {
+        config._retried = true;
+        const renewed = await refreshSession();
+        if (renewed) return apiClient(config);
+      }
+      // The session is over. Only pages that need an account send the user to /login;
+      // a visitor reading a public page (home, courses, news...) simply continues as a guest.
+      setAccessToken(null);
+      onSessionLost();
       if (typeof window !== "undefined" && !isPublicPath(window.location.pathname)) {
         window.location.assign("/login");
       }

@@ -17,6 +17,7 @@ const readCatalog = requireAnyPermission("catalog:manage", "tests:manage");
 router.get("/users", users, asyncHandler(adminController.listUsers));
 router.patch("/users/:id/role", users, asyncHandler(adminController.updateUserRole));
 router.patch("/users/:id/status", users, asyncHandler(adminController.updateUserStatus));
+router.delete("/users/:id/two-factor", users, asyncHandler(adminController.resetUserTwoFactor));
 
 router.get("/courses", readCatalog, asyncHandler(adminController.listCourses));
 router.post("/courses", catalog, asyncHandler(adminController.createCourse));

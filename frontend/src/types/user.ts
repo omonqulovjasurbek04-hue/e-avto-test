@@ -8,6 +8,9 @@ export interface User {
   phone?: string;
   role: UserRole;
   avatarUrl?: string;
+  /** undefined for accounts without an e-mail (Telegram). */
+  emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +28,29 @@ export interface UserProfile extends User {
 
 export interface AuthResponse {
   user: User;
+  /** Short-lived access token, kept in memory only. */
   token: string;
+  /** Sign-up only: what really happened to the verification e-mail. */
+  emailVerification?: EmailDelivery;
+}
+
+export interface EmailDelivery {
+  sent: boolean;
+  mailConfigured: boolean;
+}
+
+export interface TwoFactorChallenge {
+  twoFactorRequired: true;
+  challengeToken: string;
+}
+
+export type LoginResult = AuthResponse | TwoFactorChallenge;
+
+export interface TwoFactorStatus {
+  available: boolean;
+  enabled: boolean;
+  enabledAt?: string | null;
+  recoveryCodesLeft: number;
 }
 
 export interface LoginPayload {

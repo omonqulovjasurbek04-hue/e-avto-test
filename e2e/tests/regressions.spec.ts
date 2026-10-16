@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import { apiGet, apiLogin, loginViaUi, state } from "./helpers";
 
 test.describe("frontend review fixes", () => {
-  test("an expired token does not throw a visitor off a public page", async ({ page }) => {
+  test("an expired session does not throw a visitor off a public page", async ({ page }) => {
+    // The browser remembers it had a session, but the refresh cookie is gone/expired (plus a token left by older versions).
     await page.addInitScript(() => {
+      localStorage.setItem("e_avto_session", "1");
       localStorage.setItem("e_avto_token", "expired.invalid.token");
-      localStorage.setItem("e_avto_user", JSON.stringify({ id: "x", name: "Old", role: "USER" }));
     });
     for (const path of ["/", "/courses", "/pricing", "/news"]) {
       await page.goto(path);
@@ -14,10 +15,11 @@ test.describe("frontend review fixes", () => {
     }
   });
 
-  test("an expired token on a page that needs an account still leads to the login page", async ({ page }) => {
+  test("an expired session on a page that needs an account still leads to the login page", async ({ page }) => {
+    // The browser remembers it had a session, but the refresh cookie is gone/expired (plus a token left by older versions).
     await page.addInitScript(() => {
+      localStorage.setItem("e_avto_session", "1");
       localStorage.setItem("e_avto_token", "expired.invalid.token");
-      localStorage.setItem("e_avto_user", JSON.stringify({ id: "x", name: "Old", role: "USER" }));
     });
     await page.goto("/orders");
     await expect(page).toHaveURL(/\/login/);

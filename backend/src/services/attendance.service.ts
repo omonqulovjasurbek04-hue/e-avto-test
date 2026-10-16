@@ -85,7 +85,7 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
 
     // Absence notice; the student can switch the "attendance" category off. One per lesson and student.
     for (const studentId of newlyAbsent) {
-      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, title: "Darsda qatnashmadingiz", body: "Davomat bo'limini tekshiring.", email: true }, tx));
+      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, template: "ATTENDANCE_ABSENT", vars: { group: slot.group.name, date: slot.startsAt }, email: true }, tx));
     }
 
     return tx.attendanceRecord.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: "asc" } });

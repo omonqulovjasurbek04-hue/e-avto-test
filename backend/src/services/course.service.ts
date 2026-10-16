@@ -13,6 +13,8 @@ import {
 } from "../validators/course";
 import { badRequest, notFound, conflict } from "../utils/errors";
 import { getPagination } from "../utils/pagination";
+import { BASE_LANGUAGE, type Language } from "../lib/languages";
+import { localize } from "./cms.service";
 
 const courseSelect = {
   id: true,
@@ -22,19 +24,28 @@ const courseSelect = {
   level: true,
   order: true,
   isPublished: true,
+  categoryId: true,
+  category: { select: { id: true, slug: true, name: true, translations: true } },
   createdAt: true,
   updatedAt: true,
   _count: { select: { lessons: true } },
 } satisfies Prisma.CourseSelect;
 
-/** Public catalogue shows only published courses; admins see everything. */
-export const listCourses = async (includeUnpublished = false) => {
+/**
+ * Public catalogue shows only published courses; admins see everything.
+ * `categoryId`: a category id, or null for "uncategorised"; undefined = all.
+ */
+export const listCourses = async (includeUnpublished = false, opts: { categoryId?: string | null; lang?: Language } = {}) => {
   const courses = await prisma.course.findMany({
-    where: includeUnpublished ? {} : { isPublished: true },
+    where: { ...(includeUnpublished ? {} : { isPublished: true }), ...(opts.categoryId !== undefined && { categoryId: opts.categoryId }) },
     orderBy: { order: "asc" },
     select: courseSelect,
   });
-  return courses.map(({ _count, ...course }) => ({ ...course, lessonCount: _count.lessons }));
+  return courses.map(({ _count, category, ...course }) => ({
+    ...course,
+    category: category ? localize(category, opts.lang ?? BASE_LANGUAGE) : null,
+    lessonCount: _count.lessons,
+  }));
 };
 
 /** Public calls pass the viewer: lessons of a course they cannot open come without video link (`locked`). */
@@ -42,6 +53,7 @@ export const getCourse = async (id: string, includeUnpublished = false, viewer?:
   const course = await prisma.course.findFirst({
     where: includeUnpublished ? { id } : { id, isPublished: true },
     include: {
+      category: { select: { id: true, slug: true, name: true } },
       lessons: {
         where: includeUnpublished ? {} : { isPublished: true },
         orderBy: { order: "asc" },

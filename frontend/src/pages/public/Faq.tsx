@@ -6,9 +6,9 @@ import { useLoad } from "@/hooks/useLoad";
 import SafeHtml from "@/components/common/SafeHtml";
 
 export default function Faq() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState<number | null>(0);
-  const { data: cms } = useLoad(() => siteService.faq(), []);
+  const { data: cms } = useLoad(() => siteService.faq(), [i18n.language]);
 
   // Questions managed in the admin panel win; the built-in set is only a fallback while the CMS list is empty.
   const builtIn = [1, 2, 3, 4, 5].map((n) => ({ id: `b${n}`, q: t(`faq.questions.q${n}.q`), a: t(`faq.questions.q${n}.a`), html: false }));

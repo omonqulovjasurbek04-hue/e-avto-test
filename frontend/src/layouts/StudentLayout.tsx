@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import EmailVerifyBanner from "@/components/auth/EmailVerifyBanner";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
@@ -52,7 +53,7 @@ export const StudentLayout: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    logout();
+    void logout();
     navigate("/login");
   };
 
@@ -165,6 +166,7 @@ export const StudentLayout: React.FC = () => {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <EmailVerifyBanner />
           <Outlet />
         </main>
       </div>

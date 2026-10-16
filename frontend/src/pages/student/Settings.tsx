@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,13 +25,16 @@ import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import NotificationPreferences from "@/components/settings/NotificationPreferences";
+import SecuritySettings from "@/components/settings/SecuritySettings";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { theme, setTheme } = useUIStore();
-  const [tab, setTab] = useState<"appearance" | "language" | "notifications" | "security">("appearance");
+  const [params] = useSearchParams();
+  type Tab = "appearance" | "language" | "notifications" | "security";
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "security" ? "security" : "appearance");
 
   const passwordSchema = z
     .object({
@@ -67,7 +70,7 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
-    logout();
+    void logout();
     navigate(ROUTES.home);
   };
 
@@ -75,7 +78,7 @@ export default function Settings() {
     { id: "appearance", label: t("settings.appearance") },
     { id: "language", label: t("settings.language") },
     { id: "notifications", label: t("settings.notifications") },
-    { id: "security", label: t("settings.title") },
+    { id: "security", label: t("security.tab") },
   ];
 
   return (
@@ -184,12 +187,12 @@ export default function Settings() {
       {tab === "notifications" && <NotificationPreferences />}
 
       {tab === "security" && (
+        <div className="space-y-6">
         <Card className="rounded-3xl border border-slate-200 dark:border-slate-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Shield className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("settings.title")}
+              <Shield className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("profile.changePassword")}
             </CardTitle>
-            <CardDescription>{t("profile.changePassword")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onPassword)} className="max-w-md space-y-4">
@@ -219,6 +222,8 @@ export default function Settings() {
             </form>
           </CardContent>
         </Card>
+        <SecuritySettings />
+        </div>
       )}
 
       <Alert variant="warning" title={t("nav.logout")} className="mt-6 rounded-3xl">

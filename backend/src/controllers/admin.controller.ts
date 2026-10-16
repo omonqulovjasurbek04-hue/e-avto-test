@@ -30,6 +30,10 @@ export const updateUserStatus = async (req: AuthRequest, res: Response): Promise
   success(res, await adminService.updateUserStatus(requireUserId(req), req.user!.role, req.params.id, isActive));
 };
 
+export const resetUserTwoFactor = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await adminService.resetTwoFactor(requireUserId(req), req.user!.role, req.params.id));
+};
+
 export const listCourses = async (_req: Request, res: Response): Promise<void> => {
   success(res, await courseService.listCourses(true));
 };

@@ -26,6 +26,7 @@ const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 
 const Dashboard = lazy(() => import("@/pages/student/Dashboard"));
 const Lessons = lazy(() => import("@/pages/student/Lessons"));
@@ -48,6 +49,7 @@ const TeacherGroupDetail = lazy(() => import("@/pages/teacher/TeacherGroupDetail
 const Settings = lazy(() => import("@/pages/student/Settings"));
 
 const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
+const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
 const AdminQuestions = lazy(() => import("@/pages/admin/AdminQuestions"));
 const AdminLessons = lazy(() => import("@/pages/admin/AdminLessons"));
 const AdminCatalog = lazy(() => import("@/pages/admin/AdminCatalog"));
@@ -57,6 +59,8 @@ const AdminCms = lazy(() => import("@/pages/admin/AdminCms"));
 const AdminExam = lazy(() => import("@/pages/admin/AdminExam"));
 const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
 const AdminAudit = lazy(() => import("@/pages/admin/AdminAudit"));
+const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const AdminSystem = lazy(() => import("@/pages/admin/AdminSystem"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 
@@ -88,6 +92,7 @@ export default function AppRoutes() {
           <Route path={ROUTES.register} element={<Register />} />
           <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
           <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
+          <Route path={ROUTES.verifyEmail} element={<VerifyEmail />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -123,6 +128,7 @@ export default function AppRoutes() {
         >
           <Route path="/admin" element={<AdminHome />} />
           <Route path="/admin/courses" element={<RequirePerm perm="catalog:manage"><AdminCourses /></RequirePerm>} />
+          <Route path="/admin/categories" element={<RequirePerm perm="catalog:manage"><AdminCategories /></RequirePerm>} />
           <Route path="/admin/lessons" element={<RequirePerm perm="catalog:manage"><AdminLessons /></RequirePerm>} />
           <Route path="/admin/questions" element={<RequirePerm perm="tests:manage"><AdminQuestions /></RequirePerm>} />
           <Route path="/admin/catalog" element={<RequirePerm perm="catalog:manage"><AdminCatalog /></RequirePerm>} />
@@ -133,6 +139,8 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<RequirePerm perm="users:manage"><AdminUsers /></RequirePerm>} />
           <Route path="/admin/media" element={<RequirePerm perm="media:manage"><AdminMedia /></RequirePerm>} />
           <Route path="/admin/audit" element={<RequirePerm perm="audit:read"><AdminAudit /></RequirePerm>} />
+          <Route path="/admin/reports" element={<RequirePerm perm="reports:read"><AdminReports /></RequirePerm>} />
+          <Route path="/admin/system" element={<RequirePerm perm="settings:manage"><AdminSystem /></RequirePerm>} />
         </Route>
 
         <Route path="/403" element={<Forbidden />} />

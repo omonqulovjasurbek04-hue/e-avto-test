@@ -25,15 +25,48 @@ if (nodeEnv === "production") {
   }
 }
 
+const sameSite = (process.env.REFRESH_COOKIE_SAMESITE || "strict").toLowerCase();
+if (!["strict", "lax", "none"].includes(sameSite)) {
+  throw new Error("REFRESH_COOKIE_SAMESITE must be strict, lax or none");
+}
+const cookieSecure = process.env.REFRESH_COOKIE_SECURE !== "false";
+if (sameSite === "none" && !cookieSecure) {
+  throw new Error("REFRESH_COOKIE_SAMESITE=none requires a Secure cookie (REFRESH_COOKIE_SECURE must not be false)");
+}
+if (nodeEnv === "production" && !cookieSecure) {
+  throw new Error("REFRESH_COOKIE_SECURE=false is not allowed in production");
+}
+
 if (nodeEnv === "production" && process.env.PAYMENT_PROVIDER === "mock") {
   throw new Error("PAYMENT_PROVIDER=mock is not allowed in production");
+}
+
+const storageDriver = (process.env.STORAGE_DRIVER || "local").toLowerCase();
+if (!["local", "s3"].includes(storageDriver)) {
+  throw new Error("STORAGE_DRIVER must be local or s3");
+}
+if (storageDriver === "s3" && (!process.env.S3_BUCKET || !process.env.S3_ACCESS_KEY_ID || !process.env.S3_SECRET_ACCESS_KEY)) {
+  throw new Error("STORAGE_DRIVER=s3 requires S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
+}
+if (nodeEnv === "production" && !/^https:\/\/[^/\s]+\/?$/i.test(process.env.PUBLIC_API_ORIGIN ?? "")) {
+  throw new Error("PUBLIC_API_ORIGIN must be the public https origin of the API in production, without a path (e.g. https://api.example.uz); used for image links");
+}
+if (nodeEnv === "production" && process.env.METRICS_TOKEN && process.env.METRICS_TOKEN.length < 24) {
+  throw new Error("METRICS_TOKEN must be at least 24 characters");
 }
 
 export const env = {
   PORT: process.env.PORT || "5000",
   DATABASE_URL: process.env.DATABASE_URL || "",
   JWT_SECRET: process.env.JWT_SECRET || DEV_SECRET,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
+  // Short-lived access token (Authorization: Bearer). Sessions are kept alive by the refresh cookie.
+  ACCESS_TOKEN_TTL: process.env.ACCESS_TOKEN_TTL || "15m",
+  REFRESH_TOKEN_TTL_DAYS: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS || "30", 10),
+  REFRESH_COOKIE_SAMESITE: sameSite as "strict" | "lax" | "none",
+  // Browsers accept Secure cookies on http://localhost, so this stays on in development too.
+  REFRESH_COOKIE_SECURE: cookieSecure,
+  // Key for encrypting TOTP secrets at rest; derived from JWT_SECRET when empty.
+  TOTP_ENCRYPTION_KEY: process.env.TOTP_ENCRYPTION_KEY || "",
   // Comma separated list of allowed browser origins.
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
   NODE_ENV: nodeEnv,
@@ -65,4 +98,29 @@ export const env = {
   LEADERBOARD_CACHE_SECONDS: parseInt(process.env.LEADERBOARD_CACHE_SECONDS || "60", 10),
   // Unpaid orders expire after this many minutes.
   ORDER_TTL_MINUTES: parseInt(process.env.ORDER_TTL_MINUTES || "60", 10),
+  // Shared store for rate limits (redis://...). Empty = per-process memory.
+  REDIS_URL: process.env.REDIS_URL || "",
+  // Error tracking (Sentry or a compatible service such as GlitchTip). Empty = disabled.
+  SENTRY_DSN: process.env.SENTRY_DSN || "",
+  SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT || nodeEnv,
+  SENTRY_TRACES_SAMPLE_RATE: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0"),
+  // Bearer token for GET /api/metrics (Prometheus format). Empty = endpoint disabled.
+  METRICS_TOKEN: process.env.METRICS_TOKEN || "",
+  // Where private media and public CMS images are stored: "local" (MEDIA_DIR) or "s3" (S3 / Cloudflare R2 / MinIO).
+  STORAGE_DRIVER: storageDriver as "local" | "s3",
+  S3_BUCKET: process.env.S3_BUCKET || "",
+  S3_REGION: process.env.S3_REGION || "auto",
+  // Custom endpoint for R2 (https://<account>.r2.cloudflarestorage.com) or MinIO. Empty = AWS.
+  S3_ENDPOINT: process.env.S3_ENDPOINT || "",
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "",
+  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "",
+  S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE === "true",
+  // Antivirus: clamd TCP address. Empty host = no scanning.
+  CLAMAV_HOST: process.env.CLAMAV_HOST || "",
+  CLAMAV_PORT: parseInt(process.env.CLAMAV_PORT || "3310", 10),
+  CLAMAV_TIMEOUT_MS: parseInt(process.env.CLAMAV_TIMEOUT_MS || "60000", 10),
+  // Public origin of this API (no /api path), used for absolute image links inside CMS content.
+  PUBLIC_API_ORIGIN: (process.env.PUBLIC_API_ORIGIN || `http://localhost:${process.env.PORT || "5000"}`).replace(/\/+$/, ""),
+  // Public CMS images (news covers, page pictures).
+  MAX_IMAGE_MB: parseInt(process.env.MAX_IMAGE_MB || "5", 10),
 };

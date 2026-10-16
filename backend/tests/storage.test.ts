@@ -17,10 +17,11 @@ describe("private storage", () => {
   it("stores a file under a random server-chosen key and reads byte ranges", async () => {
     const { tmpPath, size } = await storage.writeTemp(Readable.from([Buffer.from("0123456789")]), 100);
     expect(size).toBe(10);
-    const key = await storage.commit(tmpPath, "pdf");
+    const key = await storage.commit(tmpPath, "pdf", "application/pdf");
+    expect(fs.existsSync(tmpPath)).toBe(false);
     expect(key).toMatch(/^[a-f0-9-]{36}\.pdf$/);
     const chunks: Buffer[] = [];
-    for await (const c of storage.openRange(key, 2, 4)) chunks.push(c as Buffer);
+    for await (const c of await storage.openRange(key, 2, 4)) chunks.push(c as Buffer);
     expect(Buffer.concat(chunks).toString()).toBe("234");
     await storage.removeObject(key);
     expect(await storage.statObject(key)).toBeNull();
@@ -35,7 +36,8 @@ describe("private storage", () => {
     const BS = String.fromCharCode(92); // a backslash, built this way so tooling cannot mangle the escape
     for (const bad of ["../secret.pdf", `..${BS}secret.pdf`, `..${BS}..${BS}windows${BS}system32.pdf`, "/etc/passwd", "a.pdf", "x/../../y.mp4"]) {
       await expect(storage.statObject(bad)).resolves.toBeNull();
-      expect(() => storage.openRange(bad, 0, 1)).toThrow("Invalid storage key");
+      await expect(storage.openRange(bad, 0, 1)).rejects.toThrow("Invalid storage key");
+      await expect(storage.removeObject(bad)).rejects.toThrow("Invalid storage key");
     }
   });
 });

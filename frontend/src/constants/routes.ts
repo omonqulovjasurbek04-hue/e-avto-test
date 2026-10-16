@@ -9,6 +9,7 @@ export const ROUTES = {
   register: "/register",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  verifyEmail: "/verify-email",
   dashboard: "/dashboard",
   lessons: "/lessons",
   lessonDetails: (id: string) => `/lessons/${id}`,

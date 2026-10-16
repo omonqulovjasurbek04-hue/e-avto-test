@@ -4,6 +4,7 @@ import { ListQuery } from "../validators/course";
 import { badRequest, forbidden, notFound } from "../utils/errors";
 import { canAssignRole } from "../lib/permissions";
 import { writeAudit } from "./audit.service";
+import { revokeAllSessions } from "./session.service";
 import { getPagination } from "../utils/pagination";
 
 export const listUsers = async (query: ListQuery) => {
@@ -25,7 +26,7 @@ export const listUsers = async (query: ListQuery) => {
       orderBy: { createdAt: "desc" },
       skip,
       take,
-      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, emailVerifiedAt: true, totpEnabledAt: true },
     }),
     prisma.user.count({ where }),
   ]);
@@ -44,6 +45,7 @@ export const updateUserRole = async (actorId: string, actorRole: string, userId:
       // A role change revokes existing sessions so the new rights apply immediately.
       data: { role, tokenVersion: { increment: 1 } },
     });
+    await revokeAllSessions(userId, tx);
     await writeAudit(
       { actorId, action: "user.role.change", entity: "User", entityId: userId, before: { role: existing.role }, after: { role } },
       tx
@@ -60,11 +62,36 @@ export const updateUserStatus = async (actorId: string, actorRole: string, userI
   if (!existing) throw notFound("User not found");
   // Same privilege boundary as role changes: only a superadmin may disable or re-enable an ADMIN/SUPERADMIN account.
   if (!canAssignRole(actorRole, existing.role, existing.role)) throw forbidden("Only a superadmin can change the status of admin accounts");
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { isActive, ...(isActive ? {} : { tokenVersion: { increment: 1 } }) },
+  const user = await prisma.$transaction(async (tx) => {
+    const saved = await tx.user.update({
+      where: { id: userId },
+      data: { isActive, ...(isActive ? {} : { tokenVersion: { increment: 1 } }) },
+    });
+    if (!isActive) await revokeAllSessions(userId, tx);
+    return saved;
   });
   return { id: user.id, isActive: user.isActive };
+};
+
+/**
+ * Recovery for a staff member who lost both the authenticator and the recovery codes. Superadmin only,
+ * never for oneself, audited; existing sessions are closed so the account signs in again.
+ */
+export const resetTwoFactor = async (actorId: string, actorRole: string, userId: string) => {
+  if (actorRole !== "SUPERADMIN") throw forbidden("Only a superadmin can reset two-factor authentication");
+  if (actorId === userId) throw badRequest("Use your own security settings to turn off two-factor authentication");
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) throw notFound("User not found");
+  if (!existing.totpEnabledAt) throw badRequest("Two-factor authentication is not enabled for this user");
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, totpLastStep: null, totpRecoveryHashes: [], tokenVersion: { increment: 1 } },
+    });
+    await revokeAllSessions(userId, tx);
+    await writeAudit({ actorId, action: "user.2fa.reset", entity: "User", entityId: userId }, tx);
+  });
+  return { id: userId, twoFactorEnabled: false };
 };
 
 export const getStatistics = async () => {
@@ -91,4 +118,4 @@ export const getStatistics = async () => {
   };
 };
 
-export default { listUsers, updateUserRole, updateUserStatus, getStatistics };
+export default { listUsers, updateUserRole, updateUserStatus, resetTwoFactor, getStatistics };

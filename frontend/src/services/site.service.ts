@@ -1,4 +1,9 @@
 import { apiGet, apiGetPage, apiPost } from "./api";
+import i18n from "@/i18n";
+
+/** CMS texts come in the visitor's language (the server falls back to uz for anything not translated). */
+export const contentLanguage = () => i18n.resolvedLanguage ?? i18n.language ?? "uz";
+const lang = () => ({ lang: contentLanguage() });
 
 export interface SiteSettings {
   siteName?: string;
@@ -20,11 +25,11 @@ export interface PublicFaq { id: string; question: string; answer: string }
 export interface PublicStats { users: number; questions: number; testsTaken: number; passRate: number | null }
 
 export const siteService = {
-  settings: () => apiGet<SiteSettings>("/site-settings"),
+  settings: () => apiGet<SiteSettings>("/site-settings", lang()),
   stats: () => apiGet<PublicStats>("/public-stats"),
-  page: (slug: string) => apiGet<PublicPage>(`/pages/${slug}`),
-  news: (page = 1) => apiGetPage<NewsItem>("/news", { page, limit: 9 }),
-  article: (slug: string) => apiGet<NewsArticle>(`/news/${slug}`),
-  faq: () => apiGet<PublicFaq[]>("/faq"),
+  page: (slug: string) => apiGet<PublicPage>(`/pages/${slug}`, lang()),
+  news: (page = 1) => apiGetPage<NewsItem>("/news", { page, limit: 9, ...lang() }),
+  article: (slug: string) => apiGet<NewsArticle>(`/news/${slug}`, lang()),
+  faq: () => apiGet<PublicFaq[]>("/faq", lang()),
   contact: (d: { name: string; contact: string; message: string; website?: string }) => apiPost<{ received: boolean }>("/contact", d),
 };

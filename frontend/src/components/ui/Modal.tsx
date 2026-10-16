@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { cn } from "../../utils/cn";
 import { X } from "lucide-react";
 
@@ -21,6 +23,8 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = "md",
 }) => {
+  const { t } = useTranslation();
+  const titleId = useId();
   const isOpenResolved = open ?? isOpen;
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,7 +52,9 @@ export const Modal: React.FC<ModalProps> = ({
     "2xl": "max-w-2xl",
   };
 
-  return (
+  // Rendered into <body>, so a modal opened from inside another one (e.g. the image picker in an editor)
+  // is not clipped or offset by the outer dialog's scroll container and animation transform.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
@@ -58,6 +64,9 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Dialog */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
         className={cn(
           "relative w-full rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-fade-in z-10 max-h-[90vh] overflow-y-auto",
           maxWidthClasses[maxWidth]
@@ -66,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="flex items-start justify-between pb-3">
           <div>
             {title && (
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+              <h3 id={titleId} className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
             )}
             {description && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
@@ -75,6 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("common.close")}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
           >
             <X className="h-5 w-5" />
@@ -82,6 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
         <div className="mt-2">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

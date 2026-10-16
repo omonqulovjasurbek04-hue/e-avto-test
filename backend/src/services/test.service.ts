@@ -222,12 +222,10 @@ export const finishTest = async (testId: string, userId: string, input: TestFini
   // Only the request that actually closed the attempt notifies (double submits stay silent); in-app only, no e-mail.
   if (outcome) {
     const { score, correctAnswers, total, passed } = outcome;
-    await notify({ userId, type: "TEST_RESULT", dedupeKey: `test:${testId}`, title: passedText(passed), body: `Natija: ${score}% (${correctAnswers}/${total}). Tahlilni Tarix bo'limida ko'ring.` }).catch(() => undefined);
+    await notify({ userId, type: "TEST_RESULT", dedupeKey: `test:${testId}`, template: passed ? "TEST_PASSED" : "TEST_FAILED", vars: { score, correct: correctAnswers, total } }).catch(() => undefined);
   }
 
   return buildResult(testId, userId);
 };
-
-const passedText = (passed: boolean) => (passed ? "Test muvaffaqiyatli topshirildi" : "Test yakunlandi: o'tish bali yetmadi");
 
 export default { startTest, answerQuestion, finishTest };

@@ -1,11 +1,11 @@
 import { apiGet, apiPut } from "./api";
 import { env } from "../config/env";
-import { storage } from "../utils/storage";
+import { getAccessToken } from "./session";
 import type { Lesson } from "../types/lesson";
 import { toLesson, type ApiLesson } from "./course.service";
 
 async function completedIds(): Promise<Set<string>> {
-  if (!storage.getToken()) return new Set();
+  if (!getAccessToken()) return new Set();
   try {
     return new Set(await apiGet<string[]>("/progress/completed"));
   } catch {
@@ -28,7 +28,7 @@ export const lessonService = {
 
   /** Reports the watched share of a lesson video; the server only ever moves progress forward. */
   async updateProgress(id: string, percent: number): Promise<void> {
-    if (env.useMock || !storage.getToken()) return;
+    if (env.useMock || !getAccessToken()) return;
     await apiPut<unknown>(`/progress/${id}`, { percent: Math.min(100, Math.max(0, Math.round(percent))) });
   },
 

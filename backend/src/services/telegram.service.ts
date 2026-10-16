@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { badRequest, HttpError } from "../utils/errors";
-import { toPublicUser, issueToken } from "./auth.service";
+import { completeLogin } from "./auth.service";
 
 const SESSION_TTL_MS = 10 * 60 * 1000; // time to press Start in the bot
 const CODE_TTL_MS = 5 * 60 * 1000; // time to type the code on the site
@@ -74,7 +74,7 @@ export const startLogin = async () => {
 };
 
 /** Step 3: the user types the code the bot sent; on success the usual JWT is issued. */
-export const verifyLogin = async (sessionId: string, code: string) => {
+export const verifyLogin = async (sessionId: string, code: string, userAgent?: string) => {
   const session = await prisma.telegramLogin.findUnique({ where: { id: sessionId } });
   const invalid = () => badRequest("Code is invalid or expired");
 
@@ -109,7 +109,7 @@ export const verifyLogin = async (sessionId: string, code: string) => {
 
   if (!user.isActive) throw new HttpError(403, "Account is disabled");
 
-  return { user: toPublicUser(user), token: issueToken(user) };
+  return completeLogin(user, userAgent);
 };
 
 // ---------------------------------------------------------------------------

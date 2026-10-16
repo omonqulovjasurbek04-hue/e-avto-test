@@ -18,6 +18,8 @@ export interface AdminUser {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  emailVerifiedAt?: string | null;
+  totpEnabledAt?: string | null;
 }
 
 export interface AdminCourse {
@@ -29,6 +31,8 @@ export interface AdminCourse {
   order: number;
   isPublished: boolean;
   lessonCount: number;
+  categoryId?: string | null;
+  category?: { id: string; slug: string; name: string } | null;
 }
 
 export interface AdminCourseInput {
@@ -38,6 +42,7 @@ export interface AdminCourseInput {
   level?: string;
   order?: number;
   isPublished?: boolean;
+  categoryId?: string | null;
 }
 
 export interface AdminLesson {

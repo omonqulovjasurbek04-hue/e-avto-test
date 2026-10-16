@@ -28,7 +28,7 @@ export const MainLayout: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    void logout();
     navigate("/login");
   };
 

@@ -32,6 +32,15 @@ model User {
   failedLogins Int       @default(0)
   lockedUntil  DateTime?
   avatarUrl    String?
+  // Set once the address in `email` was confirmed through an e-mailed link; cleared when the e-mail changes.
+  emailVerifiedAt DateTime?
+  // TOTP 2FA (staff only). Secrets are AES-GCM encrypted; recovery codes are stored as SHA-256 hashes.
+  totpSecret         String?
+  totpPendingSecret  String?
+  totpEnabledAt      DateTime?
+  // Last accepted 30-second step, so a code cannot be replayed.
+  totpLastStep       Int?
+  totpRecoveryHashes String[]  @default([])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -39,6 +48,8 @@ model User {
   progress       Progress[]
   lessonProgress LessonProgress[]
   passwordResets PasswordReset[]
+  refreshTokens  RefreshToken[]
+  emailVerifications EmailVerification[]
 
   studentProfile   StudentProfile?
   teacherProfile   TeacherProfile?
@@ -62,10 +73,12 @@ model Course {
   order       Int       @default(1)
   isPublished Boolean   @default(true)
   slug        String?   @unique
+  categoryId  String?
   archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   lessons     Lesson[]
   questions   Question[]
   tests       Test[]
@@ -75,7 +88,26 @@ model Course {
   groups      TeacherGroup[]
   testConfig  TestConfig?
 
+  @@index([categoryId])
   @@map("courses")
+}
+
+/// Topic grouping of courses (e.g. "Yo'l harakati qoidalari", "Yo'l belgilari"). uz in the columns, uz_cyrl/ru in `translations`.
+model Category {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  name         String
+  description  String?
+  translations Json     @default("{}")
+  order        Int      @default(1)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  courses Course[]
+
+  @@index([isActive, order])
+  @@map("categories")
 }
 
 model Lesson {
@@ -207,6 +239,45 @@ model LessonProgress {
 
   @@unique([userId, lessonId])
   @@map("lesson_progress")
+}
+
+/// Rotating refresh tokens (only the SHA-256 hash is stored). Every login starts a family; each refresh
+/// marks the presented token used and issues a successor. Presenting a used token again revokes the family.
+model RefreshToken {
+  id           String    @id @default(uuid())
+  userId       String
+  familyId     String
+  tokenHash    String    @unique
+  // User.tokenVersion at issue time: a later bump (password/role change, logout everywhere) invalidates it.
+  tokenVersion Int
+  expiresAt    DateTime
+  usedAt       DateTime?
+  revokedAt    DateTime?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  // The address the link confirms; a link for an old address does nothing after the e-mail changed.
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verifications")
 }
 
 model PasswordReset {
@@ -702,10 +773,26 @@ model NotificationPreference {
   inApp      Boolean @default(true)
   email      Boolean @default(true)
   attendance Boolean @default(true)
+  // Language of notices and e-mails: uz | uz_cyrl | ru
+  language   String  @default("uz")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+// Admin-edited subject/body of one notice kind in one language. Missing rows fall back to the built-in texts.
+model NotificationTemplate {
+  id          String   @id @default(uuid())
+  key         String // PAYMENT_PAID, ATTENDANCE_ABSENT, SCHEDULE_NEW, ... (see lib/notificationTemplates.ts)
+  language    String // uz | uz_cyrl | ru
+  subject     String
+  body        String
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([key, language])
+  @@map("notification_templates")
 }
 
 // ───────────────────────── CMS ─────────────────────────
@@ -722,6 +809,8 @@ model Page {
   content        String        @db.Text // sanitized on write
   seoTitle       String?
   seoDescription String?
+  // The columns above are the uz version; { uz_cyrl?: {...}, ru?: {...} } hold the other languages (sanitized on write).
+  translations   Json          @default("{}")
   status         PublishStatus @default(DRAFT)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -738,6 +827,7 @@ model NewsArticle {
   coverUrl       String?
   seoTitle       String?
   seoDescription String?
+  translations   Json          @default("{}")
   status         PublishStatus @default(DRAFT)
   publishedAt    DateTime?
   createdAt      DateTime      @default(now())
@@ -748,12 +838,13 @@ model NewsArticle {
 }
 
 model FaqItem {
-  id          String   @id @default(uuid())
-  question    String
-  answer      String   @db.Text
-  order       Int      @default(1)
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  question     String
+  answer       String   @db.Text
+  translations Json     @default("{}")
+  order        Int      @default(1)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
   @@map("faq_items")
 }

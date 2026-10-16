@@ -14,12 +14,16 @@ const UUID = "6f1c1f3e-8d0c-4b8e-9d57-2b7f0a9d1c11";
 const PUBLIC: { method: string; path: RegExp }[] = [
   { method: "GET", path: /^\/(health|robots\.txt|sitemap\.xml)$/ },
   { method: "GET", path: /^\/api\/health(\/live)?$/ },
-  { method: "POST", path: /^\/api\/auth\/(register|login|forgot-password|reset-password|telegram\/(start|verify))$/ },
-  { method: "GET", path: /^\/api\/(courses|courses\/:id|courses\/:id\/lessons|lessons|lessons\/:id|leaderboard|packages|faq|site-settings|public-stats|pages\/:slug|news|news\/:slug)$/ },
+  { method: "POST", path: /^\/api\/auth\/(register|login|forgot-password|reset-password|verify-email|2fa\/login|telegram\/(start|verify))$/ },
+  // Authenticated by the httpOnly refresh cookie instead of an access token (and gated by X-Requested-With).
+  { method: "POST", path: /^\/api\/auth\/(refresh|logout)$/ },
+  { method: "GET", path: /^\/api\/(courses|courses\/:id|courses\/:id\/lessons|lessons|lessons\/:id|leaderboard|packages|faq|site-settings|public-stats|pages\/:slug|news|news\/:slug|categories|images\/:name)$/ },
   { method: "POST", path: /^\/api\/(quote|contact)$/ },
   // Authenticated by something other than a user session: provider signature / signed media token / bot secret.
   { method: "POST", path: /^\/api\/(payments\/webhook\/:provider|telegram\/webhook\/:secret)$/ },
   { method: "GET", path: /^\/api\/media\/stream\/:token$/ },
+  // Prometheus scrape: its own bearer token (METRICS_TOKEN); without it the endpoint pretends not to exist (404).
+  { method: "GET", path: /^\/api\/metrics$/ },
 ];
 
 const isPublic = (method: string, path: string) => PUBLIC.some((p) => p.method === method && p.path.test(path));

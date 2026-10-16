@@ -65,7 +65,9 @@ test.describe.serial("purchase flow", () => {
     expect(lesson.videoUrl).toContain("video.mp4");
 
     await page.goto("/notifications");
-    await expect(page.getByText("To'lov qabul qilindi")).toBeVisible();
+    await expect(page.getByText("To'lov qabul qilindi", { exact: true })).toBeVisible();
+    // The amount is shown in so'm (the database keeps tiyin), filled in by the notice template.
+    await expect(page.getByText(/^\d[\d ]* so'm to'lov qabul qilindi/)).toBeVisible();
   });
 
   test("another student cannot see that order", async () => {

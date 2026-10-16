@@ -75,9 +75,9 @@ export default function Tests() {
             {courses.map((c) => (
               <Card key={c.id}>
                 <CardContent className="flex h-full flex-col">
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="primary">{c.category}</Badge>
-                    {c.difficulty && <Badge variant="neutral">{c.difficulty}</Badge>}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {c.category ? <Badge variant="primary">{c.category}</Badge> : <span />}
+                    {c.difficulty && <Badge variant="neutral">{t(`courses.difficulty.${c.difficulty}`)}</Badge>}
                   </div>
                   <h3 className="mt-3 font-semibold text-slate-800 dark:text-slate-100">
                     {c.title}

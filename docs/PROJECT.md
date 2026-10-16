@@ -16,5 +16,5 @@ E-Avto Test — onlayn avtomobil haydash nazariyasini o'rganish, mavzulashtirilg
 ## Important Invariants
 1. Backend test topshirilayotgan paytda to'g'ri javoblarni frontendga chiqarmasligi shart.
 2. Yakuniy test natijasi, bali va o'tish holati server tomonidan hisoblanadi.
-3. Video fayllar backend serverga yuklanmaydi, faqat tashqi CDN/video storage URL saqlanadi.
+3. Video standartda tashqi CDN/video storage URL orqali beriladi. Private media (backendga yuklash) faqat `MEDIA_UPLOAD_ENABLED=true` bo'lganda ishlaydi va imzolangan, muddati qisqa havola orqali beriladi (`docs/SECURITY.md`).
 4. Barcha maxfiy kalitlar (JWT_SECRET, DATABASE_URL) faqat `.env` orqali boshqariladi.

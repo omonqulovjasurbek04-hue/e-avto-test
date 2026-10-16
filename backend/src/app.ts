@@ -19,14 +19,19 @@ import studentRoutes from "./routes/student.routes";
 import auditRoutes from "./routes/audit.routes";
 import financeRoutes from "./routes/finance.routes";
 import examRoutes from "./routes/exam.routes";
-import { mediaRoutes, adminMediaRoutes } from "./routes/media.routes";
+import { mediaRoutes, adminMediaRoutes, adminImageRoutes } from "./routes/media.routes";
 import { publicCmsRoutes, adminCmsRoutes, crawlerRoutes } from "./routes/cms.routes";
 import { staffRoutes, adminGroupRoutes, studentTeachingRoutes } from "./routes/teaching.routes";
+import { reportRoutes, systemRoutes } from "./routes/report.routes";
+import { publicCategoryRoutes, adminCategoryRoutes } from "./routes/category.routes";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { error } from "./utils/apiResponse";
 import { redactUrl } from "./utils/redact";
 import { asyncHandler } from "./middleware/asyncHandler";
 import * as telegramController from "./controllers/telegram.controller";
+import { metricsMiddleware, renderMetrics } from "./lib/monitoring";
+import { redisStatus } from "./lib/redis";
+import { safeEqual } from "./utils/safeEqual";
 
 const app: Application = express();
 
@@ -35,6 +40,7 @@ if (env.NODE_ENV === "production") app.set("trust proxy", 1);
 
 const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim()).filter(Boolean);
 
+app.use(metricsMiddleware);
 app.use(helmet());
 app.use(
   cors({
@@ -75,12 +81,35 @@ app.get("/api/health/live", (_req: Request, res: Response) => {
   res.json({ success: true, status: "alive" });
 });
 app.get("/health", asyncHandler(health));
+
+// Prometheus scrape endpoint. Off unless METRICS_TOKEN is set; the token goes in "Authorization: Bearer".
+app.get(
+  "/api/metrics",
+  asyncHandler(async (req: Request, res: Response) => {
+    const auth = req.headers.authorization ?? "";
+    if (!env.METRICS_TOKEN || !safeEqual(auth, `Bearer ${env.METRICS_TOKEN}`)) {
+      error(res, "Not found", 404);
+      return;
+    }
+    let dbUp = 1;
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      dbUp = 0;
+    }
+    const redis = redisStatus();
+    res.type("text/plain; version=0.0.4").send(
+      renderMetrics({ app_database_up: dbUp, app_redis_up: redis === "ready" ? 1 : 0, app_redis_enabled: redis === "disabled" ? 0 : 1 })
+    );
+  })
+);
 app.get("/api/health", asyncHandler(health));
 
 app.post("/api/telegram/webhook/:secret", asyncHandler(telegramController.webhook));
 app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", courseRoutes);
+app.use("/api", publicCategoryRoutes);
 app.use("/api", lessonRoutes);
 app.use("/api", testRoutes);
 app.use("/api", resultRoutes);
@@ -94,12 +123,16 @@ app.use(crawlerRoutes);
 app.use("/api", studentTeachingRoutes);
 app.use("/api", staffRoutes);
 app.use("/api/admin/catalog", adminCatalogRoutes);
+app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/audit", auditRoutes);
 app.use("/api/admin/finance", financeRoutes);
 app.use("/api/admin/exam", examRoutes);
 app.use("/api/admin/media", adminMediaRoutes);
+app.use("/api/admin/cms/images", adminImageRoutes);
 app.use("/api/admin/cms", adminCmsRoutes);
 app.use("/api/admin/groups", adminGroupRoutes);
+app.use("/api/admin/reports", reportRoutes);
+app.use("/api/admin/system", systemRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((_req: Request, res: Response) => {

@@ -14,10 +14,14 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import VideoPlayer from "@/components/video/VideoPlayer";
 import { Alert } from "@/components/ui/Alert";
+import { useAuth } from "@/hooks/useAuth";
 
 /** Plays a video from private storage through short-lived signed URLs (renewed while watching). */
 function PrivateVideo({ videoId, onProgress }: { videoId: string; onProgress: (pct: number) => void }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  // Who is watching: contact + short account id, burned over the picture.
+  const watermark = user ? `${user.email || user.phone || user.name} · ${user.id.slice(0, 8)}` : undefined;
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -33,7 +37,7 @@ function PrivateVideo({ videoId, onProgress }: { videoId: string; onProgress: (p
 
   if (failed) return <Alert variant="danger">{t("lock.privateFail")}</Alert>;
   if (!src) return <Skeleton className="aspect-video w-full" />;
-  return <VideoPlayer src={src} onProgress={onProgress} refreshSrc={() => mediaService.streamUrl("video", videoId)} />;
+  return <VideoPlayer src={src} onProgress={onProgress} watermark={watermark} refreshSrc={() => mediaService.streamUrl("video", videoId)} />;
 }
 
 export default function VideoLesson() {

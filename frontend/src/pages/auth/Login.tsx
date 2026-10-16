@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import TelegramLogin from "@/components/auth/TelegramLogin";
+import TwoFactorStep from "@/components/auth/TwoFactorStep";
+import { useAuthStore } from "@/store/auth.store";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email kiritilishi shart").email("Noto'g'ri email formati"),
@@ -25,6 +27,7 @@ export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const twoFactorPending = useAuthStore((s) => Boolean(s.twoFactorChallenge));
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -39,8 +42,9 @@ export default function Login() {
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
     try {
-      await login(values.email, values.password);
-      navigate(ROUTES.dashboard);
+      const result = await login(values.email, values.password);
+      // Accounts with 2FA stay on this page for the code step.
+      if ("token" in result) navigate(ROUTES.dashboard);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("auth.login.error");
@@ -48,6 +52,8 @@ export default function Login() {
       toast.error(message);
     }
   };
+
+  if (twoFactorPending) return <TwoFactorStep />;
 
   return (
     <div className="space-y-6">

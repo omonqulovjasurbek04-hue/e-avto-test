@@ -26,6 +26,8 @@ export const adminService = {
   setUserActive: (id: string, isActive: boolean) =>
     apiPatch<{ id: string; isActive: boolean }>(`/admin/users/${id}/status`, { isActive }),
   setUserRole: (id: string, role: UserRole) => apiPatch<AdminUser>(`/admin/users/${id}/role`, { role }),
+  /** Superadmin only: removes 2FA from an account that lost its authenticator and recovery codes. */
+  resetUserTwoFactor: (id: string) => apiDelete<{ id: string; twoFactorEnabled: boolean }>(`/admin/users/${id}/two-factor`),
 
   listCourses: () => apiGet<AdminCourse[]>("/admin/courses"),
   createCourse: (input: AdminCourseInput) => apiPost<AdminCourse>("/admin/courses", input),

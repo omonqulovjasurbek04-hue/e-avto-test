@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { siteService } from "@/services/site.service";
 import { useLoad } from "@/hooks/useLoad";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
@@ -9,7 +10,8 @@ import NotFound from "@/pages/errors/NotFound";
 /** Any published CMS page at /p/:slug. Drafts and unknown slugs both end up as 404. */
 export default function CmsPage() {
   const { slug = "" } = useParams();
-  const { data, loading, error } = useLoad(() => siteService.page(slug), [slug]);
+  const { i18n } = useTranslation();
+  const { data, loading, error } = useLoad(() => siteService.page(slug), [slug, i18n.language]);
   useDocumentMeta(data?.seoTitle || data?.title, data?.seoDescription);
 
   if (loading) return <div className="container-page max-w-3xl py-10"><Skeleton className="h-64 rounded-2xl" /></div>;

@@ -6,28 +6,63 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { Transform } from "stream";
 import { env } from "../../config/env";
+import { s3Driver } from "./s3";
+import { assertKey } from "./keys";
 
 /**
- * Local-disk private storage. The directory is outside any static/public folder and is never
- * served directly — files leave only through the authorised media endpoints.
- * A real object store (S3/R2) is NOT integrated; implement the same four functions to swap it in.
+ * Private object storage. Uploads are always streamed to a local temp file first (size limit, type
+ * sniffing and the antivirus scan need the whole file); only a verified file is committed to the
+ * configured driver:
+ *   - "local": MEDIA_DIR on disk, outside any static/public folder, never served directly.
+ *   - "s3":    an S3-compatible bucket (AWS S3, Cloudflare R2, MinIO). The bucket must be private;
+ *              files still leave only through the authorised media endpoints.
  */
-const root = () => path.resolve(process.cwd(), env.MEDIA_DIR);
+export interface StorageDriver {
+  name: "local" | "s3";
+  put(key: string, filePath: string, contentType: string): Promise<void>;
+  remove(key: string): Promise<void>;
+  stat(key: string): Promise<{ size: number } | null>;
+  /** Inclusive byte range, like fs.createReadStream. */
+  openRange(key: string, start: number, end: number): Promise<Readable>;
+}
 
-const KEY_RE = /^[a-f0-9-]{36}\.(mp4|webm|pdf|png|jpg)$/;
+const tempRoot = () => path.resolve(process.cwd(), env.MEDIA_DIR);
 
-/** Keys are generated server-side; this guard makes path traversal impossible even if one leaks from the DB. */
-const resolveKey = (key: string): string => {
-  if (!KEY_RE.test(key)) throw new Error("Invalid storage key");
-  return path.join(root(), key);
+
+const localDriver: StorageDriver = {
+  name: "local",
+  async put(key, filePath) {
+    await fsp.rename(filePath, path.join(tempRoot(), assertKey(key)));
+  },
+  async remove(key) {
+    await fsp.rm(path.join(tempRoot(), assertKey(key)), { force: true });
+  },
+  async stat(key) {
+    try {
+      return { size: (await fsp.stat(path.join(tempRoot(), assertKey(key)))).size };
+    } catch {
+      return null;
+    }
+  },
+  async openRange(key, start, end) {
+    return fs.createReadStream(path.join(tempRoot(), assertKey(key)), { start, end });
+  },
 };
+
+let override: StorageDriver | null = null;
+/** Tests swap in a fake driver. */
+export const setDriverForTests = (d: StorageDriver | null) => {
+  override = d;
+};
+
+export const driver = (): StorageDriver => override ?? (env.STORAGE_DRIVER === "s3" ? s3Driver() : localDriver);
 
 export class UploadTooLargeError extends Error {}
 
 /** Streams `input` to a temp file, enforcing a byte limit while writing. Returns the temp path and size. */
 export const writeTemp = async (input: Readable, maxBytes: number): Promise<{ tmpPath: string; size: number }> => {
-  await fsp.mkdir(root(), { recursive: true });
-  const tmpPath = path.join(root(), `.upload-${crypto.randomUUID()}`);
+  await fsp.mkdir(tempRoot(), { recursive: true });
+  const tmpPath = path.join(tempRoot(), `.upload-${crypto.randomUUID()}`);
   let size = 0;
   const limiter = new Transform({
     transform(chunk: Buffer, _enc, cb) {
@@ -58,21 +93,19 @@ export const readHead = async (filePath: string, bytes = 16): Promise<Buffer> =>
 
 export const discard = (filePath: string) => fsp.rm(filePath, { force: true });
 
-/** Moves a verified temp file to its final, random, server-chosen key. */
-export const commit = async (tmpPath: string, ext: string): Promise<string> => {
+/** Moves a verified temp file to its final, random, server-chosen key. The temp file is gone afterwards. */
+export const commit = async (tmpPath: string, ext: string, contentType: string): Promise<string> => {
   const key = `${crypto.randomUUID()}.${ext}`;
-  await fsp.rename(tmpPath, resolveKey(key));
+  try {
+    await driver().put(key, tmpPath, contentType);
+  } finally {
+    await fsp.rm(tmpPath, { force: true });
+  }
   return key;
 };
 
-export const removeObject = (key: string) => fsp.rm(resolveKey(key), { force: true });
+export const removeObject = (key: string) => driver().remove(key);
 
-export const statObject = async (key: string): Promise<{ size: number } | null> => {
-  try {
-    return { size: (await fsp.stat(resolveKey(key))).size };
-  } catch {
-    return null;
-  }
-};
+export const statObject = (key: string) => driver().stat(key);
 
-export const openRange = (key: string, start: number, end: number) => fs.createReadStream(resolveKey(key), { start, end });
+export const openRange = (key: string, start: number, end: number) => driver().openRange(key, start, end);

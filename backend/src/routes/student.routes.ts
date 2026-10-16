@@ -5,6 +5,7 @@ import * as notifications from "../services/notification.service";
 import { authMiddleware, requireUserId, AuthRequest } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { success } from "../utils/apiResponse";
+import { languageSchema } from "../lib/languages";
 
 const router = Router();
 router.use("/me", asyncHandler(authMiddleware));
@@ -30,7 +31,7 @@ router.get("/me/notification-preferences", asyncHandler(async (req: AuthRequest,
 }));
 
 router.put("/me/notification-preferences", asyncHandler(async (req: AuthRequest, res: Response) => {
-  const body = z.object({ inApp: z.boolean().optional(), email: z.boolean().optional(), attendance: z.boolean().optional() }).strict().parse(req.body);
+  const body = z.object({ inApp: z.boolean().optional(), email: z.boolean().optional(), attendance: z.boolean().optional(), language: languageSchema.optional() }).strict().parse(req.body);
   success(res, await notifications.savePreferences(requireUserId(req), body));
 }));
 

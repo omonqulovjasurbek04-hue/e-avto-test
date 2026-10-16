@@ -50,11 +50,15 @@ export default function Register() {
   const onSubmit = async (values: RegisterFormValues) => {
     setServerError(null);
     try {
-      await registerUser({
+      const { emailVerification: mail } = await registerUser({
         name: values.name,
         email: values.email,
         password: values.password,
       });
+      // Say exactly what happened to the verification e-mail; never claim it was sent when it was not.
+      if (mail?.sent) toast.success(t("auth.register.verificationSent"));
+      else if (mail && !mail.mailConfigured) toast.info(t("auth.register.verificationNoMail"));
+      else if (mail) toast.warning(t("auth.register.verificationFailed"));
       navigate(ROUTES.dashboard);
     } catch (err) {
       const message =

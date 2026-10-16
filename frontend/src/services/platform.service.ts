@@ -71,6 +71,8 @@ export interface NotificationPrefs {
   inApp: boolean;
   email: boolean;
   attendance: boolean;
+  /** Language of notices and e-mails. */
+  language: "uz" | "uz_cyrl" | "ru";
 }
 
 export interface ScheduleItem {
@@ -190,9 +192,15 @@ export interface FinanceSummary {
   ordersByStatus: Record<string, number>;
 }
 
-export interface CmsPage { id: string; slug: string; title: string; content: string; seoTitle: string | null; seoDescription: string | null; status: "DRAFT" | "PUBLISHED"; updatedAt: string }
-export interface CmsNews { id: string; slug: string; title: string; summary: string | null; content: string; coverUrl: string | null; status: "DRAFT" | "PUBLISHED"; publishedAt: string | null }
-export interface CmsFaq { id: string; question: string; answer: string; order: number; isPublished: boolean }
+/** Languages stored next to the uz base. A field left empty falls back to uz on the public site. */
+export type CmsExtraLanguage = "uz_cyrl" | "ru";
+export type CmsTranslations<F extends string> = Partial<Record<CmsExtraLanguage, Partial<Record<F, string>> | null>>;
+export interface CmsPage { id: string; slug: string; title: string; content: string; seoTitle: string | null; seoDescription: string | null; status: "DRAFT" | "PUBLISHED"; updatedAt: string; translations?: CmsTranslations<"title" | "content" | "seoTitle" | "seoDescription"> }
+export interface CmsNews { id: string; slug: string; title: string; summary: string | null; content: string; coverUrl: string | null; seoTitle?: string | null; seoDescription?: string | null; status: "DRAFT" | "PUBLISHED"; publishedAt: string | null; translations?: CmsTranslations<"title" | "summary" | "content" | "seoTitle" | "seoDescription"> }
+export interface CmsFaq { id: string; question: string; answer: string; order: number; isPublished: boolean; translations?: CmsTranslations<"question" | "answer"> }
+export type NotificationTemplateKey = "PAYMENT_PAID" | "ATTENDANCE_ABSENT" | "SCHEDULE_NEW" | "SCHEDULE_CHANGED" | "SCHEDULE_CANCELLED" | "TEST_PASSED" | "TEST_FAILED" | "ANNOUNCEMENT";
+export interface NotificationTemplateText { subject: string; body: string; custom: boolean; updatedAt: string | null; builtin: { subject: string; body: string } }
+export interface NotificationTemplate { key: NotificationTemplateKey; placeholders: string[]; required: string[]; languages: Record<"uz" | "uz_cyrl" | "ru", NotificationTemplateText> }
 export interface ContactMessage { id: string; name: string; contact: string; message: string; status: "NEW" | "READ" | "ARCHIVED"; createdAt: string }
 
 export interface TestConfig { courseId: string; questionCount: number; durationSeconds: number | null; passScore: number; maxAttempts: number | null }
@@ -285,9 +293,12 @@ export const adminPlatformService = {
   deleteFaq: (id: string) => apiDelete<unknown>(`/admin/cms/faq/${id}`),
   messages: () => apiGet<ContactMessage[]>("/admin/cms/messages"),
   setMessageStatus: (id: string, status: ContactMessage["status"]) => apiPatch<unknown>(`/admin/cms/messages/${id}`, { status }),
-  settings: () => apiGet<Record<string, unknown>>("/site-settings"),
+  settings: () => apiGet<Record<string, unknown> & { translations?: CmsTranslations<string> }>("/admin/cms/site-settings"),
   saveSettings: (d: Record<string, unknown>) => apiPut<Record<string, unknown>>("/admin/cms/site-settings", d),
 
+  notificationTemplates: () => apiGet<NotificationTemplate[]>("/admin/cms/notification-templates"),
+  saveNotificationTemplate: (key: NotificationTemplateKey, language: string, d: { subject: string; body: string }) => apiPut<unknown>(`/admin/cms/notification-templates/${key}/${language}`, d),
+  resetNotificationTemplate: (key: NotificationTemplateKey, language: string) => apiDelete<unknown>(`/admin/cms/notification-templates/${key}/${language}`),
   announce: (d: { title: string; body: string; audience: { type: "all" } | { type: "group"; groupId: string } | { type: "course"; courseId: string } }) =>
     apiPost<{ recipients: number; emailsQueued: number; emailConfigured: boolean }>("/admin/cms/announcements", d),
 
@@ -323,4 +334,59 @@ export const mediaService = {
     const r = await apiPost<{ url: string }>(`/media/${kind}/${id}/access`);
     return new URL(r.url, apiClient.defaults.baseURL).toString();
   },
+};
+
+/* ───────── CMS image library (public images) ───────── */
+
+export interface CmsImage { id: string; filename: string; mimeType: string; sizeBytes: number; createdAt?: string; path: string; url: string }
+
+export const imageService = {
+  config: () => apiGet<{ maxImageMb: number }>("/admin/cms/images/config"),
+  list: () => apiGet<CmsImage[]>("/admin/cms/images"),
+  remove: (id: string) => apiDelete<unknown>(`/admin/cms/images/${id}`),
+  /** Raw body upload; the server checks the real type (PNG/JPEG/WebP) and runs the antivirus scan. */
+  upload: async (file: File, onProgress?: (pct: number) => void): Promise<CmsImage> => {
+    const res = await apiClient.put<{ data: CmsImage }>("/admin/cms/images", file, {
+      params: { filename: file.name },
+      headers: { "Content-Type": "application/octet-stream" },
+      timeout: 0,
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+    });
+    return res.data.data;
+  },
+};
+
+/* ───────── course categories ───────── */
+
+export interface AdminCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  order: number;
+  isActive: boolean;
+  courseCount: number;
+  translations?: CmsTranslations<"name" | "description">;
+}
+export type AdminCategoryInput = Partial<Omit<AdminCategory, "id" | "courseCount">>;
+
+export const categoryService = {
+  list: () => apiGet<AdminCategory[]>("/admin/categories"),
+  save: (id: string | null, d: AdminCategoryInput) => (id ? apiPut<AdminCategory>(`/admin/categories/${id}`, d) : apiPost<AdminCategory>("/admin/categories", d)),
+  remove: (id: string) => apiDelete<unknown>(`/admin/categories/${id}`),
+};
+
+/* ───────── reports & system status ───────── */
+
+export interface TestReportRow { courseId: string | null; course: string | null; attempts: number; students: number; passed: number; passRate: number; averageScore: number; averageSeconds: number }
+export interface TestReport { total: { attempts: number; students: number; passed: number; passRate: number; averageScore: number }; rows: TestReportRow[] }
+export interface TeacherLoadRow { teacherId: string; name: string; activeGroups: number; students: number; lessons: number; planned: number; done: number; cancelled: number; hours: number; attendanceMissing: number }
+export type CheckLevel = "ok" | "warning" | "error";
+export interface SystemCheck { key: "database" | "payments" | "email" | "telegram" | "media" | "antivirus" | "enrollment" | "rateLimit" | "monitoring"; level: CheckLevel; detail?: Record<string, unknown> }
+export interface SystemStatus { environment: string; nodeVersion: string; uptimeSeconds: number; checkedAt: string; checks: SystemCheck[] }
+
+export const reportService = {
+  tests: (from: string, to: string, courseId?: string) => apiGet<TestReport>("/admin/reports/tests", { from, to, courseId }),
+  teachers: (from: string, to: string) => apiGet<{ rows: TeacherLoadRow[] }>("/admin/reports/teachers", { from, to }),
+  system: () => apiGet<SystemStatus>("/admin/system"),
 };

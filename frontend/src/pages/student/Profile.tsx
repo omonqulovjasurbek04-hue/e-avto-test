@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
-import { ROLE_LABEL } from "@/lib/permissions";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 
@@ -121,7 +120,7 @@ export default function Profile() {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
             <span className="mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
-              {ROLE_LABEL[user.role] ?? user.role}
+              {t(`roles.${user.role}`, user.role)}
             </span>
 
             <div className="mt-6 grid w-full grid-cols-2 gap-3">

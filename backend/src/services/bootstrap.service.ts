@@ -3,6 +3,7 @@ import { prisma } from "../config/database";
 import { hashPassword } from "../utils/password";
 import { conflict } from "../utils/errors";
 import { writeAudit } from "./audit.service";
+import { revokeAllSessions } from "./session.service";
 
 // Stricter than the signup rule: this account can grant every other role.
 const bootstrapSchema = z.object({
@@ -37,6 +38,7 @@ export const createFirstSuperadmin = async (input: { name?: string; email: strin
     const saved = existing
       ? await tx.user.update({ where: { id: existing.id }, data: { role: "SUPERADMIN", passwordHash, isActive: true, tokenVersion: { increment: 1 } } })
       : await tx.user.create({ data: { name: data.name, email: data.email, passwordHash, role: "SUPERADMIN" } });
+    if (existing) await revokeAllSessions(saved.id, tx);
     await writeAudit({ actorId: null, action: "bootstrap.superadmin", entity: "User", entityId: saved.id, after: { email: saved.email, promoted: Boolean(existing) } }, tx);
     return saved;
   });

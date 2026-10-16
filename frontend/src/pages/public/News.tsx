@@ -11,9 +11,9 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDateTime } from "@/utils/money";
 
 export default function News() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
-  const { data, loading, error, reload } = useLoad(() => siteService.news(page), [page]);
+  const { data, loading, error, reload } = useLoad(() => siteService.news(page), [page, i18n.language]);
 
   return (
     <div className="container-page py-10">
@@ -30,7 +30,8 @@ export default function News() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {data.items.map((n) => (
                 <Link key={n.slug} to={`/news/${n.slug}`}>
-                  <Card className="h-full transition hover:border-brand-400">
+                  <Card className="h-full overflow-hidden transition hover:border-brand-400">
+                    {n.coverUrl && <img src={n.coverUrl} alt="" loading="lazy" className="aspect-video w-full object-cover" />}
                     <CardContent className="space-y-2 p-5">
                       <p className="text-xs text-slate-500">{formatDateTime(n.publishedAt)}</p>
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white">{n.title}</h2>

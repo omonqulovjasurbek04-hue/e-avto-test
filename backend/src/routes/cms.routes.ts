@@ -8,6 +8,8 @@ import { asyncHandler } from "../middleware/asyncHandler";
 import { contactRateLimiter } from "../middleware/rateLimit.middleware";
 import { success, paginated } from "../utils/apiResponse";
 import { env } from "../config/env";
+import { languageSchema, requestLanguage } from "../lib/languages";
+import { TEMPLATE_KEYS, type TemplateKey } from "../lib/notificationTemplates";
 import {
   contactSchema, contactStatusSchema, faqSchema, faqUpdateSchema, newsSchema, newsUpdateSchema,
   pageSchema, pageUpdateSchema, siteSettingsSchema,
@@ -21,16 +23,22 @@ const actor = (req: AuthRequest) => requireUserId(req);
 // ───────────── public (read-only; drafts never appear) ─────────────
 export const publicCmsRoutes = Router();
 
-publicCmsRoutes.get("/pages/:slug", h(async (req, res) => success(res, await cms.getPublishedPage(slugParam.parse(req.params.slug)))));
+/** Language-dependent answers: shared caches must keep one copy per language. */
+const lang = (req: AuthRequest, res: Response) => {
+  res.vary("Accept-Language");
+  return requestLanguage(req);
+};
+
+publicCmsRoutes.get("/pages/:slug", h(async (req, res) => success(res, await cms.getPublishedPage(slugParam.parse(req.params.slug), lang(req, res)))));
 publicCmsRoutes.get("/news", h(async (req, res) => {
   const { page, limit } = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(50).default(10) }).parse(req.query);
-  const data = await cms.listPublishedNews(page, limit);
+  const data = await cms.listPublishedNews(page, limit, lang(req, res));
   paginated(res, data.items, { page, limit, total: data.total });
 }));
-publicCmsRoutes.get("/news/:slug", h(async (req, res) => success(res, await cms.getPublishedNews(slugParam.parse(req.params.slug)))));
-publicCmsRoutes.get("/faq", h(async (_req, res) => success(res, await cms.listPublishedFaq())));
+publicCmsRoutes.get("/news/:slug", h(async (req, res) => success(res, await cms.getPublishedNews(slugParam.parse(req.params.slug), lang(req, res)))));
+publicCmsRoutes.get("/faq", h(async (req, res) => success(res, await cms.listPublishedFaq(lang(req, res)))));
 publicCmsRoutes.get("/public-stats", h(async (_req, res) => success(res, await cms.getPublicStats())));
-publicCmsRoutes.get("/site-settings", h(async (_req, res) => success(res, await cms.getPublicSettings())));
+publicCmsRoutes.get("/site-settings", h(async (req, res) => success(res, await cms.getPublicSettings(lang(req, res)))));
 publicCmsRoutes.post("/contact", contactRateLimiter, h(async (req, res) => success(res, await cms.submitContact(contactSchema.parse(req.body)), 201)));
 
 // ───────────── crawler files (served by the API host; point the site's proxy at them) ─────────────
@@ -67,6 +75,7 @@ adminCmsRoutes.post("/faq", h(async (req, res) => success(res, await cms.createF
 adminCmsRoutes.put("/faq/:id", h(async (req, res) => success(res, await cms.updateFaq(actor(req), uuid.parse(req.params.id), faqUpdateSchema.parse(req.body)))));
 adminCmsRoutes.delete("/faq/:id", h(async (req, res) => success(res, await cms.deleteFaq(actor(req), uuid.parse(req.params.id)))));
 
+adminCmsRoutes.get("/site-settings", h(async (_req, res) => success(res, await cms.getAdminSettings())));
 adminCmsRoutes.put("/site-settings", requirePermission("settings:manage"), h(async (req, res) => success(res, await cms.saveSettings(actor(req), siteSettingsSchema.parse(req.body)))));
 
 const announceSchema = z.object({
@@ -79,6 +88,22 @@ const announceSchema = z.object({
   ]),
 });
 adminCmsRoutes.post("/announcements", h(async (req, res) => success(res, await notifications.announce(actor(req), announceSchema.parse(req.body)), 201)));
+
+// Notice texts (subject/body per kind and language); same permission as the site settings.
+const templateParams = (req: AuthRequest) => ({
+  key: z.enum(TEMPLATE_KEYS as [TemplateKey, ...TemplateKey[]]).parse(req.params.key),
+  language: languageSchema.parse(req.params.language),
+});
+const templateSchema = z.object({ subject: z.string().trim().min(1).max(160), body: z.string().trim().min(1).max(1000) }).strict();
+adminCmsRoutes.get("/notification-templates", requirePermission("settings:manage"), h(async (_req, res) => success(res, await notifications.listTemplates())));
+adminCmsRoutes.put("/notification-templates/:key/:language", requirePermission("settings:manage"), h(async (req, res) => {
+  const { key, language } = templateParams(req);
+  success(res, await notifications.saveTemplate(actor(req), key, language, templateSchema.parse(req.body)));
+}));
+adminCmsRoutes.delete("/notification-templates/:key/:language", requirePermission("settings:manage"), h(async (req, res) => {
+  const { key, language } = templateParams(req);
+  success(res, await notifications.resetTemplate(actor(req), key, language));
+}));
 
 adminCmsRoutes.get("/messages", h(async (req, res) => success(res, await cms.adminList.messages(z.enum(["NEW", "READ", "ARCHIVED"]).optional().parse(req.query.status)))));
 adminCmsRoutes.patch("/messages/:id", h(async (req, res) => success(res, await cms.setMessageStatus(actor(req), uuid.parse(req.params.id), contactStatusSchema.parse(req.body).status))));

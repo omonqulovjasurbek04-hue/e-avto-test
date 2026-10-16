@@ -1,19 +1,22 @@
 import { prisma } from "../config/database";
 import { expireStaleOrders } from "./payment.service";
 import { processEmailQueue } from "./notification.service";
+import { pruneRefreshTokens } from "./session.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Removes data that can never be used again: abandoned attempts and expired one-time records. */
 export const runCleanup = async () => {
   const now = Date.now();
-  const [abandonedTests, resets, telegram] = await Promise.all([
+  const [abandonedTests, resets, telegram, refreshTokens, verifications] = await Promise.all([
     // An unfinished attempt older than a day is past any possible deadline (max 90 minutes).
     prisma.test.deleteMany({ where: { finishedAt: null, startedAt: { lt: new Date(now - DAY_MS) } } }),
     prisma.passwordReset.deleteMany({ where: { expiresAt: { lt: new Date(now - DAY_MS) } } }),
     prisma.telegramLogin.deleteMany({ where: { expiresAt: { lt: new Date(now - DAY_MS) } } }),
+    pruneRefreshTokens(),
+    prisma.emailVerification.deleteMany({ where: { expiresAt: { lt: new Date(now - DAY_MS) } } }),
   ]);
-  return { abandonedTests: abandonedTests.count, resets: resets.count, telegram: telegram.count };
+  return { abandonedTests: abandonedTests.count, resets: resets.count, telegram: telegram.count, refreshTokens, verifications: verifications.count };
 };
 
 export const startCleanupJob = (): NodeJS.Timeout => {

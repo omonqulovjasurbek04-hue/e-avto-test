@@ -159,7 +159,7 @@ export const createSlots = async (
     await writeAudit({ actorId: actor.userId, action: "schedule.create", entity: "TeacherGroup", entityId: groupId, after: { count: intervals.length, first: from } }, tx);
     const rows = await tx.scheduleSlot.findMany({ where: { groupId, startsAt: { gte: from, lte: intervals[intervals.length - 1].startsAt } }, orderBy: { startsAt: "asc" } });
     for (const studentId of await memberIds(tx, groupId)) {
-      emailIds.push(await notify({ userId: studentId, type: "SCHEDULE_NEW", dedupeKey: `slots:${groupId}:${from.getTime()}`, title: "Yangi dars jadvali", body: `"${group.name}" guruhi uchun ${intervals.length} ta dars qo'shildi. Jadval bo'limini tekshiring.`, email: true }, tx));
+      emailIds.push(await notify({ userId: studentId, type: "SCHEDULE_NEW", dedupeKey: `slots:${groupId}:${from.getTime()}`, template: "SCHEDULE_NEW", vars: { group: group.name, count: intervals.length }, email: true }, tx));
     }
     return rows;
   });
@@ -173,7 +173,7 @@ const memberIds = async (db: Parameters<typeof notify>[1], groupId: string): Pro
 export const updateSlot = async (actor: Actor, slotId: string, data: { topic?: string | null; room?: string | null; onlineUrl?: string | null; status?: "PLANNED" | "DONE" | "CANCELLED" }) => {
   const slot = await prisma.scheduleSlot.findUnique({ where: { id: slotId } });
   if (!slot) throw notFound("Slot not found");
-  await loadAccessibleGroup(actor, slot.groupId);
+  const { name: groupName } = await loadAccessibleGroup(actor, slot.groupId);
   // Teachers may set the topic and mark a lesson done; time/room/cancel stay with the schedule managers.
   const planner = hasPermission(actor.role, "schedule:manage");
   if (!planner && (data.room !== undefined || data.onlineUrl !== undefined || data.status === "CANCELLED" || data.status === "PLANNED")) {
@@ -188,7 +188,7 @@ export const updateSlot = async (actor: Actor, slotId: string, data: { topic?: s
     const moved = (data.room !== undefined && data.room !== slot.room) || (data.onlineUrl !== undefined && data.onlineUrl !== slot.onlineUrl);
     if (cancelled || moved) {
       for (const studentId of await memberIds(tx, slot.groupId)) {
-        emailIds.push(await notify({ userId: studentId, type: cancelled ? "SCHEDULE_CANCELLED" : "SCHEDULE_CHANGED", dedupeKey: `slot:${slotId}:${next.updatedAt.getTime()}`, title: cancelled ? "Dars bekor qilindi" : "Dars ma'lumotlari o'zgardi", body: "Jadval bo'limida yangi ma'lumotni ko'ring.", email: true }, tx));
+        emailIds.push(await notify({ userId: studentId, type: cancelled ? "SCHEDULE_CANCELLED" : "SCHEDULE_CHANGED", dedupeKey: `slot:${slotId}:${next.updatedAt.getTime()}`, template: cancelled ? "SCHEDULE_CANCELLED" : "SCHEDULE_CHANGED", vars: { group: groupName, date: next.startsAt }, email: true }, tx));
       }
     }
     return next;

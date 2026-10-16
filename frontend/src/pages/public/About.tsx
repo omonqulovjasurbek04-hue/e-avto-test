@@ -7,7 +7,8 @@ import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import SafeHtml from "@/components/common/SafeHtml";
 
 export default function About() {
-  const cms = useLoad(() => siteService.page("about").catch(() => null), []);
+  const { i18n } = useTranslation();
+  const cms = useLoad(() => siteService.page("about").catch(() => null), [i18n.language]);
   useDocumentMeta(cms.data?.seoTitle || cms.data?.title, cms.data?.seoDescription);
   if (cms.loading) return <div className="container-page py-10" />;
   // A published CMS page with the slug "about" replaces the built-in text.

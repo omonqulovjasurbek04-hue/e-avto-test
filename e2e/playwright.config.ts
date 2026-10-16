@@ -45,6 +45,12 @@ export default defineConfig({
         MEDIA_DIR: path.resolve(__dirname, ".media"),
         TELEGRAM_BOT_TOKEN: "",
         CLIENT_URL: "http://localhost:5173",
+        // Absolute links of uploaded CMS images point at this API.
+        PUBLIC_API_ORIGIN: "http://localhost:5055",
+        // Machine-wide values from other projects must not leak in.
+        REDIS_URL: "",
+        CLAMAV_HOST: "",
+        STORAGE_DRIVER: "local",
       },
     },
     {

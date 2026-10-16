@@ -65,9 +65,11 @@ export default function CourseDetails() {
 
       <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 p-8 text-white shadow-xl space-y-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="primary" className="bg-brand-600 text-white font-bold">
-            {course.category}
-          </Badge>
+          {course.category && (
+            <Badge variant="primary" className="bg-brand-600 text-white font-bold">
+              {course.category}
+            </Badge>
+          )}
           {course.difficulty && (
             <Badge variant="neutral" className="bg-white/10 text-white border-white/20">
               {t(`courses.difficulty.${course.difficulty}`)}
