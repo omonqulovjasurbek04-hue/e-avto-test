@@ -43,7 +43,7 @@ export default function Orders() {
         <EmptyState
           title={t("orders.emptyTitle")}
           description={t("orders.emptyDesc")}
-          action={<Link to="/pricing"><Button>{t("orders.toPricing")}</Button></Link>}
+          action={<Link to="/my-courses"><Button>{t("orders.toPricing")}</Button></Link>}
         />
       ) : (
         <div className="space-y-4">

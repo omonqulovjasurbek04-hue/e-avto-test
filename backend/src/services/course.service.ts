@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { writeAudit } from "./audit.service";
-import { canAccessCourse } from "./access.service";
+import { lessonStates } from "./access.service";
 import { prisma } from "../config/database";
 import {
   CourseCreateInput,
@@ -15,6 +15,7 @@ import { badRequest, notFound, conflict } from "../utils/errors";
 import { getPagination } from "../utils/pagination";
 import { BASE_LANGUAGE, type Language } from "../lib/languages";
 import { localize } from "./cms.service";
+import { currentPrice } from "./catalog.service";
 
 const courseSelect = {
   id: true,
@@ -25,6 +26,8 @@ const courseSelect = {
   order: true,
   isPublished: true,
   categoryId: true,
+  studyPeriod: true,
+  section: true,
   category: { select: { id: true, slug: true, name: true, translations: true } },
   createdAt: true,
   updatedAt: true,
@@ -41,10 +44,31 @@ export const listCourses = async (includeUnpublished = false, opts: { categoryId
     orderBy: { order: "asc" },
     select: courseSelect,
   });
+  // Total length of the published lessons (seconds), so the catalogue can show how long a course takes.
+  const sums = await prisma.lesson.groupBy({
+    by: ["courseId"],
+    where: { courseId: { in: courses.map((c) => c.id) }, ...(includeUnpublished ? {} : { isPublished: true }) },
+    _sum: { duration: true },
+  });
+  const durationOf = new Map(sums.map((s) => [s.courseId, s._sum.duration ?? 0]));
+  // "From" price: the cheapest current price among the course's active packages (null = no price set).
+  const packages = await prisma.coursePackage.findMany({
+    where: { courseId: { in: courses.map((c) => c.id) }, isActive: true, archivedAt: null },
+    select: { courseId: true, prices: true },
+  });
+  const priceOf = new Map<string, { amount: number; currency: string; isSample: boolean }>();
+  for (const p of packages) {
+    const price = currentPrice(p.prices);
+    if (!price) continue;
+    const prev = priceOf.get(p.courseId);
+    if (!prev || price.amount < prev.amount) priceOf.set(p.courseId, { amount: price.amount, currency: price.currency, isSample: price.isSample });
+  }
   return courses.map(({ _count, category, ...course }) => ({
     ...course,
     category: category ? localize(category, opts.lang ?? BASE_LANGUAGE) : null,
     lessonCount: _count.lessons,
+    totalDuration: durationOf.get(course.id) ?? 0,
+    price: priceOf.get(course.id) ?? null,
   }));
 };
 
@@ -73,28 +97,69 @@ export const getCourse = async (id: string, includeUnpublished = false, viewer?:
   });
   if (!course) throw notFound("Course not found");
 
-  const locked = includeUnpublished ? false : !(await canAccessCourse(viewer, course.id));
+  const states = includeUnpublished ? null : await lessonStates(viewer, [course.id]);
   return {
     ...course,
-    lessons: course.lessons.map(({ _count, videoUrl, ...lesson }) => ({
-      ...lesson,
-      videoUrl: locked ? "" : videoUrl,
-      locked,
-      questionCount: _count.questions,
-    })),
+    lessons: course.lessons.map(({ _count, videoUrl, ...lesson }) => {
+      const state = states?.get(lesson.id) ?? { locked: !includeUnpublished, reason: includeUnpublished ? null : "purchase", unlocksAt: null };
+      return {
+        ...lesson,
+        videoUrl: state.locked ? "" : videoUrl,
+        locked: state.locked,
+        lockReason: state.reason,
+        unlocksAt: state.unlocksAt,
+        questionCount: _count.questions,
+      };
+    }),
   };
 };
 
-export const createCourse = (input: CourseCreateInput) => prisma.course.create({ data: input });
+/**
+ * Price edited together with the course: it is the price of the course's main package (lowest order),
+ * which is created as "Standart" when missing. A change closes the old price and adds a new one, so
+ * orders keep their history; the admin-entered price is real (isSample=false). null closes the price.
+ */
+const setCoursePrice = async (courseId: string, priceSom: number | null, actorId: string | null) => {
+  let pkg = await prisma.coursePackage.findFirst({ where: { courseId, archivedAt: null }, orderBy: [{ isActive: "desc" }, { order: "asc" }], include: { prices: true } });
+  if (!pkg && priceSom === null) return;
+  if (!pkg) pkg = await prisma.coursePackage.create({ data: { courseId, name: "Standart" }, include: { prices: true } });
+  const amount = priceSom === null ? null : priceSom * 100;
+  const open = pkg.prices.filter((p) => p.isActive && !p.validTo);
+  if (open.length === 1 && open[0].amount === amount && !open[0].isSample) return;
+  // One instant from this process's clock: the old price ends exactly where the new one starts, and the
+  // new one is valid immediately (the DB engine's own "now" can run a little ahead of Node's).
+  const at = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.price.updateMany({ where: { id: { in: open.map((p) => p.id) } }, data: { isActive: false, validTo: at } });
+    if (amount !== null) await tx.price.create({ data: { packageId: pkg.id, amount, currency: "UZS", isSample: false, validFrom: at } });
+    await writeAudit({ actorId, action: "price.set", entity: "CoursePackage", entityId: pkg.id, before: { amounts: open.map((p) => p.amount) }, after: { amount } }, tx);
+  });
+};
 
-export const updateCourse = async (id: string, input: CourseUpdateInput) => {
+export const createCourse = async ({ price, ...input }: CourseCreateInput, actorId: string | null = null) => {
+  const course = await prisma.course.create({ data: input });
+  if (price !== undefined) await setCoursePrice(course.id, price, actorId);
+  return course;
+};
+
+export const updateCourse = async (id: string, { price, ...input }: CourseUpdateInput, actorId: string | null = null) => {
   await getCourse(id, true);
-  return prisma.course.update({ where: { id }, data: input });
+  const course = await prisma.course.update({ where: { id }, data: input });
+  if (price !== undefined) await setCoursePrice(id, price, actorId);
+  return course;
 };
 
 export const deleteCourse = async (id: string) => {
   await getCourse(id, true);
-  await prisma.course.delete({ where: { id } });
+  // Questions survive the delete (courseId/lessonId become NULL, so past results keep them), but a course-less
+  // question is open to everyone in mixed tests. Unpublish them first so paid content does not leak into the free pool.
+  await prisma.$transaction([
+    prisma.question.updateMany({
+      where: { OR: [{ courseId: id }, { lesson: { courseId: id } }] },
+      data: { isPublished: false },
+    }),
+    prisma.course.delete({ where: { id } }),
+  ]);
   return { deleted: true };
 };
 

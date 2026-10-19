@@ -26,6 +26,8 @@ const limiter = (name: string, windowMs: number, max: number, message: string) =
   });
 
 export const authRateLimiter = limiter("auth", 60 * 1000, 20, "Too many attempts, please try again later");
+// Telegram codes are looked up by the code alone, so guessing must stay very slow: 10 tries per 15 min per IP.
+export const telegramCodeRateLimiter = limiter("tgcode", 15 * 60 * 1000, 10, "Too many code attempts, please try again later");
 export const passwordResetRateLimiter = limiter("reset", 15 * 60 * 1000, 5, "Too many reset requests, please try again later");
 export const verificationRateLimiter = limiter("verify", 15 * 60 * 1000, 5, "Too many verification e-mails, please try again later");
 export const refreshRateLimiter = limiter("refresh", 60 * 1000, 60, "Too many session refreshes, please try again shortly");

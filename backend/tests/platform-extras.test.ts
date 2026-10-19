@@ -138,6 +138,34 @@ describe.skipIf(!enabled)("platform extras", () => {
     });
   });
 
+  describe("course price, period and section from the course form", () => {
+    it("sets, changes and removes the main package price, keeping history and an audit trail", async () => {
+      const created = await request(app).post("/api/admin/courses").set(bearer("admin")).send({ title: `C ${run} priced`, description: "d", studyPeriod: "2 oy", section: "COMBINED", price: 1_500_000 });
+      expect(created.status).toBe(201);
+      const id = created.body.data.id;
+      const publicOf = async () => (await request(app).get("/api/courses")).body.data.find((c: { id: string }) => c.id === id);
+
+      expect(await publicOf()).toMatchObject({ studyPeriod: "2 oy", section: "COMBINED", price: { amount: 150_000_000, currency: "UZS", isSample: false } });
+
+      expect((await request(app).put(`/api/admin/courses/${id}`).set(bearer("admin")).send({ price: 1_700_000 })).status).toBe(200);
+      expect((await publicOf()).price.amount).toBe(170_000_000);
+      const pkg = await prisma.coursePackage.findFirstOrThrow({ where: { courseId: id }, include: { prices: true } });
+      expect(pkg.prices).toHaveLength(2); // old price closed, not deleted
+      expect(pkg.prices.filter((p) => p.isActive)).toHaveLength(1);
+
+      // Saving other fields without "price" leaves the price alone.
+      await request(app).put(`/api/admin/courses/${id}`).set(bearer("admin")).send({ title: `C ${run} priced 2` });
+      expect((await publicOf()).price.amount).toBe(170_000_000);
+
+      await request(app).put(`/api/admin/courses/${id}`).set(bearer("admin")).send({ price: null });
+      expect((await publicOf()).price).toBeNull();
+      expect(await prisma.auditLog.count({ where: { action: "price.set", entityId: pkg.id } })).toBe(3);
+
+      expect((await request(app).put(`/api/admin/courses/${id}`).set(bearer("admin")).send({ price: -5 })).status).toBe(422);
+      expect((await request(app).put(`/api/admin/courses/${id}`).set(bearer("moder")).send({ price: 1 })).status).toBe(403);
+    });
+  });
+
   describe("course categories", () => {
     let categoryId = "";
     let courseId = "";

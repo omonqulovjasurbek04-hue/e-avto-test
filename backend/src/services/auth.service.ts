@@ -14,6 +14,7 @@ import {
   UpdateProfileInput,
   ChangePasswordInput,
   ResetPasswordInput,
+  CompleteRegistrationInput,
 } from "../validators/auth";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
@@ -31,9 +32,13 @@ export const toPublicUser = (user: User) => ({
   phone: user.phone ?? undefined,
   avatarUrl: user.avatarUrl ?? undefined,
   role: user.role,
+  // Sequential account number; the site shows it as "student0001".
+  studentNumber: user.studentNumber,
   // Telegram-only accounts have no e-mail, so there is nothing to verify.
   emailVerified: user.email ? Boolean(user.emailVerifiedAt) : undefined,
   twoFactorEnabled: Boolean(user.totpEnabledAt),
+  // false = the account came from Telegram and still has to finish sign-up (name, phone, password).
+  hasPassword: Boolean(user.passwordHash),
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -55,8 +60,8 @@ export const completeLogin = async (user: User, userAgent?: string): Promise<Log
 };
 
 export const register = async (input: RegisterInput, userAgent?: string) => {
-  const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) throw conflict("Email already registered");
+  if (input.email && (await prisma.user.findUnique({ where: { email: input.email } }))) throw conflict("Email already registered");
+  if (input.phone && (await prisma.user.findUnique({ where: { phone: input.phone } }))) throw conflict("Phone number already registered");
 
   const passwordHash = await hashPassword(input.password);
   const user = await prisma.user.create({
@@ -74,7 +79,9 @@ export const register = async (input: RegisterInput, userAgent?: string) => {
 };
 
 export const login = async (input: LoginInput, userAgent?: string): Promise<LoginOutcome> => {
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  const user = input.phone
+    ? await prisma.user.findUnique({ where: { phone: input.phone } })
+    : await prisma.user.findUnique({ where: { email: input.email! } });
   // Telegram-only accounts have no password, so password login is never possible for them.
   const valid = await comparePassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
@@ -101,6 +108,23 @@ export const login = async (input: LoginInput, userAgent?: string): Promise<Logi
   return completeLogin(user, userAgent);
 };
 
+/**
+ * Second step of sign-up after the Telegram code: the Telegram-created account gets its name, phone
+ * number and password. Only once — an account that already has a password uses the profile instead.
+ */
+export const completeRegistration = async (userId: string, input: CompleteRegistrationInput) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw notFound("User not found");
+  if (user.passwordHash) throw conflict("Registration is already complete");
+  const taken = await prisma.user.findFirst({ where: { phone: input.phone, NOT: { id: userId } }, select: { id: true } });
+  if (taken) throw conflict("Phone number already registered");
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { name: input.name, phone: input.phone, passwordHash: await hashPassword(input.password) },
+  });
+  return toPublicUser(updated);
+};
+
 export const getMe = async (userId: string) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw notFound("User not found");
@@ -113,6 +137,10 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
       where: { email: input.email, NOT: { id: userId } },
     });
     if (existing) throw conflict("Email already in use");
+  }
+  if (input.phone) {
+    const taken = await prisma.user.findFirst({ where: { phone: input.phone, NOT: { id: userId } }, select: { id: true } });
+    if (taken) throw conflict("Phone number already in use");
   }
 
   const before = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });

@@ -43,6 +43,8 @@ describe.skipIf(!enabled)("E-Avto API", () => {
     if (!c) return;
     await c.prisma.user.deleteMany({ where: { id: { in: ids.users } } });
     await c.prisma.telegramLogin.deleteMany({});
+    // Questions are kept (SetNull) when a course goes; remove them so they do not pile up as course-less questions.
+    await c.prisma.question.deleteMany({ where: { OR: [{ courseId: { in: ids.courses } }, { lesson: { courseId: { in: ids.courses } } }] } });
     await c.prisma.course.deleteMany({ where: { id: { in: ids.courses } } });
     await c.prisma.$disconnect();
   });
@@ -313,10 +315,10 @@ describe.skipIf(!enabled)("E-Avto API", () => {
       const stats = await api().get("/api/statistics").set(auth(student.token));
       expect(stats.body.data).toMatchObject({ totalTests: 2, completedLessons: 1 });
 
-      const board = await api().get("/api/leaderboard");
+      // Not opted in to the public list: the student still sees their own place.
+      const board = await api().get("/api/leaderboard").set(auth(student.token));
       expect(board.status).toBe(200);
-      const me = board.body.data.find((e: { id: string }) => e.id === student.id);
-      expect(me).toMatchObject({ tests: 2, rank: expect.any(Number) });
+      expect(board.body.data.me).toMatchObject({ tests: 2, rank: expect.any(Number), visible: false });
     });
 
     it("lets admins deactivate a user, which signs them out immediately", async () => {
@@ -353,63 +355,64 @@ describe.skipIf(!enabled)("E-Avto API", () => {
     });
     afterAll(() => vi.unstubAllGlobals());
 
-    const startUpdate = (sessionId: string, tgId = 777001) => ({
+    const startUpdate = (tgId = 777001, text = "/start", from: Record<string, unknown> = { first_name: "Ali", last_name: "Valiyev" }) => ({
       update_id: 1,
-      message: { text: `/start ${sessionId}`, chat: { id: tgId, type: "private" }, from: { id: tgId, first_name: "Ali" } },
+      message: { text, chat: { id: tgId, type: "private" }, from: { id: tgId, ...from } },
     });
+    const lastCode = () => sent[sent.length - 1].match(/\b(\d{6})\b/)![1];
+    const verify = (code: string) => api().post("/api/auth/telegram/verify").send({ code });
 
-    it("issues a code on /start, and the right code logs in once", async () => {
+    it("gives a plain bot link; /start answers with a code (and a copy button) that logs in once", async () => {
       sent = [];
       const start = await api().post("/api/auth/telegram/start");
       expect(start.status).toBe(201);
-      const { sessionId, botUrl } = start.body.data;
-      expect(botUrl).toBe(`https://t.me/test_bot?start=${sessionId}`);
+      expect(start.body.data.botUrl).toBe("https://t.me/test_bot"); // no token in the link
+      expect(start.body.data.sessionId).toBeUndefined();
 
-      await c.telegram.handleUpdate(startUpdate(sessionId));
-      const code = sent[0].match(/\b(\d{6})\b/)![1];
+      await c.telegram.handleUpdate(startUpdate());
+      const code = lastCode();
+      const call = (vi.mocked(fetch).mock.calls.at(-1)![1] as { body: string }).body;
+      expect(JSON.parse(call).reply_markup.inline_keyboard[0][0].copy_text.text).toBe(code);
 
-      const wrong = await api().post("/api/auth/telegram/verify").send({ sessionId, code: code === "000000" ? "111111" : "000000" });
-      expect(wrong.status).toBe(400);
+      expect((await verify(code === "000000" ? "111111" : "000000")).status).toBe(400);
 
-      const ok = await api().post("/api/auth/telegram/verify").send({ sessionId, code });
+      const ok = await verify(code);
       expect(ok.status).toBe(200);
-      expect(ok.body.data.user).toMatchObject({ name: "Ali", role: "USER" });
+      // The full Telegram name (first + last) becomes the starting name of the account.
+      expect(ok.body.data.user).toMatchObject({ name: "Ali Valiyev", role: "USER", hasPassword: false });
+      expect(typeof ok.body.data.user.studentNumber).toBe("number");
       expect(ok.body.data.user.email).toBeUndefined();
       ids.users.push(ok.body.data.user.id);
       expect((await api().get("/api/auth/me").set(auth(ok.body.data.token))).status).toBe(200);
 
-      const replay = await api().post("/api/auth/telegram/verify").send({ sessionId, code });
-      expect(replay.status).toBe(400);
+      expect((await verify(code)).status).toBe(400); // single use
 
       // Same Telegram account -> same user on the next login.
-      sent = [];
-      const s2 = (await api().post("/api/auth/telegram/start")).body.data.sessionId;
-      await c.telegram.handleUpdate(startUpdate(s2));
-      const again = await api().post("/api/auth/telegram/verify").send({ sessionId: s2, code: sent[0].match(/\b(\d{6})\b/)![1] });
+      await c.telegram.handleUpdate(startUpdate());
+      const again = await verify(lastCode());
       expect(again.body.data.user.id).toBe(ok.body.data.user.id);
     });
 
-    it("sends only one code per session and locks after too many wrong guesses", async () => {
+    it("a new /start replaces the previous code, and an expired code does not work", async () => {
       sent = [];
-      const { sessionId } = (await api().post("/api/auth/telegram/start")).body.data;
-      await c.telegram.handleUpdate(startUpdate(sessionId, 777002));
-      await c.telegram.handleUpdate(startUpdate(sessionId, 777003)); // hijack attempt
-      expect(sent).toHaveLength(2);
-      expect(sent[1]).not.toMatch(/\b\d{6}\b/);
+      await c.telegram.handleUpdate(startUpdate(777002, "/start", { first_name: "Vali" }));
+      const first = lastCode();
+      await c.telegram.handleUpdate(startUpdate(777002, "/start", { first_name: "Vali" }));
+      const second = lastCode();
+      if (first !== second) expect((await verify(first)).status).toBe(400);
 
-      const code = sent[0].match(/\b(\d{6})\b/)![1];
-      const wrong = code === "123456" ? "654321" : "123456";
-      for (let i = 0; i < 5; i++) {
-        expect((await api().post("/api/auth/telegram/verify").send({ sessionId, code: wrong })).status).toBe(400);
-      }
-      const locked = await api().post("/api/auth/telegram/verify").send({ sessionId, code });
-      expect(locked.status).toBe(429);
+      await c.prisma.telegramLogin.updateMany({ where: { telegramId: "777002", usedAt: null }, data: { expiresAt: new Date(Date.now() - 1000) } });
+      expect((await verify(second)).status).toBe(400);
     });
 
-    it("rejects verification before /start and malformed input", async () => {
-      const { sessionId } = (await api().post("/api/auth/telegram/start")).body.data;
-      expect((await api().post("/api/auth/telegram/verify").send({ sessionId, code: "123456" })).status).toBe(400);
-      expect((await api().post("/api/auth/telegram/verify").send({ sessionId: "nope", code: "12" })).status).toBe(422);
+    it("other messages only explain how to get a code; malformed codes are rejected", async () => {
+      sent = [];
+      await c.telegram.handleUpdate(startUpdate(777003, "salom"));
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).not.toMatch(/\b\d{6}\b/);
+      expect((await verify("123456")).status).toBe(400);
+      expect((await api().post("/api/auth/telegram/verify").send({ code: "12" })).status).toBe(422);
+      expect((await api().post("/api/auth/telegram/verify").send({})).status).toBe(422);
     });
 
     it("telegram-only accounts cannot use password login", async () => {

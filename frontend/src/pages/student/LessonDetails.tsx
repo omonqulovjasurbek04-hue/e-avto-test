@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PlayCircle, FileText, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -10,12 +10,17 @@ import type { Lesson } from "@/types/lesson";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Alert } from "@/components/ui/Alert";
+import LessonLockNotice from "@/components/lesson/LessonLockNotice";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDuration } from "@/utils/formatTime";
+import SafeHtml from "@/components/common/SafeHtml";
+
+// Lesson text is stored as simple HTML (h2/h3, p, ul/ol, strong); Tailwind's reset strips their default look.
+const LESSON_TEXT =
+  "space-y-3 text-[15px] leading-relaxed text-slate-700 dark:text-slate-300 [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-slate-900 dark:[&_h2]:text-white [&_h2:first-child]:mt-0 [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-slate-800 dark:[&_h3]:text-slate-100 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_strong]:text-slate-900 dark:[&_strong]:text-white";
 
 export default function LessonDetails() {
   const { t } = useTranslation();
@@ -77,6 +82,7 @@ export default function LessonDetails() {
   }
 
   const duration = lesson.duration || lesson.durationMinutes || 0;
+  const hasVideo = Boolean(lesson.videoUrl || lesson.privateVideoId);
 
   return (
     <div className="container-page py-8">
@@ -108,24 +114,23 @@ export default function LessonDetails() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              variant="outline"
-              leftIcon={<PlayCircle className="h-5 w-5" />}
-              onClick={() => navigate(ROUTES.videoLesson(lesson.id))}
-            >
-              {t("videoLesson.title")}
-            </Button>
+            {/* Text-only lessons have no video page to open. */}
+            {(hasVideo || lesson.locked) && (
+              <Button
+                variant="outline"
+                leftIcon={<PlayCircle className="h-5 w-5" />}
+                onClick={() => navigate(ROUTES.videoLesson(lesson.id))}
+              >
+                {t("videoLesson.title")}
+              </Button>
+            )}
             <Button loading={starting} disabled={lesson.locked} title={lesson.locked ? t("lock.title") : undefined} onClick={handleStartTest}>
               {t("tests.startTest")}
             </Button>
           </div>
         </div>
 
-        {lesson.locked && (
-          <Alert variant="warning" title={t("lock.title")} className="mt-6">
-            {t("lock.details")} <Link to="/pricing" className="font-semibold underline">{t("lock.link")}</Link>
-          </Alert>
-        )}
+        {lesson.locked && <LessonLockNotice lesson={lesson} className="mt-6" />}
 
         <Card className="mt-6">
           <CardContent>
@@ -156,6 +161,14 @@ export default function LessonDetails() {
             )}
           </CardContent>
         </Card>
+
+        {lesson.content && (
+          <Card className="mt-6">
+            <CardContent>
+              <SafeHtml html={lesson.content} className={LESSON_TEXT} />
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
     </div>
   );

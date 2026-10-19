@@ -10,8 +10,9 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Select } from "@/components/ui/Select";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 
-type SwitchKey = "inApp" | "email" | "attendance";
-const KEYS: SwitchKey[] = ["inApp", "email", "attendance"];
+// No e-mail switch: the platform contacts students by phone and Telegram only.
+type SwitchKey = "inApp" | "attendance";
+const KEYS: SwitchKey[] = ["inApp", "attendance"];
 
 /** Real, saved preferences (each switch is stored on the server the moment it is changed). */
 export default function NotificationPreferences() {

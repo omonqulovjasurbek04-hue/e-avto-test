@@ -1,4 +1,6 @@
 export const APP_NAME = "E-Avto Test";
+/** Shown when the admin has not filled the contact fields (Admin → CMS → Sozlamalar overrides them). */
+export const DEFAULT_CONTACT = { phone: "+998 00 000 00 00", address: "Sirdaryo v., Yangiyer sh." } as const;
 export const PASS_THRESHOLD = 70;
 export const DEFAULT_TEST_DURATION = 45 * 60; // 45 minutes for 50 questions
 export const DEFAULT_QUESTION_COUNT = 50; // 50 questions standard

@@ -9,7 +9,7 @@ import * as storage from "../lib/media/storage";
 import { scanFile, ScannerUnavailableError } from "../lib/media/antivirus";
 import { hasPermission } from "../lib/permissions";
 import { badRequest, forbidden, HttpError, notFound, unauthorized } from "../utils/errors";
-import { canAccessCourse } from "./access.service";
+import { canAccessCourse, canAccessLesson } from "./access.service";
 import { writeAudit } from "./audit.service";
 
 interface Viewer {
@@ -214,11 +214,12 @@ const loadAsset = async (kind: MediaKind, id: string): Promise<AssetView | null>
   if (kind === "VIDEO") {
     const v = await prisma.videoAsset.findFirst({ where: { id, isArchived: false } });
     if (!v) return null;
-    const lesson = v.lessonId ? await prisma.lesson.findUnique({ where: { id: v.lessonId }, select: { courseId: true } }) : null;
+    const lesson = v.lessonId ? await prisma.lesson.findUnique({ where: { id: v.lessonId }, select: { id: true, courseId: true } }) : null;
     return {
       storageKey: v.storageKey, mimeType: v.mimeType, sizeBytes: v.sizeBytes, filename: null,
       // A video that is not attached to a lesson is visible to staff only.
-      authorized: async (viewer) => (lesson ? canAccessCourse(viewer, lesson.courseId) : hasPermission(viewer.role, "media:manage")),
+      // A lesson video opens together with its lesson (bought course, then step by step).
+      authorized: async (viewer) => (lesson ? canAccessLesson(viewer, lesson) : hasPermission(viewer.role, "media:manage")),
     };
   }
   const f = await prisma.fileAsset.findUnique({ where: { id } });

@@ -1,6 +1,6 @@
 import { prisma } from "../config/database";
 import { notFound } from "../utils/errors";
-import { accessibleCourseIds, canAccessCourse } from "./access.service";
+import { accessibleCourseIds, lessonState, lessonStates } from "./access.service";
 
 export type Viewer = { userId: string; role: string } | undefined;
 
@@ -22,13 +22,18 @@ export const listLessons = async (viewer?: Viewer) => {
       _count: { select: { questions: true } },
     },
   });
+  // Bought courses open lesson by lesson (attendance or the 2-lessons-per-3-days schedule).
+  const states = allowed === "all" && !viewer ? new Map() : await lessonStates(viewer, [...new Set(lessons.map((l) => l.courseId))]);
   return lessons.map(({ course, _count, ...lesson }) => {
-    const locked = allowed !== "all" && !allowed.has(lesson.courseId);
+    const state = states.get(lesson.id) ?? (allowed === "all" ? { locked: false, reason: null, unlocksAt: null } : { locked: true, reason: "purchase", unlocksAt: null });
+    const locked = state.locked;
     return {
     ...lesson,
     // Locked lessons expose metadata only; the video URL is withheld.
     videoUrl: locked ? "" : lesson.videoUrl,
     locked,
+    lockReason: state.reason,
+    unlocksAt: state.unlocksAt,
     category: course.title,
     questionCount: _count.questions,
     };
@@ -46,7 +51,8 @@ export const getLesson = async (id: string, viewer?: Viewer) => {
   });
   if (!lesson) throw notFound("Lesson not found");
 
-  const locked = !(await canAccessCourse(viewer, lesson.courseId));
+  const state = await lessonState(viewer, lesson);
+  const locked = state.locked;
   // A video uploaded to private storage is streamed through the signed-URL endpoints, never exposed as a link here.
   const privateVideo = locked ? null : await prisma.videoAsset.findFirst({ where: { lessonId: lesson.id, isArchived: false }, orderBy: { createdAt: "desc" }, select: { id: true } });
 
@@ -58,6 +64,8 @@ export const getLesson = async (id: string, viewer?: Viewer) => {
     description: lesson.description,
     content: locked ? null : lesson.content,
     locked,
+    lockReason: state.reason,
+    unlocksAt: state.unlocksAt,
     privateVideoId: privateVideo?.id ?? null,
     thumbnail: lesson.thumbnail,
     duration: lesson.duration,

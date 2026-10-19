@@ -11,6 +11,21 @@ async function main() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("Refusing to run the demo seed with NODE_ENV=production");
   }
+  // NODE_ENV alone is not enough: a dev shell can still point DATABASE_URL at a real server. Only local databases are allowed.
+  const host = (() => {
+    try {
+      return new URL(process.env.DATABASE_URL ?? "").hostname.replace(/^\[|\]$/g, "");
+    } catch {
+      return "";
+    }
+  })();
+  const LOCAL_HOSTS = ["localhost", "127.0.0.1", "::1"];
+  if (!LOCAL_HOSTS.includes(host) && process.env.SEED_ALLOW_NON_LOCAL_DB !== "true") {
+    throw new Error(
+      `Refusing to run the demo seed against non-local database host "${host || "?"}". ` +
+        "It deletes courses, lessons, questions and test results. Set SEED_ALLOW_NON_LOCAL_DB=true only for a disposable database.",
+    );
+  }
 
   // Demo credentials are for local development only; override them via the environment.
   const adminHash = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD || "admin123", 10);
@@ -18,10 +33,12 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "admin@eavto.uz" },
-    update: { role: "ADMIN" },
+    update: { role: "ADMIN", phone: "+998900000001" },
     create: {
       name: "Admin",
       email: "admin@eavto.uz",
+      phone: "+998900000001", // demo login: phone + password
+
       passwordHash: adminHash,
       role: "ADMIN",
     },
@@ -29,10 +46,11 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "user@eavto.uz" },
-    update: {},
+    update: { phone: "+998900000002" },
     create: {
       name: "Demo User",
       email: "user@eavto.uz",
+      phone: "+998900000002",
       passwordHash: userHash,
       role: "USER",
     },

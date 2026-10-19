@@ -24,6 +24,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import LanguageFlag from "@/components/common/LanguageFlag";
 import NotificationPreferences from "@/components/settings/NotificationPreferences";
 import SecuritySettings from "@/components/settings/SecuritySettings";
 
@@ -167,7 +168,7 @@ export default function Settings() {
                     )}
                   >
                     <div className="flex w-full items-center justify-between">
-                      <span className="text-2xl">{lang.flag}</span>
+                      <LanguageFlag code={lang.code} className="h-4 w-6" />
                       {isActive && <Check className="h-4 w-4 text-brand-600 dark:text-brand-400 font-black" />}
                     </div>
                     <div>

@@ -3,18 +3,114 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light palette: "test rang uchun.html" (surface / on-surface / primary / tertiary / secondary). */
   :root {
     color-scheme: light;
+    --slate-50: 248 249 255;
+    --slate-100: 239 244 255;
+    --slate-200: 229 238 255;
+    --slate-300: 195 198 215;
+    --slate-400: 148 151 168;
+    --slate-500: 115 118 134;
+    --slate-600: 67 70 85;
+    --slate-700: 47 58 78;
+    --slate-800: 33 49 69;
+    --slate-900: 11 28 48;
+    --slate-950: 6 17 31;
+    --brand-50: 239 244 255;
+    --brand-100: 219 225 255;
+    --brand-200: 180 197 255;
+    --brand-300: 138 166 255;
+    --brand-400: 91 133 245;
+    --brand-500: 59 116 240;
+    --brand-600: 37 99 235;
+    --brand-700: 0 74 198;
+    --brand-800: 0 62 168;
+    --brand-900: 0 45 128;
+    --brand-950: 0 23 75;
+    --emerald-50: 234 255 240;
+    --emerald-100: 199 255 202;
+    --emerald-200: 127 252 151;
+    --emerald-300: 98 223 125;
+    --emerald-400: 47 191 92;
+    --emerald-500: 0 160 70;
+    --emerald-600: 0 127 54;
+    --emerald-700: 0 99 41;
+    --emerald-800: 0 83 32;
+    --emerald-900: 0 58 22;
+    --emerald-950: 0 33 9;
+    --amber-50: 255 248 241;
+    --amber-100: 255 238 221;
+    --amber-200: 255 221 184;
+    --amber-300: 255 203 138;
+    --amber-400: 255 185 95;
+    --amber-500: 254 166 25;
+    --amber-600: 196 127 0;
+    --amber-700: 133 83 0;
+    --amber-800: 104 64 0;
+    --amber-900: 42 23 0;
+    --amber-950: 28 15 0;
   }
 
+  /* Dark palette: stock Tailwind values, unchanged. */
   html.dark {
     color-scheme: dark;
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+    --brand-50: 239 246 255;
+    --brand-100: 219 234 254;
+    --brand-200: 191 219 254;
+    --brand-300: 147 197 253;
+    --brand-400: 96 165 250;
+    --brand-500: 59 130 246;
+    --brand-600: 37 99 235;
+    --brand-700: 29 78 216;
+    --brand-800: 30 64 175;
+    --brand-900: 30 58 138;
+    --brand-950: 23 37 84;
+    --emerald-50: 236 253 245;
+    --emerald-100: 209 250 229;
+    --emerald-200: 167 243 208;
+    --emerald-300: 110 231 183;
+    --emerald-400: 52 211 153;
+    --emerald-500: 16 185 129;
+    --emerald-600: 5 150 105;
+    --emerald-700: 4 120 87;
+    --emerald-800: 6 95 70;
+    --emerald-900: 6 78 59;
+    --emerald-950: 2 44 34;
+    --amber-50: 255 251 235;
+    --amber-100: 254 243 199;
+    --amber-200: 253 230 138;
+    --amber-300: 252 211 77;
+    --amber-400: 251 191 36;
+    --amber-500: 245 158 11;
+    --amber-600: 217 119 6;
+    --amber-700: 180 83 9;
+    --amber-800: 146 64 14;
+    --amber-900: 120 53 15;
+    --amber-950: 69 26 3;
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100;
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
     font-family: theme("fontFamily.sans");
     overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
   }
 
   #root {

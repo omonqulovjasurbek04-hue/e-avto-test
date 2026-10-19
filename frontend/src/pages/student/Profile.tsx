@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User as UserIcon, Mail, Phone, Save, Loader2 } from "lucide-react";
+import { User as UserIcon, Phone, Save, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/user.service";
@@ -18,8 +18,6 @@ import { ErrorState } from "@/components/ui/ErrorState";
 
 const schema = z.object({
   name: z.string().min(2, "Ism juda qisqa"),
-  // Read-only here: Telegram accounts may have none, and changing it is not supported on this page.
-  email: z.string().optional(),
   phone: z
     .string()
     .optional()
@@ -44,7 +42,6 @@ export default function Profile() {
     resolver: zodResolver(schema),
     values: {
       name: user?.name ?? "",
-      email: user?.email ?? "",
       phone: user?.phone ?? "",
     },
   });
@@ -118,7 +115,7 @@ export default function Profile() {
             <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
               {user.name}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            {user.phone && <p className="text-sm text-slate-500 dark:text-slate-400">{user.phone}</p>}
             <span className="mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
               {t(`roles.${user.role}`, user.role)}
             </span>
@@ -158,15 +155,6 @@ export default function Profile() {
                   leftIcon={<UserIcon className="h-4 w-4" />}
                   error={errors.name?.message}
                   {...register("name")}
-                />
-                <Input
-                  label={t("profile.email")}
-                  type="email"
-                  leftIcon={<Mail className="h-4 w-4" />}
-                  error={errors.email?.message}
-                  readOnly
-                  disabled
-                  {...register("email")}
                 />
                 <Input
                   label="Telefon"

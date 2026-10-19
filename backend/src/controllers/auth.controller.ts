@@ -1,3 +1,4 @@
+import { completeRegistrationSchema } from "../validators/auth";
 import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
 import * as sessionService from "../services/session.service";
@@ -72,6 +73,10 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   await sessionService.endSession(readCookie(req, REFRESH_COOKIE));
   clearRefreshCookie(res);
   success(res, { loggedOut: true });
+};
+
+export const completeRegistration = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await authService.completeRegistration(requireUserId(req), completeRegistrationSchema.parse(req.body)));
 };
 
 export const me = async (req: AuthRequest, res: Response): Promise<void> => {

@@ -73,13 +73,13 @@ test.describe.serial("categories, CMS images, watermarked video", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Saqlash" }).click();
     await expect(page.getByRole("row", { name: new RegExp(`E2E Kurs ${s.run}`) })).toContainText(name);
 
-    // Public catalogue: the filter lists the category and narrows the grid to its course only.
+    // Public catalogue: the card is a clean picture + title; the category is shown on the course page.
     await page.goto("/courses");
-    await page.getByLabel("Kategoriya").selectOption({ label: `${name} (1)` });
-    await expect(page.getByText(`E2E Kurs ${s.run}`)).toBeVisible();
-    const cards = page.locator('a[href^="/courses/"]');
-    await expect(cards).toHaveCount(1);
-    await expect(cards.first()).toContainText(name);
+    const card = page.locator('a[href^="/courses/"]', { hasText: `E2E Kurs ${s.run}` });
+    await expect(card).toBeVisible();
+    await expect(card).not.toContainText(name);
+    await card.click();
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
 
     // Russian visitors get the translated name from the API.
     const ru = await fetch(`${API}/courses?category=${s.run}-belgilar&lang=ru`).then((r) => r.json() as Promise<{ data: { category: { name: string } }[] }>);

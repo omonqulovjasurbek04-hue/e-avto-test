@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle, History } from "lucide-react";
+import { PlayCircle, History, Lock, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { resultService } from "@/services/result.service";
+import { studentService } from "@/services/platform.service";
+import { Alert } from "@/components/ui/Alert";
+import { cn } from "@/utils/cn";
 import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Course } from "@/types/course";
@@ -24,17 +27,23 @@ export default function Tests() {
   const [error, setError] = useState(false);
   const { startTest, starting } = useStartTest();
   const [startingId, setStartingId] = useState<string | null>(null);
+  // Which courses this student bought: the server decides, the page only mirrors it (null = still loading).
+  const [access, setAccess] = useState<{ all: boolean; courseIds: string[] } | null>(null);
+  const canOpen = (courseId: string) => !access || access.all || access.courseIds.includes(courseId);
 
   const load = async () => {
     setLoading(true);
     setError(false);
     try {
-      const [cs, rs] = await Promise.all([
+      const [cs, rs, ac] = await Promise.all([
         courseService.getCourses(),
         resultService.list(),
+        // If this fails the buttons stay enabled and the server still refuses a locked test.
+        studentService.courseAccess().catch(() => null),
       ]);
       setCourses(cs);
       setResults(rs);
+      setAccess(ac);
     } catch {
       setError(true);
     } finally {
@@ -71,29 +80,59 @@ export default function Tests() {
         </div>
       ) : (
         <>
+          {access && !access.all && access.courseIds.length === 0 && (
+            <Alert variant="warning" title={t("tests.lockedTitle")} className="mt-6">
+              {t("tests.lockedHint")}{" "}
+              <Link to="/my-courses" className="font-semibold underline">{t("nav.courses")}</Link>
+            </Alert>
+          )}
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((c) => (
-              <Card key={c.id}>
+            {courses.map((c) => {
+              const open = canOpen(c.id);
+              const owned = access && !access.all && access.courseIds.includes(c.id);
+              return (
+              <Card key={c.id} className={cn(!open && "bg-slate-50/80 dark:bg-slate-900/60")}>
                 <CardContent className="flex h-full flex-col">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {c.category ? <Badge variant="primary">{c.category}</Badge> : <span />}
-                    {c.difficulty && <Badge variant="neutral">{t(`courses.difficulty.${c.difficulty}`)}</Badge>}
+                    {open ? (
+                      owned && (
+                        <Badge variant="success">
+                          <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {t("tests.owned")}
+                        </Badge>
+                      )
+                    ) : (
+                      <Badge variant="neutral">
+                        <Lock className="mr-1 h-3.5 w-3.5" /> {t("tests.lockedCourse")}
+                      </Badge>
+                    )}
                   </div>
-                  <h3 className="mt-3 font-semibold text-slate-800 dark:text-slate-100">
+                  <h3 className={cn("mt-3 font-semibold", open ? "text-slate-800 dark:text-slate-100" : "text-slate-500 dark:text-slate-400")}>
                     {c.title}
                   </h3>
                   <p className="mt-1 line-clamp-2 text-sm text-slate-500">{c.description}</p>
-                  <Button
-                    className="mt-4"
-                    loading={starting && startingId === c.id}
-                    leftIcon={<PlayCircle className="h-5 w-5" />}
-                    onClick={() => handleStart(c.id)}
-                  >
-                    {t("tests.startTest")}
-                  </Button>
+                  {/* Pushes the button to the bottom so the cards line up. */}
+                  <div className="flex-1" />
+                  {open ? (
+                    <Button
+                      className="mt-4"
+                      loading={starting && startingId === c.id}
+                      leftIcon={<PlayCircle className="h-5 w-5" />}
+                      onClick={() => handleStart(c.id)}
+                    >
+                      {t("tests.startTest")}
+                    </Button>
+                  ) : (
+                    <Link to={`/my-courses/${c.id}#packages`} className="mt-4">
+                      <Button variant="outline" className="w-full" leftIcon={<ShoppingCart className="h-5 w-5" />}>
+                        {t("tests.buyCourse")}
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-10">

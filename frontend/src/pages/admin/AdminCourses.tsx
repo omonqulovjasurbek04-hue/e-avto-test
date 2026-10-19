@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { ImagePlus, Plus, Pencil, Trash2 } from "lucide-react";
+import { ImagePickerModal } from "@/components/admin/ImageLibrary";
+import { formatMoney } from "@/utils/money";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
 import { categoryService } from "@/services/platform.service";
@@ -27,6 +29,8 @@ const emptyForm: AdminCourseInput = {
   order: 1,
   isPublished: true,
   categoryId: null,
+  studyPeriod: "",
+  section: "MAIN",
 };
 
 export default function AdminCourses() {
@@ -44,6 +48,9 @@ export default function AdminCourses() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<AdminCourse | null>(null);
   const categories = useLoad(() => categoryService.list(), []);
+  // Price is typed in whole so'm; it is sent only when it actually changed.
+  const [priceText, setPriceText] = useState("");
+  const [picker, setPicker] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -59,6 +66,7 @@ export default function AdminCourses() {
 
   const openNew = () => {
     setForm({ ...emptyForm, order: courses.length + 1 });
+    setPriceText("");
     setFormError(null);
     setEditing("new");
   };
@@ -72,7 +80,10 @@ export default function AdminCourses() {
       order: c.order,
       isPublished: c.isPublished,
       categoryId: c.categoryId ?? null,
+      studyPeriod: c.studyPeriod ?? "",
+      section: c.section ?? "MAIN",
     });
+    setPriceText(c.price ? String(Math.round(c.price.amount / 100)) : "");
     setFormError(null);
     setEditing(c);
   };
@@ -82,7 +93,19 @@ export default function AdminCourses() {
       setFormError(t("admin.courses.needTitle"));
       return;
     }
-    const payload: AdminCourseInput = { ...form, thumbnail: form.thumbnail?.trim() || null };
+    const digits = priceText.replace(/\s/g, "");
+    if (digits !== "" && !/^\d+$/.test(digits)) {
+      setFormError(t("admin.courses.priceInvalid"));
+      return;
+    }
+    const before = editing && editing !== "new" && editing.price ? Math.round(editing.price.amount / 100) : null;
+    const after = digits === "" ? null : Number(digits);
+    const payload: AdminCourseInput = {
+      ...form,
+      thumbnail: form.thumbnail?.trim() || null,
+      studyPeriod: form.studyPeriod?.trim() || null,
+      ...(after !== before ? { price: after } : {}),
+    };
     setSaving(true);
     try {
       if (editing === "new") await adminService.createCourse(payload);
@@ -134,6 +157,7 @@ export default function AdminCourses() {
                 <th className="px-4 py-3">{t("admin.courses.category")}</th>
                 <th className="px-4 py-3">{t("admin.courses.level")}</th>
                 <th className="px-4 py-3">{t("admin.courses.lessons")}</th>
+                <th className="px-4 py-3">{t("admin.courses.price")}</th>
                 <th className="px-4 py-3">{t("admin.common.status")}</th>
                 <th className="px-4 py-3 text-right">{t("admin.common.actions")}</th>
               </tr>
@@ -146,6 +170,16 @@ export default function AdminCourses() {
                   <td className="px-4 py-3">{c.category?.name ?? <span className="text-slate-500">—</span>}</td>
                   <td className="px-4 py-3">{levelLabel(c.level)}</td>
                   <td className="px-4 py-3">{c.lessonCount}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {c.price ? (
+                      <>
+                        {formatMoney(c.price.amount, c.price.currency)}
+                        {c.price.isSample && <Badge variant="warning" className="ml-2">{t("admin.courses.sample")}</Badge>}
+                      </>
+                    ) : (
+                      <span className="text-slate-500">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant={c.isPublished ? "success" : "neutral"}>
                       {c.isPublished ? t("admin.common.published") : t("admin.common.draft")}
@@ -182,10 +216,27 @@ export default function AdminCourses() {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
+          <div className="flex items-end gap-3">
+            {form.thumbnail && <img src={form.thumbnail} alt="" className="h-16 w-28 shrink-0 rounded-lg object-cover" />}
+            <div className="min-w-0 flex-1">
+              <Input
+                label={t("admin.courses.thumbnail")}
+                value={form.thumbnail ?? ""}
+                onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+              />
+            </div>
+            <Button variant="outline" leftIcon={<ImagePlus className="h-4 w-4" />} onClick={() => setPicker(true)}>
+              {t("admin.images.choosePicture")}
+            </Button>
+          </div>
+          <ImagePickerModal open={picker} onClose={() => setPicker(false)} onPick={(img) => setForm({ ...form, thumbnail: img.url })} />
           <Input
-            label={t("admin.courses.thumbnail")}
-            value={form.thumbnail ?? ""}
-            onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+            label={t("admin.courses.priceSom")}
+            inputMode="numeric"
+            placeholder="5 900 000"
+            helperText={t("admin.courses.priceHint")}
+            value={priceText}
+            onChange={(e) => setPriceText(e.target.value)}
           />
           <Select
             label={t("admin.courses.category")}
@@ -193,6 +244,20 @@ export default function AdminCourses() {
             value={form.categoryId ?? ""}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value || null })}
           />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label={t("admin.courses.section")}
+              options={(["MAIN", "COMBINED", "EXTRA"] as const).map((v) => ({ value: v, label: t(`courses.section.${v}`) }))}
+              value={form.section ?? "MAIN"}
+              onChange={(e) => setForm({ ...form, section: e.target.value as AdminCourseInput["section"] })}
+            />
+            <Input
+              label={t("admin.courses.studyPeriod")}
+              placeholder="2–2,5 oy"
+              value={form.studyPeriod ?? ""}
+              onChange={(e) => setForm({ ...form, studyPeriod: e.target.value })}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label={t("admin.courses.level")}

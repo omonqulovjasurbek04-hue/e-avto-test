@@ -12,7 +12,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
       <div className="absolute top-4 right-4">
-        <LanguageSwitcher variant="pills" />
+        <LanguageSwitcher />
       </div>
       <p className="text-8xl font-extrabold text-brand-600">404</p>
       <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">

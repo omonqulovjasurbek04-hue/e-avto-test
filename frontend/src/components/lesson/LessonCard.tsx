@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Lock, PlayCircle } from "lucide-react";
 import type { Lesson } from "@/types/lesson";
 import { ROUTES } from "@/constants/routes";
 import { formatDuration } from "@/utils/formatTime";
+import { lockHint } from "./LessonLockNotice";
 
 export default function LessonCard({
   lesson,
@@ -13,7 +14,7 @@ export default function LessonCard({
   index: number;
   courseId: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const duration = lesson.duration || lesson.durationMinutes || 0;
 
   return (
@@ -27,7 +28,13 @@ export default function LessonCard({
         </div>
         <div>
           <p className="font-medium text-slate-800 dark:text-slate-100">{lesson.title}</p>
-          <p className="text-xs text-slate-500">{formatDuration(duration)}</p>
+          <p className="text-xs text-slate-500">
+            {formatDuration(duration)}
+            {/* A closed lesson says when (date) or how (next class) it opens. */}
+            {lesson.locked && lesson.lockReason !== "purchase" && (
+              <span className="ml-2 font-medium text-amber-600 dark:text-amber-400">· {lockHint(lesson, t, i18n.language)}</span>
+            )}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -37,7 +44,7 @@ export default function LessonCard({
           <Circle className="h-5 w-5 text-slate-300" />
         )}
         {lesson.locked ? (
-          <Lock className="h-5 w-5 text-slate-400" aria-label={t("lock.locked")} />
+          <Lock className="h-5 w-5 text-slate-400" aria-label={lockHint(lesson, t, i18n.language)} />
         ) : (
           <PlayCircle className="h-5 w-5 text-brand-600" />
         )}

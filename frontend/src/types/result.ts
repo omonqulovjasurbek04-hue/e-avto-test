@@ -35,15 +35,27 @@ export interface StartTestResponse {
   questions: TestQuestion[];
 }
 
+/** Public leaderboard row: only students who agreed to be listed, with a shortened name ("Azizbek K."). */
 export interface LeaderboardEntry {
-  id: string;
-  rank?: number;
+  rank: number;
   name: string;
-  points: number;
+  course: string | null;
   tests: number;
-  averageScore: number;
-  avatarColor?: string;
+  /** Percent of correct answers over all counted attempts. */
+  accuracy: number;
+  points: number;
+  isMe: boolean;
 }
+
+export interface Leaderboard {
+  stats: { students: number; testsTaken: number; averageAccuracy: number | null };
+  entries: LeaderboardEntry[];
+  /** The viewer's own position (private to them); null for guests. */
+  me: { rank: number | null; points: number; tests: number; accuracy: number; visible: boolean } | null;
+  rules: { perCorrect: number; perfectBonus: number; firstTryPassBonus: number };
+}
+
+export type LeaderboardSort = "points" | "accuracy" | "tests";
 
 export interface ProgressStats {
   weekly: { date: string; count: number }[];

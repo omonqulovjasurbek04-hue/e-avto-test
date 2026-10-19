@@ -4,8 +4,8 @@ import { loginViaUi, state } from "./helpers";
 // Dark mode regression: on every main page, visible text must keep at least 3:1 contrast against the
 // surface it sits on. (It caught dark:bg-brand-950 classes that generated nothing because the palette
 // had no 950 shade, leaving light-blue text on white badges.) Text over gradients/images is skipped.
-const PUBLIC = ["/", "/courses", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/login", "/register", "/forgot-password"];
-const STUDENT = ["/dashboard", "/lessons", "/tests", "/history", "/progress", "/leaderboard", "/profile", "/settings", "/orders", "/schedule", "/attendance", "/notifications"];
+const PUBLIC = ["/", "/courses", "/news", "/faq", "/contact", "/about", "/privacy", "/login", "/register", "/forgot-password"];
+const STUDENT = ["/dashboard", "/lessons", "/tests", "/pricing", "/leaderboard", "/profile", "/settings", "/orders", "/schedule", "/attendance", "/notifications"];
 
 const lowContrast = () => {
   const lum = (c: number[]) => {

@@ -7,9 +7,9 @@ import uzCyrl from "@/locales/uz_cyrl.json";
 import ru from "@/locales/ru.json";
 
 export const SUPPORTED_LANGUAGES = [
-  { code: "uz", name: "O'zbek", short: "UZ", flag: "🇺🇿" },
-  { code: "uz_cyrl", name: "Ўзбек", short: "ЎЗ", flag: "🇺🇿" },
-  { code: "ru", name: "Русский", short: "RU", flag: "🇷🇺" },
+  { code: "uz", name: "O'zbekcha", short: "UZ" },
+  { code: "uz_cyrl", name: "Ўзбекча", short: "ЎЗ" },
+  { code: "ru", name: "Русский", short: "RU" },
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -24,6 +24,7 @@ i18n
       ru: { translation: ru },
     },
     fallbackLng: "uz",
+    supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     interpolation: { escapeValue: false },
     detection: {
       order: ["localStorage", "navigator"],
@@ -31,5 +32,12 @@ i18n
       lookupLocalStorage: "i18nextLng",
     },
   });
+
+// Keep <html lang> in step with the UI language (screen readers, hyphenation, browser translation prompts).
+const htmlLang = (lng: string) => (lng === "uz_cyrl" ? "uz-Cyrl" : lng);
+document.documentElement.lang = htmlLang(i18n.resolvedLanguage ?? "uz");
+i18n.on("languageChanged", (lng) => {
+  document.documentElement.lang = htmlLang(lng);
+});
 
 export default i18n;

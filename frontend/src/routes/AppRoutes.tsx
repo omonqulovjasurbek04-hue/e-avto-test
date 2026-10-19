@@ -5,6 +5,8 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { StudentLayout } from "@/layouts/StudentLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import GuestRoute from "./GuestRoute";
+import RequireCourse from "./RequireCourse";
 import { AdminRoute, RequirePerm } from "./AdminRoute";
 import { TeacherRoute } from "./TeacherRoute";
 import { FullSpinner } from "@/components/ui/Spinner";
@@ -26,7 +28,6 @@ const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
-const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 
 const Dashboard = lazy(() => import("@/pages/student/Dashboard"));
 const Lessons = lazy(() => import("@/pages/student/Lessons"));
@@ -36,9 +37,7 @@ const Tests = lazy(() => import("@/pages/student/Tests"));
 const TestPage = lazy(() => import("@/pages/student/TestPage"));
 const TestResult = lazy(() => import("@/pages/student/TestResult"));
 const TestReview = lazy(() => import("@/pages/student/TestReview"));
-const History = lazy(() => import("@/pages/student/History"));
-const Progress = lazy(() => import("@/pages/student/Progress"));
-const Leaderboard = lazy(() => import("@/pages/student/Leaderboard"));
+const Leaderboard = lazy(() => import("@/pages/public/Leaderboard"));
 const Profile = lazy(() => import("@/pages/student/Profile"));
 const Orders = lazy(() => import("@/pages/student/Orders"));
 const Schedule = lazy(() => import("@/pages/student/Schedule"));
@@ -73,13 +72,17 @@ export default function AppRoutes() {
     <Suspense fallback={<FullSpinner />}>
       <Routes>
         <Route element={<MainLayout />}>
-          <Route path={ROUTES.home} element={<Home />} />
+          {/* The landing page is for guests: a signed-in user opening the site goes to the dashboard. */}
+          <Route element={<GuestRoute />}>
+            <Route path={ROUTES.home} element={<Home />} />
+          </Route>
           <Route path={ROUTES.courses} element={<Courses />} />
           <Route path="/courses/:courseId" element={<CourseDetails />} />
           <Route path={ROUTES.about} element={<About />} />
           <Route path={ROUTES.contact} element={<Contact />} />
           <Route path={ROUTES.faq} element={<Faq />} />
-          <Route path="/pricing" element={<Pricing />} />
+          {/* Public: guests see the ranking too; a signed-in student also sees their own place. */}
+          <Route path={ROUTES.leaderboard} element={<Leaderboard />} />
           <Route path="/news" element={<News />} />
           <Route path="/news/:slug" element={<NewsDetail />} />
           <Route path="/p/:slug" element={<CmsPage />} />
@@ -88,28 +91,35 @@ export default function AppRoutes() {
         </Route>
 
         <Route element={<AuthLayout />}>
-          <Route path={ROUTES.login} element={<Login />} />
+          {/* Signed-in users skip these and land on the dashboard. */}
+          <Route element={<GuestRoute />}>
+            <Route path={ROUTES.login} element={<Login />} />
+            <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
+          </Route>
+          {/* Register checks the session itself: a Telegram sign-up without a password finishes step 2 here. */}
           <Route path={ROUTES.register} element={<Register />} />
-          <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
           <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
-          <Route path={ROUTES.verifyEmail} element={<VerifyEmail />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
           <Route element={<StudentLayout />}>
             <Route path={ROUTES.dashboard} element={<Dashboard />} />
-            <Route path={ROUTES.lessons} element={<Lessons />} />
-            <Route path="/lessons/:lessonId" element={<LessonDetails />} />
-            <Route path="/lessons/:lessonId/video" element={<VideoLesson />} />
-            <Route path={ROUTES.tests} element={<Tests />} />
+            {/* The course catalogue inside the student panel (same page as the public /courses). */}
+            <Route path="/my-courses" element={<Courses />} />
+            <Route path="/my-courses/:courseId" element={<CourseDetails />} />
+            {/* Lessons and tests need a bought course; without one the student lands on the catalogue. */}
+            <Route path={ROUTES.lessons} element={<RequireCourse><Lessons /></RequireCourse>} />
+            <Route path="/lessons/:lessonId" element={<RequireCourse><LessonDetails /></RequireCourse>} />
+            <Route path="/lessons/:lessonId/video" element={<RequireCourse><VideoLesson /></RequireCourse>} />
+            <Route path={ROUTES.tests} element={<RequireCourse><Tests /></RequireCourse>} />
             <Route path="/tests/:testId" element={<TestPage />} />
             <Route path="/tests/:testId/result" element={<TestResult />} />
             <Route path="/tests/:testId/review" element={<TestReview />} />
-            <Route path={ROUTES.history} element={<History />} />
-            <Route path={ROUTES.progress} element={<Progress />} />
-            <Route path={ROUTES.leaderboard} element={<Leaderboard />} />
+            {/* The ranking inside the student panel (same page as the public /leaderboard). */}
+            <Route path="/my-rating" element={<Leaderboard />} />
             <Route path={ROUTES.profile} element={<Profile />} />
             <Route path={ROUTES.settings} element={<Settings />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/attendance" element={<Attendance />} />

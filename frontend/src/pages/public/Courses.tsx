@@ -1,62 +1,28 @@
 import { useEffect, useState } from "react";
-import { Search, BookOpen, RotateCcw } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { DIFFICULTIES } from "@/constants/categories";
-import { courseService, type PublicCategory } from "@/services/course.service";
-import type { Course } from "@/types/course";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { courseService } from "@/services/course.service";
+import type { Course, CourseSection } from "@/types/course";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import CourseCard from "@/components/course/CourseCard";
 
+const SECTIONS: CourseSection[] = ["MAIN", "COMBINED", "EXTRA"];
+
 export default function Courses() {
   const { t, i18n } = useTranslation();
-  const [categories, setCategories] = useState<PublicCategory[]>([]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [difficulty, setDifficulty] = useState("all");
-  const [sort, setSort] = useState("newest");
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const debouncedSearch = useDebounce(search, 300);
-
-  // Category names come from the API in the visitor's language.
-  useEffect(() => {
-    courseService.getCategories().then(setCategories).catch(() => setCategories([]));
-  }, [i18n.language]);
-
-  const categoryOptions = [
-    { value: "all", label: t("courses.allCategories") },
-    ...categories.map((c) => ({ value: c.slug, label: `${c.name} (${c.courseCount})` })),
-  ];
-
-  const difficultyOptions = [
-    { value: "all", label: t("courses.allLevels") },
-    ...DIFFICULTIES.map((d) => ({ value: d.value, label: t(`courses.difficulty.${d.value}`) })),
-  ];
-
-  const sortOptions = [
-    { value: "newest", label: t("courses.sortNewest") },
-    { value: "title", label: t("courses.sortTitle") },
-  ];
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
     courseService
-      .getCourses({
-        search: debouncedSearch,
-        category: category === "all" ? undefined : category,
-        difficulty: difficulty === "all" ? undefined : difficulty,
-        sort,
-      })
+      .getCourses() // API order = the "order" set by the admin
       .then((data) => {
         if (active) setCourses(data);
       })
@@ -69,68 +35,15 @@ export default function Courses() {
     return () => {
       active = false;
     };
-  }, [debouncedSearch, category, difficulty, sort, t, i18n.language]);
-
-  const hasFilters = search !== "" || category !== "all" || difficulty !== "all" || sort !== "newest";
-
-  const handleReset = () => {
-    setSearch("");
-    setCategory("all");
-    setDifficulty("all");
-    setSort("newest");
-  };
+  }, [t, i18n.language, attempt]);
 
   return (
     <div className="container-page py-10 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("courses.title")}</h1>
-          <p className="mt-1.5 text-sm text-slate-500 max-w-xl">
-            {t("courses.description")}
-          </p>
-        </div>
-
-        {hasFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-            className="self-start md:self-auto text-xs"
-          >
-            {t("common.cancel")}
-          </Button>
-        )}
-      </div>
-
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
-          <Input
-            label={t("common.search")}
-            placeholder={t("courses.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="h-4 w-4" />}
-          />
-          <Select
-            label={t("courses.category")}
-            options={categoryOptions}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
-          <Select
-            label={t("courses.level")}
-            options={difficultyOptions}
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-          />
-          <Select
-            label={t("courses.sort")}
-            options={sortOptions}
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          />
-        </div>
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("courses.title")}</h1>
+        <p className="mt-1.5 text-sm text-slate-500 max-w-xl">
+          {t("courses.description")}
+        </p>
       </div>
 
       {loading ? (
@@ -140,7 +53,7 @@ export default function Courses() {
           ))}
         </div>
       ) : error ? (
-        <ErrorState message={error} onRetry={() => setLoading(true)} />
+        <ErrorState message={error} onRetry={() => setAttempt((n) => n + 1)} />
       ) : courses.length === 0 ? (
         <EmptyState
           icon={<BookOpen className="h-12 w-12" />}
@@ -148,10 +61,26 @@ export default function Courses() {
           description={t("common.noResults")}
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c) => (
-            <CourseCard key={c.id} course={c} />
-          ))}
+        // One block per catalogue section, in the admin's order inside each block; empty blocks are hidden.
+        <div className="space-y-12">
+          {SECTIONS.map((section) => {
+            const list = courses.filter((c) => (c.section ?? "MAIN") === section);
+            if (list.length === 0) return null;
+            return (
+              <section key={section} aria-labelledby={`courses-${section}`} className="space-y-5">
+                <div>
+                  <h2 id={`courses-${section}`} className="text-xl font-bold text-slate-900 dark:text-white">{t(`courses.section.${section}`)}</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(`courses.sectionHint.${section}`)}</p>
+                </div>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {list.map((c) => (
+                    <CourseCard key={c.id} course={c} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+          {courses.some((c) => c.price?.isSample) && <p className="text-xs text-slate-500 dark:text-slate-400">{t("courses.sampleNote")}</p>}
         </div>
       )}
     </div>

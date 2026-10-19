@@ -2,7 +2,7 @@ import { apiGet, apiPut } from "./api";
 import { authService } from "./auth.service";
 import { env } from "../config/env";
 import type { User, UserProfile, UpdateProfilePayload } from "../types/user";
-import type { LeaderboardEntry, ProgressStats, TestResultSummary } from "../types/result";
+import type { Leaderboard, LeaderboardSort, ProgressStats, TestResultSummary } from "../types/result";
 
 interface ApiStatistics {
   totalTests: number;
@@ -62,10 +62,12 @@ export const userService = {
     return res.user;
   },
 
-  async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    if (env.useMock) return (await import("../data/mockResults")).mockLeaderboard;
-    return apiGet<LeaderboardEntry[]>("/leaderboard");
+  /** Points are computed on the server; the token (if any) adds the viewer's own private position. */
+  async getLeaderboard(params: { courseId?: string; sort?: LeaderboardSort } = {}): Promise<Leaderboard> {
+    return apiGet<Leaderboard>("/leaderboard", params);
   },
+
+  setLeaderboardVisibility: (visible: boolean) => apiPut<{ visible: boolean }>("/users/me/leaderboard", { visible }),
 
   async getProgressStats(): Promise<ProgressStats> {
     if (env.useMock) return (await import("../data/mockResults")).mockProgressSummary;

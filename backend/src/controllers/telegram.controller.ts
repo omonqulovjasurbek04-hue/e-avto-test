@@ -7,8 +7,7 @@ import { env } from "../config/env";
 import { sendLoginOutcome } from "./auth.controller";
 
 const verifySchema = z.object({
-  sessionId: z.string().uuid(),
-  code: z.string().regex(/^\d{6}$/, "Code must be 6 digits"),
+  code: z.string().trim().regex(/^\d{6}$/, "Code must be 6 digits"),
 });
 
 export const start = async (_req: Request, res: Response): Promise<void> => {
@@ -16,8 +15,8 @@ export const start = async (_req: Request, res: Response): Promise<void> => {
 };
 
 export const verify = async (req: Request, res: Response): Promise<void> => {
-  const { sessionId, code } = verifySchema.parse(req.body);
-  sendLoginOutcome(res, await telegramService.verifyLogin(sessionId, code, req.get("user-agent") ?? undefined));
+  const { code } = verifySchema.parse(req.body);
+  sendLoginOutcome(res, await telegramService.verifyLogin(code, req.get("user-agent") ?? undefined));
 };
 
 /** Webhook mode: Telegram posts updates here; the secret in the URL authenticates the caller. */

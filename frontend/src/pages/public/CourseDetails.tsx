@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import type { Course } from "@/types/course";
@@ -7,12 +7,12 @@ import type { Lesson } from "@/types/lesson";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
+import CoursePackages from "@/components/course/CoursePackages";
 import {
   ArrowLeft,
   BookOpen,
   Clock,
   PlayCircle,
-  ShieldCheck,
 } from "lucide-react";
 
 export default function CourseDetails() {
@@ -21,6 +21,10 @@ export default function CourseDetails() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  // Opened from the student panel ("Kurslar"): back link and layout stay in the panel.
+  const location = useLocation();
+  const inPanel = location.pathname.startsWith("/my-courses");
+  const catalog = inPanel ? "/my-courses" : "/courses";
 
   useEffect(() => {
     if (!courseId) return;
@@ -35,6 +39,14 @@ export default function CourseDetails() {
       .finally(() => setLoading(false));
   }, [courseId]);
 
+  // "…#packages" links (from a locked lesson or test) land on the prices once the page is there.
+  useEffect(() => {
+    if (loading || location.hash !== "#packages") return;
+    // After the app's scroll-to-top on navigation has run.
+    const timer = setTimeout(() => document.getElementById("packages")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+    return () => clearTimeout(timer);
+  }, [loading, location.hash]);
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -47,7 +59,7 @@ export default function CourseDetails() {
     return (
       <div className="container-page py-16 text-center space-y-4">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t("courses.noCourses")}</h2>
-        <Link to="/courses">
+        <Link to={catalog}>
           <Button variant="outline">{t("courses.title")}</Button>
         </Link>
       </div>
@@ -55,9 +67,9 @@ export default function CourseDetails() {
   }
 
   return (
-    <div className="container-page py-10 space-y-8 pb-16">
+    <div className={inPanel ? "space-y-8 pb-16" : "container-page py-10 space-y-8 pb-16"}>
       <Link
-        to="/courses"
+        to={catalog}
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
       >
         <ArrowLeft className="h-4 w-4" /> {t("courses.title")}
@@ -89,14 +101,18 @@ export default function CourseDetails() {
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4 text-brand-400" />
-            {t("courseDetails.duration", { hours: Math.round((course.totalDurationMinutes || 180) / 60) })}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Rasmiy YHQ 2026
+            {(course.totalDurationMinutes ?? 0) >= 60
+              ? t("courses.hours", { count: Math.round((course.totalDurationMinutes ?? 0) / 60) })
+              : t("courses.minutes", { count: course.totalDurationMinutes ?? 0 })}
           </span>
         </div>
       </div>
+
+      {/* Packages and prices of this course, with the buy button (the old "Narxlar" page lives here now). */}
+      <section id="packages" className="space-y-4 scroll-mt-24">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t("pricing.title")}</h2>
+        <CoursePackages courseId={course.id} />
+      </section>
 
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -119,12 +135,14 @@ export default function CourseDetails() {
                       {lesson.title}
                     </h4>
                     <span className="text-xs text-slate-400">
-                      {lesson.durationMinutes || 15} {t("common.min")} · {lesson.questionCount || 10} {t("common.question")}
+                      {/* Real numbers only: a lesson without questions shows just its length. */}
+                      {lesson.durationMinutes} {t("common.min")}
+                      {lesson.questionCount ? ` · ${lesson.questionCount} ${t("common.question")}` : ""}
                     </span>
                   </div>
                 </div>
 
-                <Link to={`/lessons/${lesson.id}/video`}>
+                <Link to={`/lessons/${lesson.id}`}>
                   <Button size="sm" variant="outline" leftIcon={<PlayCircle className="h-4 w-4 text-brand-600" />}>
                     {t("lessonDetails.startLesson")}
                   </Button>

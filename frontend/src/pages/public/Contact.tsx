@@ -9,6 +9,7 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { siteService } from "@/services/site.service";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { DEFAULT_CONTACT } from "@/constants/config";
 
 export default function Contact() {
   const { t } = useTranslation();
@@ -48,9 +49,9 @@ export default function Contact() {
   };
 
   const info = [
-    { icon: Phone, value: site.phone },
+    { icon: Phone, value: site.phone || DEFAULT_CONTACT.phone },
     { icon: Mail, value: site.email },
-    { icon: MapPin, value: site.address },
+    { icon: MapPin, value: site.address || DEFAULT_CONTACT.address },
     { icon: Clock, value: site.workingHours },
   ].filter((i) => i.value);
 

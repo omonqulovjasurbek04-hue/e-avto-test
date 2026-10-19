@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PlayCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
@@ -14,6 +14,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import VideoPlayer from "@/components/video/VideoPlayer";
 import { Alert } from "@/components/ui/Alert";
+import LessonLockNotice from "@/components/lesson/LessonLockNotice";
 import { useAuth } from "@/hooks/useAuth";
 
 /** Plays a video from private storage through short-lived signed URLs (renewed while watching). */
@@ -110,10 +111,7 @@ export default function VideoLesson() {
 
       <div className="mt-4">
         {lesson.locked ? (
-          <Alert variant="warning" title={t("lock.title")}>
-            {t("lock.watch")}{" "}
-            <Link to="/pricing" className="font-semibold underline">{t("lock.link")}</Link>
-          </Alert>
+          <LessonLockNotice lesson={lesson} />
         ) : lesson.privateVideoId ? (
           <PrivateVideo videoId={lesson.privateVideoId} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
         ) : lesson.videoUrl ? (

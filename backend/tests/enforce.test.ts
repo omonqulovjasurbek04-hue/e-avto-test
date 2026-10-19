@@ -70,14 +70,42 @@ describe.skipIf(!enabled)("tests respect course access", () => {
   });
 
   it("a mixed test draws only from courses the user may open", async () => {
-    const res = await start("ownsB", { count: 50 });
+    // count = the maximum, so the draw covers the whole (small) pool and course B's questions must be in it.
+    const res = await start("ownsB", { count: 100 });
     expect(res.status).toBe(201);
     const texts = (res.body.data.questions as { text: string }[]).map((q) => q.text);
     // Questions that belong to no course are open to everyone; the other course's questions must never appear.
     expect(texts.some((t) => t.startsWith(`${run}-B`))).toBe(true);
     expect(texts.some((t) => t.startsWith(`${run}-A`))).toBe(false);
-    const nobody = await start("nobody", { count: 100 });
-    expect([201, 400]).toContain(nobody.status);
-    if (nobody.status === 201) expect((nobody.body.data.questions as { text: string }[]).some((q) => q.text.startsWith(run))).toBe(false);
+    // Without any purchased course there is no test at all, not even a mixed one.
+    expect((await start("nobody", { count: 100 })).status).toBe(403);
+    expect((await start("expired", { count: 100 })).status).toBe(403);
+  });
+
+  it("tells the student which courses they can open", async () => {
+    const access = (k: string) => request(app).get("/api/me/course-access").set(bearer(k));
+    expect((await access("nobody")).body.data).toEqual({ all: false, courseIds: [] });
+    expect((await access("expired")).body.data).toEqual({ all: false, courseIds: [] });
+    expect((await access("ownsA")).body.data).toEqual({ all: false, courseIds: [courseA] });
+    expect((await access("admin")).body.data).toEqual({ all: true, courseIds: [] });
+    expect((await request(app).get("/api/me/course-access")).status).toBe(401);
+  });
+
+  it("deleting a course does not drop its questions into the open pool", async () => {
+    const courseC = (await prisma.course.create({ data: { title: `C ${run}`, description: "d" } })).id;
+    const lessonC = (await prisma.lesson.create({ data: { courseId: courseC, title: "LC" } })).id;
+    await prisma.question.createMany({
+      data: [
+        { courseId: courseC, text: `${run}-C0`, options: ["x", "y"], correctIndex: 0 },
+        { courseId: null, lessonId: lessonC, text: `${run}-CL0`, options: ["x", "y"], correctIndex: 0 },
+      ],
+    });
+    const del = await request(app).delete(`/api/admin/courses/${courseC}`).set(bearer("admin"));
+    expect(del.status).toBe(200);
+    const left = await prisma.question.findMany({ where: { text: { startsWith: `${run}-C` } } });
+    expect(left).toHaveLength(2);
+    expect(left.every((q) => q.courseId === null && q.lessonId === null && !q.isPublished)).toBe(true);
+    const res = await start("nobody", { count: 100 });
+    if (res.status === 201) expect((res.body.data.questions as { text: string }[]).some((q) => q.text.startsWith(`${run}-C`))).toBe(false);
   });
 });

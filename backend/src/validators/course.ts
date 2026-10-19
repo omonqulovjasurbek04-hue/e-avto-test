@@ -11,6 +11,10 @@ export const courseCreateSchema = z.object({
   order: z.number().int().optional(),
   isPublished: z.boolean().optional(),
   categoryId: z.string().uuid().nullable().optional(),
+  studyPeriod: z.string().trim().max(40).nullable().optional(),
+  section: z.enum(["MAIN", "COMBINED", "EXTRA"]).optional(),
+  /** Main package price in so'm (whole number). null = no price. Stored as a new price row, history kept. */
+  price: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
 });
 
 export const courseUpdateSchema = courseCreateSchema.partial();

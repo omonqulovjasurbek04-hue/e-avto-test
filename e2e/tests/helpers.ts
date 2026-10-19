@@ -6,10 +6,10 @@ import { PASSWORD, STATE_FILE, type State } from "../global-setup";
 
 export const state = (): State => JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) as State;
 
-/** Logs in through the real login form and waits for the app to leave /login. */
+/** Logs in through the real login form (the phone field also accepts an e-mail) and waits for the app to leave /login. */
 export async function loginViaUi(page: Page, email: string) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Telefon raqam").fill(email);
   await page.getByLabel("Parol").fill(PASSWORD);
   await page.getByRole("button", { name: "Kirish", exact: true }).click();
   await expect(page).not.toHaveURL(/\/login/);

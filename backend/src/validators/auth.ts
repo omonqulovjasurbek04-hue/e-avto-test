@@ -1,5 +1,20 @@
 import { z } from "zod";
 import { httpUrl } from "./common";
+import { normalizeUzPhone } from "../lib/phone";
+
+/** Uzbek mobile number in any common spelling, stored as "+998XXXXXXXXX". */
+export const phoneSchema = z
+  .string()
+  .trim()
+  .max(30)
+  .transform((v, ctx) => {
+    const phone = normalizeUzPhone(v);
+    if (!phone) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid phone number" });
+      return z.NEVER;
+    }
+    return phone;
+  });
 
 const password = z
   .string()
@@ -8,22 +23,48 @@ const password = z
   .regex(/[A-Za-z]/, "Password must contain a letter")
   .regex(/\d/, "Password must contain a digit");
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
-  email: z.string().trim().toLowerCase().email("Invalid email"),
-  password,
-  phone: z.string().trim().max(30).optional(),
-});
+// The site signs people up with a phone number; e-mail is optional (older clients still send only e-mail).
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+    email: z.string().trim().toLowerCase().email("Invalid email").optional(),
+    password,
+    phone: phoneSchema.optional(),
+  })
+  .refine((v) => v.phone || v.email, { message: "Phone number is required", path: ["phone"] });
 
-export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Invalid email"),
-  password: z.string().min(1, "Password is required").max(100),
+// Log in with the phone number (or e-mail, for staff and older accounts).
+export const loginSchema = z
+  .object({
+    phone: phoneSchema.optional(),
+    email: z.string().trim().toLowerCase().email("Invalid email").optional(),
+    password: z.string().min(1, "Password is required").max(100),
+  })
+  .refine((v) => v.phone || v.email, { message: "Phone number is required", path: ["phone"] });
+
+// First and last name, each at least 2 letters ("Ali Valiyev"); extra spaces are collapsed.
+const fullNameSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/\s+/g, " "))
+  .pipe(
+    z
+      .string()
+      .max(100)
+      .refine((v) => v.split(" ").filter((p) => p.length >= 2).length >= 2, "Enter your first and last name")
+  );
+
+export const completeRegistrationSchema = z.object({
+  name: fullNameSchema,
+  phone: phoneSchema,
+  password,
 });
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   email: z.string().trim().toLowerCase().email().optional(),
-  phone: z.string().trim().max(30).optional().nullable(),
+  // "" clears the number.
+  phone: z.union([z.literal("").transform(() => null), phoneSchema]).optional().nullable(),
   avatarUrl: httpUrl.optional().nullable(),
 });
 
@@ -64,6 +105,7 @@ export const twoFactorDisableSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type CompleteRegistrationInput = z.infer<typeof completeRegistrationSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

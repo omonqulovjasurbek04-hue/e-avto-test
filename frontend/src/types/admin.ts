@@ -33,6 +33,10 @@ export interface AdminCourse {
   lessonCount: number;
   categoryId?: string | null;
   category?: { id: string; slug: string; name: string } | null;
+  studyPeriod?: string | null;
+  section?: "MAIN" | "COMBINED" | "EXTRA";
+  /** Current price of the main package (minor units). */
+  price?: { amount: number; currency: string; isSample: boolean } | null;
 }
 
 export interface AdminCourseInput {
@@ -43,6 +47,10 @@ export interface AdminCourseInput {
   order?: number;
   isPublished?: boolean;
   categoryId?: string | null;
+  studyPeriod?: string | null;
+  section?: "MAIN" | "COMBINED" | "EXTRA";
+  /** Main package price in whole so'm; null removes it; omitted = unchanged. */
+  price?: number | null;
 }
 
 export interface AdminLesson {

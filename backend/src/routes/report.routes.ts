@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { z } from "zod";
 import * as reports from "../services/report.service";
 import { systemStatus } from "../services/system.service";
+import * as leaderboard from "../services/leaderboard.service";
 import { authMiddleware, AuthRequest } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/admin.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
@@ -27,6 +28,10 @@ const parsePeriod = (req: AuthRequest, res: Response) => {
 export const reportRoutes = Router();
 reportRoutes.use(asyncHandler(authMiddleware));
 reportRoutes.use(requirePermission("reports:read"));
+reportRoutes.get("/leaderboard", h(async (req, res) => {
+  const q = z.object({ courseId: z.string().uuid().optional(), sort: z.enum(["points", "accuracy", "tests"]).optional(), period: z.enum(["all", "month", "week"]).optional() }).parse(req.query);
+  success(res, await leaderboard.adminLeaderboard(q));
+}));
 reportRoutes.get("/tests", h(async (req, res) => {
   const q = parsePeriod(req, res);
   if (q) success(res, await reports.testResults(q.from, q.to, q.courseId));

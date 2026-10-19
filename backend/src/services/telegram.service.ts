@@ -4,15 +4,19 @@ import { env } from "../config/env";
 import { badRequest, HttpError } from "../utils/errors";
 import { completeLogin } from "./auth.service";
 
-const SESSION_TTL_MS = 10 * 60 * 1000; // time to press Start in the bot
 const CODE_TTL_MS = 5 * 60 * 1000; // time to type the code on the site
-const MAX_ATTEMPTS = 5;
 
 export const isTelegramConfigured = (): boolean =>
   Boolean(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_BOT_USERNAME);
 
-const hashCode = (sessionId: string, code: string) =>
-  crypto.createHash("sha256").update(`${sessionId}:${code}`).digest("hex");
+/**
+ * Codes are stored only as a keyed hash (HMAC with the server secret), so a database dump does not
+ * reveal a valid code. The code itself is the lookup key: the site sends nothing else.
+ */
+const hashCode = (code: string) => crypto.createHmac("sha256", env.JWT_SECRET).update(`tg-login:${code}`).digest("hex");
+
+/** "Ali Valiyev" from Telegram's first and last name (either may be missing). */
+const fullName = (u: TgUser) => [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || null;
 
 // ---------------------------------------------------------------------------
 // Telegram Bot API (plain fetch, no extra dependency)
@@ -21,6 +25,7 @@ interface TgUser {
   id: number;
   is_bot?: boolean;
   first_name?: string;
+  last_name?: string;
   username?: string;
 }
 
@@ -50,59 +55,59 @@ const sendMessage = (chatId: number, text: string) =>
     console.error(e.message);
   });
 
+/** The code with a "copy" button under it (Bot API copy_text); older clients just see the text. */
+const sendCode = (chatId: number, code: string) =>
+  tgCall("sendMessage", {
+    chat_id: chatId,
+    text: `E-Avto Test tasdiqlash kodi: ${code}\n\nKodni saytdagi "Kod" maydoniga kiriting. Kod 5 daqiqa amal qiladi, uni hech kimga bermang.`,
+    reply_markup: { inline_keyboard: [[{ text: "Kodni nusxalash", copy_text: { text: code } }]] },
+  }).catch(() => sendMessage(chatId, `E-Avto Test tasdiqlash kodi: ${code}\n\nKod 5 daqiqa amal qiladi.`));
+
 // ---------------------------------------------------------------------------
 // Site side
 // ---------------------------------------------------------------------------
 
-/** Step 1: the site asks for a login session and gets a link that opens the bot. */
+/**
+ * Step 1 (site): show how to reach the bot. The link carries no token: the user simply opens the bot
+ * and presses Start, and the bot answers with a random one-time code.
+ */
 export const startLogin = async () => {
   if (!isTelegramConfigured()) throw new HttpError(503, "Telegram login is not configured");
-
-  const session = await prisma.telegramLogin.create({
-    data: { expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
-  });
-  // Opportunistic cleanup of old sessions.
-  void prisma.telegramLogin
-    .deleteMany({ where: { expiresAt: { lt: new Date(Date.now() - 60 * 60 * 1000) } } })
-    .catch(() => undefined);
-
   return {
-    sessionId: session.id,
-    botUrl: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${session.id}`,
-    expiresInSeconds: SESSION_TTL_MS / 1000,
+    botUrl: `https://t.me/${env.TELEGRAM_BOT_USERNAME}`,
+    botUsername: env.TELEGRAM_BOT_USERNAME,
+    codeLength: 6,
+    expiresInSeconds: CODE_TTL_MS / 1000,
   };
 };
 
-/** Step 3: the user types the code the bot sent; on success the usual JWT is issued. */
-export const verifyLogin = async (sessionId: string, code: string, userAgent?: string) => {
-  const session = await prisma.telegramLogin.findUnique({ where: { id: sessionId } });
+/**
+ * Step 3 (site): the user types the code the bot gave them. The code finds the Telegram account it was
+ * issued to; it works once and only within 5 minutes. (Guessing is held back by a strict rate limit
+ * on this route: a few active 6-digit codes out of a million.)
+ */
+export const verifyLogin = async (code: string, userAgent?: string) => {
+  if (!isTelegramConfigured()) throw new HttpError(503, "Telegram login is not configured");
   const invalid = () => badRequest("Code is invalid or expired");
+  const codeHash = hashCode(code);
 
-  if (!session || session.usedAt || !session.codeHash || !session.telegramId) throw invalid();
-  if (session.expiresAt < new Date()) throw invalid();
-  if (session.attempts >= MAX_ATTEMPTS) throw new HttpError(429, "Too many wrong codes, start again");
-
-  const expected = Buffer.from(session.codeHash, "hex");
-  const actual = Buffer.from(hashCode(session.id, code), "hex");
-  if (!crypto.timingSafeEqual(expected, actual)) {
-    await prisma.telegramLogin.update({ where: { id: session.id }, data: { attempts: { increment: 1 } } });
-    throw invalid();
-  }
-
-  // Single use: only one concurrent request can flip usedAt from null.
+  // Single use: only one request can flip usedAt from null.
   const claimed = await prisma.telegramLogin.updateMany({
-    where: { id: session.id, usedAt: null },
+    where: { codeHash, usedAt: null, expiresAt: { gt: new Date() } },
     data: { usedAt: new Date() },
   });
   if (claimed.count === 0) throw invalid();
+  const login = await prisma.telegramLogin.findFirst({ where: { codeHash, usedAt: { not: null } }, orderBy: { usedAt: "desc" } });
+  if (!login?.telegramId) throw invalid();
 
-  const telegramId = session.telegramId;
+  const telegramId = login.telegramId;
   const user = await prisma.user.upsert({
     where: { telegramId },
     update: {},
     create: {
       telegramId,
-      name: session.firstName || session.username || "Telegram foydalanuvchi",
+      // Full name from Telegram as a starting point; the sign-up form asks for the real first and last name.
+      name: login.firstName || login.username || "Telegram foydalanuvchi",
       role: "USER", // never elevated through Telegram
     },
   });
@@ -116,49 +121,45 @@ export const verifyLogin = async (sessionId: string, code: string, userAgent?: s
 // Bot side
 // ---------------------------------------------------------------------------
 
-const START_PAYLOAD = /^[0-9a-f-]{36}$/i;
-
-/** Step 2: the user pressed Start in the bot; send a one-time code to that chat. */
+/** Step 2 (bot): the user pressed Start (or sent /code); give them a fresh random one-time code. */
 export async function handleUpdate(update: TgUpdate): Promise<void> {
   const msg = update.message;
   if (!msg?.text || msg.chat.type !== "private" || !msg.from || msg.from.is_bot) return;
 
-  const [command, payload] = msg.text.trim().split(/\s+/);
-  if (command !== "/start") return;
-
-  if (!payload || !START_PAYLOAD.test(payload)) {
-    await sendMessage(msg.chat.id, "Salom! Kirish uchun saytdagi \"Telegram orqali kirish\" tugmasini bosing.");
+  const command = msg.text.trim().split(/\s+/)[0].split("@")[0];
+  if (command !== "/start" && command !== "/code") {
+    await sendMessage(msg.chat.id, "Saytga kirish yoki ro'yxatdan o'tish uchun kod olish: /start");
     return;
   }
 
-  const session = await prisma.telegramLogin.findUnique({ where: { id: payload } });
-  if (!session || session.usedAt || session.expiresAt < new Date()) {
-    await sendMessage(msg.chat.id, "Bu havola eskirgan. Saytdan qaytadan urinib ko'ring.");
-    return;
+  const telegramId = String(msg.from.id);
+  // One live code per Telegram account: a new /start replaces the previous unused code.
+  await prisma.telegramLogin.deleteMany({ where: { telegramId, usedAt: null } });
+  // Opportunistic cleanup of old rows.
+  void prisma.telegramLogin.deleteMany({ where: { expiresAt: { lt: new Date(Date.now() - 60 * 60 * 1000) } } }).catch(() => undefined);
+
+  // A random 6-digit code that is not live for anyone else right now.
+  let code = "";
+  for (let i = 0; i < 10 && !code; i++) {
+    const candidate = String(crypto.randomInt(100000, 1000000));
+    const taken = await prisma.telegramLogin.count({ where: { codeHash: hashCode(candidate), usedAt: null, expiresAt: { gt: new Date() } } });
+    if (!taken) code = candidate;
   }
-  if (session.codeHash) {
-    await sendMessage(msg.chat.id, "Kod allaqachon yuborilgan. Yangi kod uchun saytdan qaytadan boshlang.");
+  if (!code) {
+    await sendMessage(msg.chat.id, "Hozir kod berib bo'lmadi. Birozdan keyin /start ni qayta bosing.");
     return;
   }
 
-  const code = String(crypto.randomInt(100000, 1000000));
-  // Claim the session so a repeated /start cannot issue a second code.
-  const claimed = await prisma.telegramLogin.updateMany({
-    where: { id: session.id, codeHash: null },
+  await prisma.telegramLogin.create({
     data: {
-      codeHash: hashCode(session.id, code),
-      telegramId: String(msg.from.id),
-      firstName: msg.from.first_name ?? null,
+      telegramId,
+      firstName: fullName(msg.from),
       username: msg.from.username ?? null,
+      codeHash: hashCode(code),
       expiresAt: new Date(Date.now() + CODE_TTL_MS),
     },
   });
-  if (claimed.count === 0) return;
-
-  await sendMessage(
-    msg.chat.id,
-    `E-Avto Test kirish kodi: ${code}\n\nKod 5 daqiqa amal qiladi. Uni hech kimga bermang.`
-  );
+  await sendCode(msg.chat.id, code);
 }
 
 // ---------------------------------------------------------------------------

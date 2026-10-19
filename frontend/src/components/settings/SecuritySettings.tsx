@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Mail, KeyRound, MonitorSmartphone, Copy } from "lucide-react";
+import { KeyRound, MonitorSmartphone, Copy } from "lucide-react";
 import { authService } from "@/services/auth.service";
-import { ApiError } from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
 import { ROUTES } from "@/constants/routes";
 import type { TwoFactorStatus } from "@/types/user";
@@ -16,60 +15,6 @@ import { Alert } from "@/components/ui/Alert";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const cardClass = "rounded-3xl border border-slate-200 dark:border-slate-800";
-
-/** E-mail verification state with a resend button that reports honestly what happened. */
-function EmailCard() {
-  const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
-  const updateUser = useAuthStore((s) => s.updateUser);
-  const [busy, setBusy] = useState(false);
-
-  const resend = async () => {
-    setBusy(true);
-    try {
-      const r = await authService.resendVerification();
-      if (r.alreadyVerified) {
-        updateUser({ emailVerified: true });
-        toast.success(t("security.alreadyVerified"));
-      } else if (r.sent) toast.success(t("security.resent"));
-      else if (!r.mailConfigured) toast.info(t("security.resendNoMail"));
-      else toast.error(t("security.resendFailed"));
-    } catch (e) {
-      toast.error(e instanceof ApiError && e.status === 429 ? e.message : t("security.resendFailed"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Card className={cardClass}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-bold">
-          <Mail className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("security.emailTitle")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {!user?.email ? (
-          <p className="text-sm text-slate-500">{t("security.emailNone")}</p>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-medium text-slate-800 dark:text-slate-100">{user.email}</span>
-              <Badge variant={user.emailVerified ? "success" : "warning"}>
-                {t(user.emailVerified ? "security.emailVerified" : "security.emailUnverified")}
-              </Badge>
-            </div>
-            {!user.emailVerified && (
-              <Button variant="outline" size="sm" loading={busy} onClick={resend}>
-                {t("security.resend")}
-              </Button>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 const codeError = (e: unknown, t: (k: string) => string) => {
   const msg = e instanceof Error ? e.message : "";
@@ -211,7 +156,7 @@ function TwoFactorCard() {
 
         {status.enabled && mode !== "idle" && (
           <div className="space-y-3">
-            {mode === "disable" && user?.email && (
+            {mode === "disable" && user?.hasPassword !== false && (
               <Input label={t("security.password")} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             )}
             <Input label={t("security.code")} autoComplete="one-time-code" maxLength={11} value={code} onChange={(e) => setCode(e.target.value)} />
@@ -266,7 +211,6 @@ function SessionsCard() {
 export default function SecuritySettings() {
   return (
     <div className="space-y-6">
-      <EmailCard />
       <TwoFactorCard />
       <SessionsCard />
     </div>

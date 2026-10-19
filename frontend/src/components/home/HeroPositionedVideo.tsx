@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
+/** Hero video shown as a framed card (glow, gradient hairline, soft shadow) instead of a faded background. */
 export default function HeroPositionedVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -36,31 +37,26 @@ export default function HeroPositionedVideo() {
   }, []);
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[60%] xl:w-[54%] overflow-hidden pointer-events-none z-0">
-      {/* Background Video */}
-      <video
-        ref={videoRef}
-        src="/video/car.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="h-full w-full object-cover object-center scale-105 opacity-90"
-      />
+    <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
+      {/* Glow behind the card */}
+      <div className="pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-gradient-to-tr from-brand-400/30 via-brand-200/20 to-amber-200/30 blur-2xl dark:from-brand-600/30 dark:via-indigo-500/15 dark:to-transparent" />
 
-      {/* PARDA 1: Left-to-Right Horizontal Gradient Fade */}
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/20" />
-
-      {/* PARDA 2: Vertical Top and Bottom Gradient Blends */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/70" />
-
-      {/* PARDA 3: Extra Left Side Blur Mask for Text Readability */}
-      <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-slate-950 to-transparent" />
-
-      {/* Ambient Neon Lighting */}
-      <div className="absolute top-1/3 right-1/4 h-80 w-80 rounded-full bg-brand-500/20 blur-3xl" />
-      <div className="absolute bottom-10 right-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
+      {/* Gradient hairline frame */}
+      <div className="relative rounded-[2rem] bg-gradient-to-br from-white via-brand-100 to-brand-300/60 p-[1.5px] shadow-2xl shadow-brand-900/15 dark:from-white/25 dark:via-white/5 dark:to-brand-500/40 dark:shadow-black/40">
+        <div className="relative overflow-hidden rounded-[calc(2rem-1.5px)] bg-slate-900">
+          <video
+            ref={videoRef}
+            src="/video/car.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="aspect-[16/11] w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 rounded-[calc(2rem-1.5px)] ring-1 ring-inset ring-white/15" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { prisma } from "../config/database";
 import { LessonProgressInput } from "../validators/progress";
 import { forbidden, notFound } from "../utils/errors";
-import { canAccessCourse } from "./access.service";
+import { canAccessLesson } from "./access.service";
 
 export const updateLessonProgress = async (
   userId: string,
@@ -15,7 +15,7 @@ export const updateLessonProgress = async (
     select: { id: true, courseId: true },
   });
   if (!lesson) throw notFound("Lesson not found");
-  if (!(await canAccessCourse({ userId, role }, lesson.courseId))) throw forbidden("You need access to this course");
+  if (!(await canAccessLesson({ userId, role }, lesson))) throw forbidden("This lesson is not open for you yet");
 
   const existing = await prisma.lessonProgress.findUnique({
     where: { userId_lessonId: { userId, lessonId } },

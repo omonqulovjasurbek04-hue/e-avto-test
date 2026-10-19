@@ -4,8 +4,12 @@ import { apiGet, apiLogin, loginViaUi, sendPaymentWebhook, state } from "./helpe
 interface Order { id: string; status: string; total: number; payments: { id: string; amount: number }[] }
 
 test.describe.serial("purchase flow", () => {
-  test("a guest sees the package and its price on the pricing page", async ({ page }) => {
+  test("pricing lives in the student cabinet: a guest is sent to log in, a student sees the package and its price", async ({ page }) => {
     const s = state();
+    await page.goto("/pricing");
+    await expect(page).toHaveURL(/\/login/);
+
+    await loginViaUi(page, s.emails.student);
     await page.goto("/pricing");
     await expect(page.getByRole("heading", { name: `E2E Paket ${s.run}` })).toBeVisible();
     await expect(page.getByText("200 000 so'm").first()).toBeVisible();

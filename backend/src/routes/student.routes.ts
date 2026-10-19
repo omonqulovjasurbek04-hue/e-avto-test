@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { z } from "zod";
 import * as student from "../services/student.service";
 import * as notifications from "../services/notification.service";
+import { courseAccessSummary } from "../services/access.service";
 import { authMiddleware, requireUserId, AuthRequest } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { success } from "../utils/apiResponse";
@@ -12,6 +13,12 @@ router.use("/me", asyncHandler(authMiddleware));
 
 router.get("/me/enrollments", asyncHandler(async (req: AuthRequest, res: Response) => {
   success(res, await student.listEnrollments(requireUserId(req)));
+}));
+
+// Which courses the student may open (purchased and active); the UI locks lessons and tests of the rest.
+router.get("/me/course-access", asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireUserId(req);
+  success(res, await courseAccessSummary(req.user!));
 }));
 
 router.get("/me/notifications", asyncHandler(async (req: AuthRequest, res: Response) => {

@@ -21,10 +21,13 @@ model User {
   id           String    @id @default(uuid())
   email        String?   @unique
   name         String
-  phone        String?
+  // "+998XXXXXXXXX"; the login identifier on the site (unique).
+  phone        String?   @unique
   passwordHash String?
   telegramId   String?   @unique
   role         Role      @default(USER)
+  // Permanent sequential account number, shown on the site as "student0001". Never reused.
+  studentNumber Int      @unique @default(autoincrement())
   isActive     Boolean   @default(true)
   // Incremented on password change / "log out everywhere"; older JWTs stop working.
   tokenVersion Int       @default(0)
@@ -32,6 +35,8 @@ model User {
   failedLogins Int       @default(0)
   lockedUntil  DateTime?
   avatarUrl    String?
+  // Public leaderboard: shown (as "First L.") only after the student agrees. Off by default.
+  leaderboardOptIn Boolean @default(false)
   // Set once the address in `email` was confirmed through an e-mailed link; cleared when the e-mail changes.
   emailVerifiedAt DateTime?
   // TOTP 2FA (staff only). Secrets are AES-GCM encrypted; recovery codes are stored as SHA-256 hashes.
@@ -74,6 +79,10 @@ model Course {
   isPublished Boolean   @default(true)
   slug        String?   @unique
   categoryId  String?
+  /// Shown as is, e.g. "2–2,5 oy" (learning period; package durationDays is the access period).
+  studyPeriod String?
+  /// Block of the public catalogue the course is listed in.
+  section     CourseSection @default(MAIN)
   archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -90,6 +99,12 @@ model Course {
 
   @@index([categoryId])
   @@map("courses")
+}
+
+enum CourseSection {
+  MAIN // single licence categories: B, A, A1, C, D
+  COMBINED // combined and trailer categories: BC, BE, CE, DE
+  EXTRA // practice, theory and other extra courses
 }
 
 /// Topic grouping of courses (e.g. "Yo'l harakati qoidalari", "Yo'l belgilari"). uz in the columns, uz_cyrl/ru in `translations`.
@@ -758,12 +773,17 @@ model Notification {
   emailStatus   String    @default("NONE")
   emailAttempts Int       @default(0)
   emailSentAt   DateTime?
+  // Telegram reminders (e.g. a missed class): how many went out, and when the next one is due
+  // (null = none wanted, or finished / stopped because the notice was read).
+  telegramSends  Int       @default(0)
+  telegramNextAt DateTime?
   createdAt     DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, dedupeKey])
   @@index([userId, readAt])
+  @@index([telegramNextAt])
   @@map("notifications")
 }
 

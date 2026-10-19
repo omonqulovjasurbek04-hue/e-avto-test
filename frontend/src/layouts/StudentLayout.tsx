@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import EmailVerifyBanner from "@/components/auth/EmailVerifyBanner";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
@@ -10,8 +9,6 @@ import {
   LayoutDashboard,
   BookOpen,
   CheckSquare,
-  History,
-  TrendingUp,
   Trophy,
   User as UserIcon,
   ShoppingBag,
@@ -25,21 +22,55 @@ import {
   Sun,
   Menu,
   X,
+  ChevronDown,
+  Library,
+  Lock,
 } from "lucide-react";
 import { cn } from "../utils/cn";
+import { formatStudentId } from "../utils/studentId";
+import { useCourseAccess } from "../hooks/useCourseAccess";
 import { can } from "../lib/permissions";
 import { env } from "../config/env";
-import { studentService } from "../services/platform.service";
+import { studentService, UNREAD_EVENT } from "../services/platform.service";
+import type { User } from "../types/user";
+
+const COLLAPSE_KEY = "e_avto_sidebar_collapsed";
 
 export const StudentLayout: React.FC = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useUIStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop: the sidebar can be folded to icons; the choice is remembered in this browser.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleMenu = () => {
+    if (!isDesktop()) {
+      setSidebarOpen((v) => !v);
+      return;
+    }
+    setCollapsed((v) => {
+      try {
+        localStorage.setItem(COLLAPSE_KEY, v ? "0" : "1");
+      } catch {
+        // storage unavailable: the choice lasts until reload
+      }
+      return !v;
+    });
+  };
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
 
-  // Unread counter for the bell; a failed refresh just keeps the last number.
+  // Unread counter for the red dot; a failed refresh just keeps the last number. It is re-read on every
+  // page change, and the notifications page reports the new count right after "mark as read".
+  const { pathname } = useLocation();
+  // Re-read on each page change, so a purchase unlocks the menu without a reload.
+  const { hasAnyCourse } = useCourseAccess(pathname);
   useEffect(() => {
     if (env.useMock) return;
     let alive = true;
@@ -50,7 +81,20 @@ export const StudentLayout: React.FC = () => {
       alive = false;
       clearInterval(t);
     };
+  }, [pathname]);
+  useEffect(() => {
+    const onUnread = (e: Event) => setUnread((e as CustomEvent<number>).detail);
+    window.addEventListener(UNREAD_EVENT, onUnread);
+    return () => window.removeEventListener(UNREAD_EVENT, onUnread);
   }, []);
+
+  // The phone drawer closes with Escape too.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSidebarOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
 
   const handleLogout = () => {
     void logout();
@@ -59,117 +103,258 @@ export const StudentLayout: React.FC = () => {
 
   const navItems = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
-    { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" /> },
-    { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" /> },
-    { to: "/history", label: t("nav.history"), icon: <History className="h-5 w-5" /> },
-    { to: "/progress", label: t("nav.progress"), icon: <TrendingUp className="h-5 w-5" /> },
-    { to: "/leaderboard", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
+    { to: "/my-courses", label: t("nav.courses"), icon: <Library className="h-5 w-5" /> },
+    { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
+    { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
+    { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
     { to: "/orders", label: t("nav.orders"), icon: <ShoppingBag className="h-5 w-5" /> },
     { to: "/schedule", label: t("nav.schedule"), icon: <CalendarDays className="h-5 w-5" /> },
     { to: "/attendance", label: t("nav.attendance"), icon: <ClipboardCheck className="h-5 w-5" /> },
-    { to: "/notifications", label: t("nav.notifications"), icon: <Bell className="h-5 w-5" /> },
     ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
       ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
       : []),
     ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
-    { to: "/profile", label: t("nav.profile"), icon: <UserIcon className="h-5 w-5" /> },
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden animate-fade-in" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm shadow-brand-500/30">
-              <Car className="h-5 w-5" />
-            </div>
-            <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">E-AVTO TEST</span>
-          </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-            <X className="h-5 w-5" />
-          </button>
+    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+      {/* Full-width top bar: logo, menu button, account number on the left; language, theme, profile on the right. */}
+      <header className="sticky top-0 z-40 flex h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+        <div
+          className={cn(
+            "hidden shrink-0 items-center border-r border-slate-200 transition-[width] duration-200 lg:flex dark:border-slate-800",
+            collapsed ? "w-20 justify-center" : "w-72 px-6"
+          )}
+        >
+          <Logo compact={collapsed} />
         </div>
-
-        <div className="p-4 mx-3 my-3 rounded-2xl bg-gradient-to-br from-brand-50 to-blue-50/50 border border-brand-100 dark:from-brand-950/40 dark:to-blue-950/20 dark:border-brand-900/60 flex items-center gap-3">
-          <div className="h-11 w-11 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold">
-            {user?.name?.charAt(0) || "U"}
-          </div>
-          <div className="overflow-hidden">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name || t("nav.profile")}</h4>
-            <span className="inline-flex items-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">{t("nav.profile")}</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1.5 px-3 py-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
-                isActive
-                  ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-              )}
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleMenu}
+              aria-label={t("nav.menu")}
+              aria-controls="student-sidebar"
+              aria-expanded={isDesktop() ? !collapsed : sidebarOpen}
+              className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
-              {item.icon}
-              <span>{item.label}</span>
-              {item.to === "/notifications" && unread > 0 && (
-                <span aria-label={t("notifications.unreadAria", { count: unread })} className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">{unread > 99 ? "99+" : unread}</span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
-          <button onClick={toggleTheme} className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition">
-            <span className="flex items-center gap-2">
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              <span>{theme === "light" ? t("settings.darkMode") : t("settings.lightMode")}</span>
-            </span>
-          </button>
-          <button onClick={handleLogout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition">
-            <LogOut className="h-4 w-4" />
-            <span>{t("nav.logout")}</span>
-          </button>
-        </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col overflow-x-hidden">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 sm:px-8 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
-          <div className="flex items-center gap-3">
-            <button aria-label={t("nav.menu")} onClick={() => setSidebarOpen(true)} className="lg:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
-            <span className="max-w-[10rem] truncate text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline-block">
-              {t("nav.dashboard")}
+            {/* On phones the logo column is hidden, so the logo sits next to the menu button. */}
+            <div className="lg:hidden">
+              <Logo compact />
+            </div>
+            {/* The student's own account number (e.g. "student0001") instead of a page title. */}
+            <span
+              title={t("nav.profile")}
+              className="hidden max-w-[12rem] truncate rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-semibold tracking-wide text-slate-600 sm:inline-block dark:bg-slate-800 dark:text-slate-300"
+            >
+              {formatStudentId(user?.studentNumber) || t("nav.dashboard")}
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="pills" />
-            <Link to="/tests" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 border border-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800 hover:bg-brand-100 transition">
-              <CheckSquare className="h-4 w-4" />
-              <span>{t("nav.tests")}</span>
-            </Link>
-            <button onClick={toggleTheme} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher />
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === "light" ? t("settings.darkMode") : t("settings.lightMode")}
+              className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            >
               {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
+            <ProfileMenu user={user} unread={unread} onLogout={handleLogout} />
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <EmailVerifyBanner />
+      <div className="flex">
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden animate-fade-in" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        {/*
+          Phones: a drawer over the page. Desktop: stays in place under the top bar while the page scrolls
+          (sticky, own scroll), and the menu button folds it to icons only.
+        */}
+        <aside
+          id="student-sidebar"
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-slate-900",
+            "lg:sticky lg:top-16 lg:z-30 lg:h-[calc(100vh-4rem)] lg:translate-x-0",
+            collapsed && "lg:w-20",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-6 lg:hidden dark:border-slate-800">
+            <Logo />
+            <button onClick={() => setSidebarOpen(false)} aria-label={t("common.close")} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
+            {navItems.map((item) => {
+              // No bought course yet: lessons and tests are locked and lead to the course catalogue.
+              const locked = "needsCourse" in item && item.needsCourse && hasAnyCourse === false;
+              return (
+              <NavLink
+                key={item.to}
+                to={locked ? "/my-courses" : item.to}
+                onClick={() => setSidebarOpen(false)}
+                title={locked ? t("access.buyFirst") : collapsed ? item.label : undefined}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
+                  collapsed && "lg:justify-center lg:px-0",
+                  // A locked item points at the catalogue, but only "Kurslar" itself is the current page.
+                  isActive && !locked
+                    ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                )}
+              >
+                <span className="relative">
+                  {item.icon}
+                  {locked && collapsed && <Lock aria-hidden="true" className="absolute -bottom-1 -right-1.5 hidden h-3 w-3 lg:block" />}
+                </span>
+                <span className={cn(collapsed && "lg:sr-only")}>{item.label}</span>
+                {locked && (
+                  <Lock aria-label={t("access.locked")} className={cn("ml-auto h-4 w-4 opacity-70", collapsed && "lg:hidden")} />
+                )}
+              </NavLink>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
     </div>
   );
 };
+
+const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+
+function Logo({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="E-AVTO TEST">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm shadow-brand-500/30">
+        <Car className="h-5 w-5" />
+      </span>
+      {!compact && <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">E-AVTO TEST</span>}
+    </Link>
+  );
+}
+/**
+ * The avatar chip in the header opens a small account menu: notifications (with the unread count),
+ * the profile page and logout. Closes on an outside click, Escape, or when a page is opened.
+ */
+function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: number; onLogout: () => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { pathname } = useLocation();
+
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const initial = user?.name?.charAt(0).toUpperCase() || "U";
+  const itemClass = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+      isActive
+        ? "bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300"
+        : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+    );
+
+  return (
+    <div ref={boxRef} className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t("nav.profile")}
+        className={cn(
+          "flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-1 transition sm:pr-2.5",
+          open
+            ? "border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-950/40"
+            : "border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand-700 dark:hover:bg-brand-950/40"
+        )}
+      >
+        <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+          {initial}
+          {unread > 0 && (
+            <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 dark:border-slate-900" />
+          )}
+        </span>
+        <span className="hidden max-w-[9rem] text-left leading-tight sm:block">
+          <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name || t("nav.profile")}</span>
+          <span className="block text-[11px] font-semibold text-brand-600 dark:text-brand-400">{t("nav.profile")}</span>
+        </span>
+        <ChevronDown className={cn("hidden h-4 w-4 text-slate-400 transition-transform sm:block", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label={t("nav.profile")}
+          className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10 animate-fade-in dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40"
+        >
+          <div className="mb-1 flex items-center gap-3 border-b border-slate-100 px-3 pb-3 pt-2 dark:border-slate-800">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 font-bold text-white">{initial}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name}</span>
+              {user?.studentNumber && (
+                <span className="block truncate font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">{formatStudentId(user.studentNumber)}</span>
+              )}
+              {user?.phone && <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{user.phone}</span>}
+            </span>
+          </div>
+          <NavLink to="/notifications" role="menuitem" className={itemClass}>
+            <Bell className="h-4 w-4" />
+            <span>{t("nav.notifications")}</span>
+            {unread > 0 && (
+              <span aria-label={t("notifications.unreadAria", { count: unread })} className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </NavLink>
+          <NavLink to="/profile" role="menuitem" className={itemClass}>
+            <UserIcon className="h-4 w-4" />
+            <span>{t("nav.profile")}</span>
+          </NavLink>
+          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>{t("nav.logout")}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

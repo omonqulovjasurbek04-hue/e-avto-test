@@ -52,7 +52,9 @@ test.describe("language switching", () => {
   });
 
   test("Uzbek Cyrillic is used when chosen", async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("i18nextLng", "uz_cyrl"));
+    // Pricing is a cabinet page: sign in while the interface is still Latin Uzbek, then switch.
+    await loginViaUi(page, state().emails.student);
+    await page.evaluate(() => localStorage.setItem("i18nextLng", "uz_cyrl"));
     await page.goto("/pricing");
     await expect(page.getByRole("heading", { name: "Нархлар ва пакетлар" })).toBeVisible();
     await expect(page.getByText(/200 000 сўм/).first()).toBeVisible();
@@ -82,6 +84,7 @@ test.describe("language switching", () => {
   });
 
   test("Latin Uzbek stays the default", async ({ page }) => {
+    await loginViaUi(page, state().emails.student);
     await page.goto("/pricing");
     await expect(page.getByRole("heading", { name: "Narxlar va paketlar" })).toBeVisible();
     await expect(page.getByText(/200 000 so'm/).first()).toBeVisible();

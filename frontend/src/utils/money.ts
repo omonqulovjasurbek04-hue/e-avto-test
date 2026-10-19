@@ -11,8 +11,12 @@ const locale = () => LOCALES[lang()];
 
 export const formatMoney = (minor: number, currency = "UZS"): string => {
   const som = toSom(minor);
-  // Group digits with a normal space so the text is easy to copy and to match in tests.
-  const text = new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }).format(som).replace(/\u00a0/g, " ");
+  // Group digits with a normal space so the text is easy to copy and to match in tests. Built from parts:
+  // browsers without full ICU data fall back to English grouping ("5,900,000") for uz-UZ.
+  const text = new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 })
+    .formatToParts(som)
+    .map((p) => (p.type === "group" ? " " : p.value))
+    .join("");
   return currency === "UZS" ? `${text} ${SOM[lang()]}` : `${text} ${currency}`;
 };
 
@@ -26,3 +30,10 @@ export const formatTime = (iso: string | Date): string =>
 
 /** Value for <input type="datetime-local"> in Tashkent time (UTC+5, no DST) -> ISO string in UTC. */
 export const tashkentLocalToIso = (local: string): string => new Date(`${local}:00+05:00`).toISOString();
+
+/** Whole numbers with a space as the thousands separator in every language ("2 850"). */
+export const formatNumber = (n: number): string =>
+  new Intl.NumberFormat(locale(), { maximumFractionDigits: 0 })
+    .formatToParts(n)
+    .map((p) => (p.type === "group" ? " " : p.value))
+    .join("");

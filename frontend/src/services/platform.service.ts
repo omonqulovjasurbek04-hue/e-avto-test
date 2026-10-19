@@ -217,6 +217,8 @@ export const shopService = {
 
 export const studentService = {
   enrollments: () => apiGet<Enrollment[]>("/me/enrollments"),
+  /** Courses the student may open now (bought and active); `all` for staff or when the paywall is off. */
+  courseAccess: () => apiGet<{ all: boolean; courseIds: string[] }>("/me/course-access"),
   notifications: () => apiGet<{ items: AppNotification[]; unread: number }>("/me/notifications"),
   preferences: () => apiGet<NotificationPrefs>("/me/notification-preferences"),
   savePreferences: (d: Partial<NotificationPrefs>) => apiPut<NotificationPrefs>("/me/notification-preferences", d),
@@ -390,3 +392,6 @@ export const reportService = {
   teachers: (from: string, to: string) => apiGet<{ rows: TeacherLoadRow[] }>("/admin/reports/teachers", { from, to }),
   system: () => apiGet<SystemStatus>("/admin/system"),
 };
+
+/** Window event with the current unread-notification count (detail: number), sent by the notifications page. */
+export const UNREAD_EVENT = "eavto:unread-notifications";

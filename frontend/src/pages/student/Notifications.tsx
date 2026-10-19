@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { studentService } from "@/services/platform.service";
+import { studentService, UNREAD_EVENT } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -14,6 +15,12 @@ import { cn } from "@/utils/cn";
 export default function Notifications() {
   const { t } = useTranslation();
   const { data, loading, error, reload } = useLoad(() => studentService.notifications(), []);
+
+  // Tell the header the fresh unread count (its red dot), so it does not wait for its next poll.
+  const unread = data?.unread;
+  useEffect(() => {
+    if (unread !== undefined) window.dispatchEvent(new CustomEvent<number>(UNREAD_EVENT, { detail: unread }));
+  }, [unread]);
 
   const run = async (action: () => Promise<unknown>) => {
     try {

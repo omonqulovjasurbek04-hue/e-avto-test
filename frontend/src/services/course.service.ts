@@ -1,6 +1,6 @@
 import { apiGet } from "./api";
 import { env } from "../config/env";
-import type { Course, Difficulty } from "../types/course";
+import type { Course, CourseSection, Difficulty } from "../types/course";
 import type { Lesson } from "../types/lesson";
 import { contentLanguage } from "./site.service";
 
@@ -24,6 +24,12 @@ interface ApiCourse {
   updatedAt?: string;
   lessons?: ApiLesson[];
   category?: { id: string; slug: string; name: string } | null;
+  /** Seconds, sum of the published lessons (list endpoint). */
+  totalDuration?: number;
+  studyPeriod?: string | null;
+  section?: CourseSection;
+  /** Cheapest current package price (minor units); null = no price set yet. */
+  price?: { amount: number; currency: string; isSample: boolean } | null;
 }
 
 export interface PublicCategory {
@@ -44,6 +50,8 @@ export interface ApiLesson {
   thumbnail?: string | null;
   videoUrl?: string | null;
   locked?: boolean;
+  lockReason?: "purchase" | "attendance" | "schedule" | null;
+  unlocksAt?: string | null;
   privateVideoId?: string | null;
   duration?: number;
   order: number;
@@ -68,6 +76,8 @@ export function toLesson(l: ApiLesson): Lesson {
     thumbnail: l.thumbnail ?? undefined,
     videoUrl: l.videoUrl || undefined,
     locked: l.locked ?? false,
+    lockReason: l.lockReason ?? null,
+    unlocksAt: l.unlocksAt ?? null,
     privateVideoId: l.privateVideoId ?? null,
     duration: undefined,
     durationMinutes: Math.max(1, Math.round((l.duration ?? 0) / 60)),
@@ -86,11 +96,14 @@ function toCourse(c: ApiCourse): Course {
     description: c.description,
     category: c.category?.name ?? "",
     categorySlug: c.category?.slug,
+    studyPeriod: c.studyPeriod ?? undefined,
+    section: c.section ?? "MAIN",
+    price: c.price ?? null,
     difficulty: c.level ? LEVEL_TO_DIFFICULTY[c.level] : undefined,
     thumbnail: c.thumbnail ?? undefined,
     lessonsCount: c.lessonCount ?? lessons?.length ?? 0,
     totalLessons: c.lessonCount ?? lessons?.length ?? 0,
-    totalDurationMinutes: Math.round(totalSeconds / 60),
+    totalDurationMinutes: Math.round((c.totalDuration ?? totalSeconds) / 60),
     order: c.order,
     isPublished: c.isPublished,
     createdAt: c.createdAt,

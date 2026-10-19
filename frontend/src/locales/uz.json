@@ -35,7 +35,9 @@
     "general": "Umumiy",
     "passed": "O'tildi",
     "failed": "O'tilmadi",
-    "areYouSure": "Tasdiqlaysizmi?"
+    "areYouSure": "Tasdiqlaysizmi?",
+    "showPassword": "Parolni ko'rsatish",
+    "hidePassword": "Parolni yashirish"
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -47,7 +49,7 @@
     "faq": "Ko'p beriladigan savollar",
     "login": "Kirish",
     "register": "Ro'yxatdan o'tish",
-    "dashboard": "Panel",
+    "dashboard": "Dashboard",
     "profile": "Profil",
     "settings": "Sozlamalar",
     "history": "Tarix",
@@ -67,7 +69,7 @@
   },
   "home": {
     "heroTitle": "Haydovchilik testiga tayyorlang",
-    "heroSubtitle": "O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlaringizni sinang va oshiring",
+    "heroSubtitle": "O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlaringizni sinang va oshiring. Haydovchilik imtihoniga ishonch bilan tayyorlaning",
     "startTest": "Testni boshlash",
     "viewCourses": "Kurslarni ko'rish",
     "features": {
@@ -134,16 +136,47 @@
       }
     },
     "testimonials": {
-      "title": "Foydalanuvchilar fikrlari"
+      "title": "Haqiqiy imtihon natijalari"
     },
     "faq": {
       "title": "Ko'p beriladigan savollar",
-      "viewAll": "Barcha savollarni ko'rish"
+      "viewAll": "Barcha savollarni ko'rish",
+      "items": {
+        "q1": {
+          "q": "Savollar bazasi rasmiy imtihon savollariga mos keladimi?",
+          "a": "Ha, albatta. E-Avto platformasidagi barcha savollar O'zbekiston Respublikasi Yo'l Harakati Qoidalarining 2025-yildagi eng so'nggi tahriri hamda Davlat Yo'l Harakati Xavfsizligi Xizmati tasdiqlagan rasmiy imtihon bazasi asosida tuzilgan."
+        },
+        "q2": {
+          "q": "50 talik katta imtihondan o'tish sharti qanday?",
+          "a": "Imtihon topshirish uchun sizga 45 daqiqa vaqt ajratiladi. 50 ta savoldan kamida 45 tasiga to'g'ri javob berganingizda (90% aniqlik) test muvaffaqiyatli topshirilgan deb hisoblanadi va sertifikat taqdim etiladi."
+        },
+        "q3": {
+          "q": "Platformadan telefonda foydalanish qulaymi?",
+          "a": "Ha, sayt to'liq moslashuvchan (responsive) qilib yaratilgan. Siz Android yoki iOS qurilmalaringizdagi brauzer orqali kompyuterdagi kabi qulaylikda test yechishingiz va videolarni tomosha qilishingiz mumkin."
+        },
+        "q4": {
+          "q": "Xatolar marafoni qanday ishlaydi?",
+          "a": "Har qanday test davomida xato belgilangan har bir savol sizning shaxsiy profil hisobingizga avtomatik saqlanib boradi. Marafon rejimida tizim faqat shu adashgan savollaringizni ketma-ket chiqarib, to'g'ri yodlaguningizcha siz bilan ishlaydi."
+        }
+      },
+      "telegram": {
+        "title": "Savollaringiz Telegram orqali qabul qilinadi",
+        "description": "Savolingizni Telegram botimizga yozing — tez orada javob beramiz.",
+        "button": "Telegramda yozish"
+      }
     },
     "cta": {
-      "title": "Hoziroq boshlang!",
-      "description": "Bepul ro'yxatdan o'ting va haydovchilik testiga tayyorlang",
-      "button": "Bepul boshlash"
+      "title": "Guvohnoma olishga bir qadam qoldi!",
+      "description": "Hoziroq bepul sinov testini boshlang va haqiqiy bilim darajangizni aniqlang.",
+      "button": "Ro'yxatdan o'ting"
+    },
+    "eyebrows": {
+      "features": "Imkoniyatlar",
+      "courses": "Tizimli ta'lim",
+      "howItWorks": "Oddiy qadamlar",
+      "whyUs": "Afzalliklar",
+      "testimonials": "Fikrlar",
+      "faq": "Savollaringiz bormi?"
     }
   },
   "courses": {
@@ -164,7 +197,21 @@
     "sort": "Saralash",
     "allLevels": "Barcha darajalar",
     "sortNewest": "Eng yangi",
-    "sortTitle": "Nom bo'yicha"
+    "sortTitle": "Nom bo'yicha",
+    "hours": "{{count}} soat",
+    "minutes": "{{count}} daqiqa",
+    "priceFrom": "{{price}}",
+    "section": {
+      "MAIN": "Haydovchilik toifalari",
+      "COMBINED": "Birlashtirilgan toifalar",
+      "EXTRA": "Qo'shimcha kurslar"
+    },
+    "sectionHint": {
+      "MAIN": "B, A, A1, C va D toifalari bo'yicha to'liq tayyorgarlik",
+      "COMBINED": "Ikki toifa bitta dasturda yoki tirkama bilan boshqarish",
+      "EXTRA": "Nazariya, avtodrom, shahar va imtihonga tayyorgarlik"
+    },
+    "sampleNote": "Narxlar namunaviy: avtomaktablarning e'lon qilingan tariflari asosida. Aniq narx va unga nimalar kirishi shartnomada ko'rsatiladi."
   },
   "courseDetails": {
     "aboutCourse": "Kurs haqida",
@@ -261,12 +308,16 @@
       "submit": "Kirish",
       "noAccount": "Hisobingiz yo'qmi?",
       "register": "Ro'yxatdan o'ting",
-      "error": "Kirishda xatolik yuz berdi"
+      "error": "Kirishda xatolik yuz berdi",
+      "phone": "Telefon raqam",
+      "phoneRequired": "Telefon raqamni kiriting",
+      "phoneInvalid": "Telefon raqamni to'g'ri kiriting: +998 90 123 45 67",
+      "passwordRequired": "Parolni kiriting"
     },
     "register": {
       "title": "Ro'yxatdan o'tish",
       "subtitle": "Yangi hisob yaratib o'qishni boshlang",
-      "name": "Ism",
+      "name": "Ism va familiya",
       "email": "Email",
       "password": "Parol",
       "confirmPassword": "Parolni tasdiqlang",
@@ -276,7 +327,16 @@
       "error": "Ro'yxatdan o'tishda xatolik yuz berdi",
       "verificationSent": "Tasdiqlash havolasi emailingizga yuborildi",
       "verificationFailed": "Tasdiqlash xatini yuborib bo'lmadi. Keyinroq sozlamalardan qayta yuboring",
-      "verificationNoMail": "Email xizmati hali sozlanmagan, tasdiqlash xati yuborilmadi"
+      "verificationNoMail": "Email xizmati hali sozlanmagan, tasdiqlash xati yuborilmadi",
+      "phone": "Telefon raqam",
+      "emailOptional": "Email (ixtiyoriy)",
+      "stepsLabel": "Ro'yxatdan o'tish bosqichlari",
+      "step1": "Telegram orqali tasdiqlash",
+      "step2": "Ma'lumotlar",
+      "telegramIntro": "Avval Telegram orqali tasdiqlang: bot sizga 6 xonali kod yuboradi. Shundan keyin ism, telefon raqam va parolni kiritasiz.",
+      "finish": "Ro'yxatdan o'tishni yakunlash",
+      "done": "Ro'yxatdan o'tdingiz!",
+      "alreadyRegistered": "Bu Telegram hisobi allaqachon ro'yxatdan o'tgan — tizimga kirdingiz"
     },
     "forgotPassword": {
       "title": "Parolni tiklash",
@@ -377,7 +437,12 @@
     "generalTest": "Umumiy test",
     "questionsCount": "{{count}} savol",
     "timeSpent": "{{time}} vaqt",
-    "course": "Kurs"
+    "course": "Kurs",
+    "lockedCourse": "Kurs sotib olinmagan",
+    "buyCourse": "Kursni sotib olish",
+    "lockedTitle": "Testlar yopiq",
+    "lockedHint": "Test topshirish uchun avval kursni sotib oling. Sotib olingan kursning darslari va testlari darhol ochiladi.",
+    "owned": "Sotib olingan"
   },
   "testPage": {
     "question": "Savol {{current}} / {{total}}",
@@ -463,7 +528,8 @@
     "currentPassword": "Joriy parol",
     "newPassword": "Yangi parol",
     "confirmPassword": "Parolni tasdiqlang",
-    "updatePassword": "Parolni yangilash"
+    "updatePassword": "Parolni yangilash",
+    "description": "Shaxsiy ma'lumotlaringiz va test natijalaringiz"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -610,7 +676,12 @@
     "link": "Narxlar va paketlar",
     "noVideo": "Bu dars uchun video hali qo'shilmagan.",
     "privateFail": "Videoni ochib bo'lmadi. Kursga kirish huquqingizni tekshiring yoki keyinroq urinib ko'ring.",
-    "locked": "Yopiq dars"
+    "locked": "Yopiq dars",
+    "notYetTitle": "Dars hali ochilmagan",
+    "attendance": "Bu dars guruhdagi mashg'ulotga qatnashganingizdan keyin ochiladi: har bir qatnashilgan dars keyingi darslikni ochadi.",
+    "schedule": "Bu dars {{date}} kuni ochiladi. Masofaviy ta'limda darslar har 3 kunda 2 tadan ochib boriladi.",
+    "scheduleShort": "{{date}} ochiladi",
+    "attendanceShort": "Darsga qatnashgach ochiladi"
   },
   "roles": {
     "USER": "O'quvchi",
@@ -889,7 +960,14 @@
       "levelMiddle": "O'rta",
       "levelAdvanced": "Murakkab",
       "category": "Kategoriya",
-      "noCategory": "Kategoriyasiz"
+      "noCategory": "Kategoriyasiz",
+      "section": "Katalog bo'limi",
+      "studyPeriod": "O'qish muddati",
+      "price": "Narx",
+      "priceSom": "Narx (so'm)",
+      "priceHint": "Asosiy paket narxi. Bo'sh qoldirilsa, narx olib tashlanadi. Boshqa paketlar \"Paketlar va narxlar\" bo'limida.",
+      "priceInvalid": "Narxni faqat raqam bilan kiriting (masalan, 5 900 000)",
+      "sample": "namuna"
     },
     "cms": {
       "title": "Sayt kontenti",
@@ -1256,5 +1334,58 @@
   },
   "video": {
     "loadError": "Videoni yuklashda xatolik yuz berdi."
+  },
+  "rating": {
+    "eyebrow": "E-AVTO · O'quvchilar reytingi",
+    "title": "Eng kuchli haydovchilar",
+    "subtitle": "Testlarni yeching, bilimingizni sinang va reytingda yuqorilang!",
+    "statStudents": "O'quvchi",
+    "statTests": "Test yechilgan",
+    "statAverage": "O'rtacha natija",
+    "filterCourse": "Kurs bo'yicha",
+    "allCourses": "Barchasi",
+    "sortBy": "Saralash",
+    "sort_points": "Ball",
+    "sort_accuracy": "Aniqlik",
+    "sort_tests": "Testlar soni",
+    "top3": "Kuchli uchlik",
+    "fullList": "Umumiy reyting",
+    "points": "ball",
+    "testsAccuracy": "{{tests}} ta test · {{accuracy}}% aniqlik",
+    "colRank": "O'rin",
+    "colStudent": "O'quvchi",
+    "colTests": "Test",
+    "colAccuracy": "Aniqlik",
+    "colPoints": "Ball",
+    "you": "siz",
+    "myRank": "Sizning o'rningiz: {{rank}}",
+    "myNoTests": "Siz hali test yechmagansiz",
+    "myLine": "{{points}} ball · {{tests}} ta test · {{accuracy}}% aniqlik",
+    "visibleHint": "Reytingda \"Ism F.\" ko'rinishida chiqyapsiz.",
+    "hiddenHint": "Ro'yxatda ko'rinmaysiz: o'rningizni faqat siz ko'rasiz.",
+    "showMe": "Reytingda ko'rsatish",
+    "hideMe": "Reytingdan yashirish",
+    "nowVisible": "Endi reytingda ko'rinasiz",
+    "nowHidden": "Reytingdan yashirildingiz",
+    "guestHint": "O'z o'rningizni ko'rish va reytingga qo'shilish uchun",
+    "loginLink": "tizimga kiring",
+    "emptyTitle": "Reyting hali bo'sh",
+    "emptyHint": "Test yeching va reytingda ko'rinishga rozilik bering — birinchi bo'ling!",
+    "rulesTitle": "Ball qanday hisoblanadi",
+    "rulePerCorrect": "Har bir to'g'ri javob: +{{n}}",
+    "rulePerfect": "Testni 100% to'g'ri tugatish: +{{n}} bonus",
+    "ruleFirstTry": "Birinchi urinishda testdan o'tish: +{{n}} bonus",
+    "ruleWrong": "Noto'g'ri javob: 0",
+    "ruleRetake": "Bir kurs testini qayta yechsangiz, faqat eng yaxshi natijangiz hisoblanadi — bonus qayta berilmaydi.",
+    "privacyNote": "Reytingda faqat rozilik bergan o'quvchilar qisqartirilgan ism bilan ko'rsatiladi. Ballarni server hisoblaydi.",
+    "colCourse": "Kurs",
+    "colGrade": "Daraja",
+    "gradeTitle": "Aniqlik: {{accuracy}}% (A ≥ 90%, B ≥ 75%, C ≥ 50%)",
+    "top10": "Kuchli o'nlik",
+    "sampleNote": "Ismlar, ballar va natijalar — interfeysni ko'rsatish uchun namunaviy ma'lumotlar. Saytda 10 ta o'quvchi to'plangach, bu yerda haqiqiy reyting chiqadi."
+  },
+  "access": {
+    "buyFirst": "Darslar va testlar kurs sotib olingandan keyin ochiladi. Avval kursni tanlang.",
+    "locked": "Yopiq: kurs sotib olinmagan"
   }
 }

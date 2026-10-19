@@ -11,12 +11,12 @@ async function expectNoHorizontalOverflow(page: Page, path: string) {
 
 test.describe("phone layout (375px)", () => {
   test("public pages fit the screen", async ({ page }) => {
-    for (const path of ["/", "/pricing", "/courses", "/faq", "/contact", "/news", "/login", "/register", "/privacy"]) {
+    for (const path of ["/", "/courses", "/faq", "/contact", "/news", "/login", "/register", "/privacy"]) {
       await expectNoHorizontalOverflow(page, path);
     }
   });
 
-  test("the hamburger menu opens and reaches the pricing page", async ({ page }) => {
+  test("the hamburger menu opens and reaches the courses page", async ({ page }) => {
     await page.goto("/");
     const menu = page.getByRole("button", { name: "Menyu" });
     await expect(menu).toBeVisible();
@@ -24,8 +24,8 @@ test.describe("phone layout (375px)", () => {
 
     await menu.tap();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
-    await page.getByRole("link", { name: "Narxlar" }).first().tap();
-    await expect(page).toHaveURL(/\/pricing/);
+    await page.getByRole("link", { name: "Kurslar" }).first().tap();
+    await expect(page).toHaveURL(/\/courses/);
   });
 
   test("the menu button stays on screen and the language switch moved into the menu", async ({ page }) => {
@@ -34,7 +34,11 @@ test.describe("phone layout (375px)", () => {
     expect(box).not.toBeNull();
     expect(box!.x + box!.width).toBeLessThanOrEqual(375);
     await page.getByRole("button", { name: "Menyu" }).tap();
-    await expect(page.getByRole("button", { name: /RU/ }).last()).toBeVisible();
+    const langToggle = page.getByRole("button", { name: /^Til:/ }).last();
+    await expect(langToggle).toBeVisible();
+    await langToggle.tap();
+    await page.getByRole("menuitem", { name: "Русский" }).tap();
+    await expect(page.locator("html")).toHaveAttribute("lang", "ru");
   });
 
   test("tap targets of the main navigation are large enough", async ({ page }) => {

@@ -85,7 +85,8 @@ export const env = {
   PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || "",
   PAYMENT_MOCK_SECRET: process.env.PAYMENT_MOCK_SECRET || "",
   // true = lesson video/content require an active enrollment (paid access). false = everything published is open.
-  ENFORCE_ENROLLMENT: process.env.ENFORCE_ENROLLMENT === "true",
+  // Lessons and tests need a purchased (active) course. Only an explicit "false" opens everything (demos).
+  ENFORCE_ENROLLMENT: process.env.ENFORCE_ENROLLMENT !== "false",
   // Private media. Uploads are OFF by default: the project rule is that videos live on an external CDN.
   MEDIA_UPLOAD_ENABLED: process.env.MEDIA_UPLOAD_ENABLED === "true",
   MEDIA_DIR: process.env.MEDIA_DIR || "storage/private",

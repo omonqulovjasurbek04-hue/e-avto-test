@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle } from "lucide-react";
+import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { lessonService } from "@/services/lesson.service";
@@ -16,6 +16,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import LessonCard from "@/components/lesson/LessonCard";
+import WeeklyActivityChart from "@/components/common/WeeklyActivityChart";
+import { formatMinutesToDuration } from "@/utils/formatTime";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -50,7 +52,8 @@ export default function Dashboard() {
   }, []);
 
   const recommended = lessons.slice(0, 6);
-  const continueLearning = lessons.find((l) => !l.completed) ?? lessons[0];
+  // The next lesson to study: open (bought and already unlocked) and not finished yet.
+  const continueLearning = lessons.find((l) => !l.locked && !l.completed) ?? lessons.find((l) => !l.locked);
 
   return (
     <div className="container-page py-8">
@@ -64,8 +67,8 @@ export default function Dashboard() {
       </motion.div>
 
       {loading ? (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
@@ -75,10 +78,11 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Progress at a glance (the former "Rivojlanish" page lives here now). */}
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               label={t("dashboard.stats.progress")}
-              value={`${stats?.progressPct ?? 0}%`}
+              value={`${Math.round(stats?.progressPct ?? 0)}%`}
               icon={<Trophy className="h-6 w-6" />}
               color="brand"
             />
@@ -96,11 +100,19 @@ export default function Dashboard() {
             />
             <StatCard
               label={t("dashboard.stats.avgScore")}
-              value={`${stats?.avgScore ?? 0}%`}
+              value={`${Math.round(stats?.avgScore ?? 0)}%`}
               icon={<BookOpen className="h-6 w-6" />}
               color="slate"
             />
+            <StatCard
+              label={t("progress.studyTime")}
+              value={formatMinutesToDuration(stats?.learningMinutes ?? 0)}
+              icon={<Clock className="h-6 w-6" />}
+              color="brand"
+            />
           </div>
+
+          {stats && <WeeklyActivityChart weekly={stats.weekly} className="mt-8" />}
 
           {continueLearning && (
             <Card className="mt-8">

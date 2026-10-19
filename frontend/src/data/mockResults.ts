@@ -1,4 +1,4 @@
-import type { TestResultDetail, LeaderboardEntry, ProgressStats } from "../types/result";
+import type { TestResultDetail, ProgressStats } from "../types/result";
 import { mockQuestions } from "./mockQuestions";
 
 function buildResult(opts: {
@@ -78,14 +78,6 @@ export const mockResults: TestResultDetail[] = [
     timeSpent: 1100,
     createdAt: "2025-02-10T16:45:00.000Z",
   }),
-];
-
-export const mockLeaderboard: LeaderboardEntry[] = [
-  { id: "u-lead-1", name: "Sardorbek Rahimov", points: 9800, tests: 45, averageScore: 98, avatarColor: "bg-rose-500" },
-  { id: "u-lead-2", name: "Malika Yusupova", points: 9120, tests: 38, averageScore: 96, avatarColor: "bg-amber-500" },
-  { id: "u-lead-3", name: "Jasurbek Omonqulov", points: 8450, tests: 28, averageScore: 92, avatarColor: "bg-brand-600" },
-  { id: "u-lead-4", name: "Bekzod Aliyev", points: 7900, tests: 25, averageScore: 89, avatarColor: "bg-emerald-500" },
-  { id: "u-lead-5", name: "Nodira Karimova", points: 7400, tests: 22, averageScore: 88, avatarColor: "bg-indigo-500" },
 ];
 
 export const mockProgressSummary: ProgressStats = {

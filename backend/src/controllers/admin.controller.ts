@@ -39,11 +39,11 @@ export const listCourses = async (_req: Request, res: Response): Promise<void> =
 };
 
 export const createCourse = async (req: Request, res: Response): Promise<void> => {
-  success(res, await courseService.createCourse(courseCreateSchema.parse(req.body)), 201);
+  success(res, await courseService.createCourse(courseCreateSchema.parse(req.body), (req as AuthRequest).user?.userId ?? null), 201);
 };
 
 export const updateCourse = async (req: Request, res: Response): Promise<void> => {
-  success(res, await courseService.updateCourse(req.params.id, courseUpdateSchema.parse(req.body)));
+  success(res, await courseService.updateCourse(req.params.id, courseUpdateSchema.parse(req.body), (req as AuthRequest).user?.userId ?? null));
 };
 
 export const deleteCourse = async (req: Request, res: Response): Promise<void> => {

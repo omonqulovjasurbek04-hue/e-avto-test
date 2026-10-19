@@ -33,7 +33,7 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
   return config;
 });
 
-const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/courses", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/terms", "/p/", "/403", "/404", "/500"];
+const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/courses", "/leaderboard", "/pricing", "/news", "/faq", "/contact", "/about", "/privacy", "/terms", "/p/", "/403", "/404", "/500"];
 const isPublicPath = (path: string) => path === "/" || PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p.endsWith("/") ? p : `${p}/`));
 
 const AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/password", "/auth/reset-password", "/auth/2fa/login", "/auth/2fa/disable", "/auth/verify-email"];

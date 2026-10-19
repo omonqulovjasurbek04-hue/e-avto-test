@@ -1,14 +1,14 @@
 import { apiGet, apiPost, apiPut } from "./api";
 import { env } from "../config/env";
 import { setAccessToken } from "./session";
-import type { AuthResponse, EmailDelivery, LoginPayload, LoginResult, RegisterPayload, TwoFactorStatus, UpdateProfilePayload, User } from "../types/user";
+import type { AuthResponse, LoginPayload, LoginResult, RegisterPayload, TwoFactorStatus, UpdateProfilePayload, User } from "../types/user";
 
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResult> {
     if (env.useMock) {
       const { mockUsers } = await import("../data/mockUsers");
       const user = payload.email === "admin@eavto.uz" ? mockUsers[1] : mockUsers[0];
-      return { user: { ...user, email: payload.email }, token: "demo-token-" + Date.now() };
+      return { user: { ...user, ...(payload.email ? { email: payload.email } : {}) }, token: "demo-token-" + Date.now() };
     }
     return apiPost<LoginResult>("/auth/login", payload);
   },
@@ -35,14 +35,19 @@ export const authService = {
     return apiPost<AuthResponse>("/auth/register", payload);
   },
 
-  /** Telegram login, step 1: returns the bot link to open (the bot then sends a one-time code). */
-  async telegramStart(): Promise<{ sessionId: string; botUrl: string; expiresInSeconds: number }> {
+  /** Second sign-up step after the Telegram code: name, phone and password (once). */
+  async completeRegistration(payload: { name: string; phone: string; password: string }): Promise<User> {
+    return apiPost<User>("/auth/complete-registration", payload);
+  },
+
+  /** Telegram login, step 1: the plain bot link (no token); pressing Start there gives a random code. */
+  async telegramStart(): Promise<{ botUrl: string; botUsername: string; codeLength: number; expiresInSeconds: number }> {
     return apiPost("/auth/telegram/start");
   },
 
-  /** Telegram login, step 3: exchange the code from the bot for a session. */
-  async telegramVerify(sessionId: string, code: string): Promise<LoginResult> {
-    return apiPost<LoginResult>("/auth/telegram/verify", { sessionId, code });
+  /** Telegram login, step 2: the code from the bot finds the Telegram account and opens a session. */
+  async telegramVerify(code: string): Promise<LoginResult> {
+    return apiPost<LoginResult>("/auth/telegram/verify", { code });
   },
 
   async getCurrentUser(): Promise<User> {
@@ -66,15 +71,6 @@ export const authService = {
   async logoutEverywhere(): Promise<void> {
     if (env.useMock) return;
     await apiPost<unknown>("/auth/logout-all");
-  },
-
-  async verifyEmail(token: string): Promise<void> {
-    await apiPost<unknown>("/auth/verify-email", { token });
-  },
-
-  async resendVerification(): Promise<EmailDelivery & { alreadyVerified: boolean }> {
-    if (env.useMock) return { alreadyVerified: false, sent: false, mailConfigured: false };
-    return apiPost("/auth/verify-email/resend");
   },
 
   async twoFactorStatus(): Promise<TwoFactorStatus> {

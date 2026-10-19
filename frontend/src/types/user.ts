@@ -7,10 +7,14 @@ export interface User {
   name: string;
   phone?: string;
   role: UserRole;
+  /** Permanent sequential account number from the server; shown as "student0001". */
+  studentNumber?: number;
   avatarUrl?: string;
   /** undefined for accounts without an e-mail (Telegram). */
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
+  /** false: created through Telegram, sign-up not finished yet (no phone/password). */
+  hasPassword?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,16 +57,18 @@ export interface TwoFactorStatus {
   recoveryCodesLeft: number;
 }
 
+/** Sign in with the phone number; e-mail still works for staff and older accounts. */
 export interface LoginPayload {
-  email: string;
+  phone?: string;
+  email?: string;
   password: string;
 }
 
 export interface RegisterPayload {
   name: string;
-  email: string;
+  phone: string;
+  email?: string;
   password: string;
-  phone?: string;
 }
 
 export interface UpdateProfilePayload {

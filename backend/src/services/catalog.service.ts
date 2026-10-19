@@ -7,7 +7,7 @@ import { writeAudit } from "./audit.service";
 const now = () => new Date();
 
 /** Current price: active, inside its validity window, newest first. */
-const currentPrice = (prices: { amount: number; currency: string; validFrom: Date; validTo: Date | null; isActive: boolean; isSample: boolean }[]) =>
+export const currentPrice = (prices: { amount: number; currency: string; validFrom: Date; validTo: Date | null; isActive: boolean; isSample: boolean }[]) =>
   prices
     .filter((p) => p.isActive && p.validFrom <= now() && (!p.validTo || p.validTo > now()))
     .sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0] ?? null;

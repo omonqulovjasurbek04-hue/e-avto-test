@@ -8,7 +8,7 @@ test.describe("frontend review fixes", () => {
       localStorage.setItem("e_avto_session", "1");
       localStorage.setItem("e_avto_token", "expired.invalid.token");
     });
-    for (const path of ["/", "/courses", "/pricing", "/news"]) {
+    for (const path of ["/", "/courses", "/news"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await expect(page).not.toHaveURL(/\/login/);

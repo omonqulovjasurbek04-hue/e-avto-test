@@ -98,10 +98,11 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.web
-      args: { VITE_API_URL: "${PUBLIC_API_URL}" }
+      args: { VITE_API_URL: "${PUBLIC_API_URL:?set PUBLIC_API_URL in deploy/.env.production}" }
     restart: unless-stopped
     environment:
-      API_ORIGIN: ${PUBLIC_API_ORIGIN}
+      # Goes into the CSP connect-src; empty would block every API call from the browser.
+      API_ORIGIN: ${PUBLIC_API_ORIGIN:?set PUBLIC_API_ORIGIN in deploy/.env.production}
       API_UPSTREAM: http://api:5000
     depends_on: [api]
     ports:

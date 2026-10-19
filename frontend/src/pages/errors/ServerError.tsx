@@ -11,7 +11,7 @@ export default function ServerError() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
       <div className="absolute top-4 right-4">
-        <LanguageSwitcher variant="pills" />
+        <LanguageSwitcher />
       </div>
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/10">
         <ServerCrash className="h-8 w-8" />

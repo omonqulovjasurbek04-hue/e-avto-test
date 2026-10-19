@@ -95,18 +95,28 @@ test.describe("auth security", () => {
     expect(replay.status).toBe(401);
   });
 
-  test("sign-up reports honestly that no verification e-mail was sent, and the link verifies the address", async ({ page }) => {
-    const email = `${state().run}-verify@e2e.test`;
+  test("sign-up on the site takes a phone number (no e-mail), and an e-mail account can verify its address", async ({ page }) => {
+    // The form asks for a phone only: no e-mail field, no verification message, no "unconfirmed e-mail" banner.
+    const phone = `+9989${String(Date.now()).slice(-8)}`;
     await page.goto("/register");
-    await page.getByLabel("Ism").fill("E2E Verify");
-    await page.getByLabel("Email").fill(email);
+    // Step 1 is the Telegram code; the E2E server has no bot, so the form opens as the fallback.
+    await expect(page.getByLabel("Ism")).toHaveCount(0);
+    await page.getByRole("button", { name: "Telegram orqali tasdiqlash" }).click();
+    await expect(page.getByLabel(/Email/)).toHaveCount(0);
+    await page.getByLabel("Ism").fill("E2E Phone");
+    await page.getByLabel("Telefon raqam").fill(phone);
     await page.getByLabel("Parol", { exact: true }).fill(PASSWORD);
     await page.getByLabel("Parolni tasdiqlang").fill(PASSWORD);
     await page.getByRole("button", { name: "Ro'yxatdan o'tish" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
-    // The E2E backend has no SMTP: the UI must not claim the mail was sent.
-    await expect(page.getByText("Email xizmati hali sozlanmagan, tasdiqlash xati yuborilmadi")).toBeVisible();
-    await expect(page.getByText("Tasdiqlash havolasi emailingizga yuborildi")).toHaveCount(0);
+    await expect(page.getByText("Email manzilingiz hali tasdiqlanmagan.")).toHaveCount(0);
+    expect((await prisma.user.findUniqueOrThrow({ where: { phone } })).email).toBeNull();
+
+    // Accounts that do have an e-mail (created through the API) still verify it with the link.
+    const email = `${state().run}-verify@e2e.test`;
+    await register(email);
+    await page.context().clearCookies();
+    await loginViaUi(page, email);
     await expect(page.getByText("Email manzilingiz hali tasdiqlanmagan.")).toBeVisible();
 
     // Stand in for the e-mail: a link with a token whose hash the server knows.
@@ -144,7 +154,7 @@ test.describe("auth security", () => {
     // A fresh browser (no cookie) must pass both steps.
     await page.context().clearCookies();
     await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Telefon raqam").fill(email);
     await page.getByLabel("Parol").fill(PASSWORD);
     await page.getByRole("button", { name: "Kirish", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Ikki bosqichli tekshiruv" })).toBeVisible();

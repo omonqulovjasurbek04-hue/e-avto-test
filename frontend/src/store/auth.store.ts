@@ -13,10 +13,11 @@ interface AuthState {
   /** Set when the password (or Telegram) step succeeded and the account needs a 2FA code. */
   twoFactorChallenge: string | null;
   init: () => Promise<void>;
-  login: (email: string, password: string) => Promise<LoginResult>;
+  /** `login` is a phone number, or an e-mail address (contains "@"). */
+  login: (login: string, password: string) => Promise<LoginResult>;
   completeTwoFactor: (code: string) => Promise<void>;
   cancelTwoFactor: () => void;
-  register: (input: { name: string; email: string; password: string }) => Promise<AuthResponse>;
+  register: (input: { name: string; phone: string; email?: string; password: string }) => Promise<AuthResponse>;
   /** Applies the result of any login method: a session, or the 2FA step. */
   applyLoginResult: (result: LoginResult) => void;
   logout: () => Promise<void>;
@@ -61,8 +62,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: result.user, isAuthenticated: true, loading: false, twoFactorChallenge: null });
   },
 
-  login: async (email, password) => {
-    const result = await authService.login({ email, password });
+  login: async (login, password) => {
+    const id = login.trim();
+    const result = await authService.login(id.includes("@") ? { email: id, password } : { phone: id, password });
     get().applyLoginResult(result);
     return result;
   },

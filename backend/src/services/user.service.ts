@@ -1,6 +1,4 @@
 import { prisma } from "../config/database";
-import { env } from "../config/env";
-import { ttlCache } from "../utils/ttlCache";
 import { getMe } from "./auth.service";
 
 const TASHKENT_OFFSET_MS = 5 * 3_600_000;
@@ -25,7 +23,6 @@ export const studyStreak = (finishedAt: Date[], now: Date = new Date()): number 
   return streak;
 };
 
-const LEADERBOARD_SIZE = 50;
 
 export const getProfile = async (userId: string) => {
   const [user, progress] = await Promise.all([
@@ -78,46 +75,6 @@ export const getStatistics = async (userId: string) => {
   };
 };
 
-interface LeaderRow {
-  id: string;
-  name: string;
-  tests: number;
-  average: number;
-  lessons: number;
-}
 
-/** Aggregated in SQL so only the top entries are loaded, not every user. */
-const computeLeaderboard = async () => {
-  const rows = await prisma.$queryRaw<LeaderRow[]>`
-    SELECT u.id, u.name,
-           COALESCE(t.tests, 0)::int    AS tests,
-           COALESCE(t.average, 0)::int  AS average,
-           COALESCE(l.lessons, 0)::int  AS lessons
-    FROM users u
-    LEFT JOIN (
-      SELECT "userId", COUNT(*) AS tests, ROUND(AVG(score)) AS average
-      FROM tests WHERE "finishedAt" IS NOT NULL GROUP BY "userId"
-    ) t ON t."userId" = u.id
-    LEFT JOIN (
-      SELECT "userId", COUNT(*) AS lessons
-      FROM lesson_progress WHERE completed = true GROUP BY "userId"
-    ) l ON l."userId" = u.id
-    WHERE u."isActive" = true AND (t.tests IS NOT NULL OR l.lessons IS NOT NULL)
-    ORDER BY (COALESCE(t.average, 0) * COALESCE(t.tests, 0) + COALESCE(l.lessons, 0) * 10) DESC,
-             COALESCE(t.average, 0) DESC, u.id
-    LIMIT ${LEADERBOARD_SIZE}`;
 
-  return rows.map((r, index) => ({
-    id: r.id,
-    name: r.name,
-    tests: r.tests,
-    averageScore: r.average,
-    points: r.average * r.tests + r.lessons * 10,
-    rank: index + 1,
-  }));
-};
-
-// The public top list is an aggregation over every finished test; a minute of staleness is invisible to visitors.
-export const getLeaderboard = ttlCache(computeLeaderboard, () => env.LEADERBOARD_CACHE_SECONDS * 1000);
-
-export default { getProfile, getStatistics, getLeaderboard };
+export default { getProfile, getStatistics };

@@ -1,10 +1,11 @@
+import { clearLeaderboardCache } from "./leaderboard.service";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
 import { TestStartInput, TestAnswerInput, TestFinishInput } from "../validators/test";
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { buildResult } from "./result.service";
 import { notify } from "./notification.service";
-import { accessibleCourseIds, canAccessCourse } from "./access.service";
+import { accessibleCourseIds, canAccessCourse, canAccessLesson, lessonStates } from "./access.service";
 
 export const PASS_THRESHOLD = 70;
 const DEFAULT_QUESTION_COUNT = 50;
@@ -44,9 +45,15 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
   }
   if (targetCourseId) {
     if (!(await canAccessCourse(viewer, targetCourseId))) throw forbidden("You need access to this course to take its test");
+    // A lesson's test opens together with the lesson (attendance or the step-by-step schedule).
+    if (input.lessonId && !(await canAccessLesson(viewer, { id: input.lessonId, courseId: targetCourseId }))) {
+      throw forbidden("This lesson is not open for you yet");
+    }
   } else {
     // A mixed test may only draw from courses the user can open.
     const allowed = await accessibleCourseIds(viewer);
+    // Without any purchased course there is no test to take.
+    if (allowed !== "all" && allowed.size === 0) throw forbidden("You need an active course to take tests");
     if (allowed !== "all") {
       const ids = [...allowed];
       where.OR = [
@@ -66,6 +73,18 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
   }
   if (input.courseId) where.courseId = input.courseId;
   if (input.lessonId) where.lessonId = input.lessonId;
+
+  // Questions of lessons that are not open yet stay out of course and mixed tests.
+  if (!input.lessonId) {
+    const scope = targetCourseId ? [targetCourseId] : await (async () => {
+      const allowed = await accessibleCourseIds(viewer);
+      if (allowed !== "all") return [...allowed];
+      return (await prisma.course.findMany({ where: { isPublished: true }, select: { id: true } })).map((c) => c.id);
+    })();
+    const states = await lessonStates(viewer, scope);
+    const closed = [...states].filter(([, st]) => st.locked).map(([id]) => id);
+    if (closed.length) where.AND = [{ OR: [{ lessonId: null }, { lessonId: { notIn: closed } }] }];
+  }
 
   const available = await prisma.question.findMany({ where });
   if (available.length === 0) throw badRequest("No questions available");
@@ -221,6 +240,7 @@ export const finishTest = async (testId: string, userId: string, input: TestFini
 
   // Only the request that actually closed the attempt notifies (double submits stay silent); in-app only, no e-mail.
   if (outcome) {
+    clearLeaderboardCache(); // the new result shows up in the ranking right away
     const { score, correctAnswers, total, passed } = outcome;
     await notify({ userId, type: "TEST_RESULT", dedupeKey: `test:${testId}`, template: passed ? "TEST_PASSED" : "TEST_FAILED", vars: { score, correct: correctAnswers, total } }).catch(() => undefined);
   }
