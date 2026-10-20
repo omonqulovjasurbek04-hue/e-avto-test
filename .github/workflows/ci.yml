@@ -11,9 +11,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to a feature branch cancels the older run there. Runs on main are never cancelled:
+# Render waits for their result before deploying.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   backend:
