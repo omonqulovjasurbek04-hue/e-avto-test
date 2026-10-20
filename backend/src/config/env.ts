@@ -9,7 +9,10 @@ const nodeEnv = process.env.NODE_ENV || "development";
 
 if (nodeEnv === "production") {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret === DEV_SECRET || secret.length < 32) {
+  // JWT_SECRET_FROM_DB=true: no secret in the environment; the server creates a random one on first start
+  // and keeps it in the database (app_secrets), so nobody has to generate or paste it.
+  const fromDb = process.env.JWT_SECRET_FROM_DB === "true" && !secret;
+  if (!fromDb && (!secret || secret === DEV_SECRET || secret.length < 32)) {
     throw new Error("JWT_SECRET must be set to a random value of at least 32 characters in production");
   }
   if (!process.env.DATABASE_URL) {
@@ -58,7 +61,9 @@ if (nodeEnv === "production" && process.env.METRICS_TOKEN && process.env.METRICS
 export const env = {
   PORT: process.env.PORT || "5000",
   DATABASE_URL: process.env.DATABASE_URL || "",
-  JWT_SECRET: process.env.JWT_SECRET || DEV_SECRET,
+  // Replaced at start-up by the database secret when JWT_SECRET_FROM_DB=true (see lib/appSecrets.ts).
+  JWT_SECRET: process.env.JWT_SECRET || (process.env.JWT_SECRET_FROM_DB === "true" && nodeEnv === "production" ? "" : DEV_SECRET),
+  JWT_SECRET_FROM_DB: process.env.JWT_SECRET_FROM_DB === "true" && !process.env.JWT_SECRET,
   // Short-lived access token (Authorization: Bearer). Sessions are kept alive by the refresh cookie.
   ACCESS_TOKEN_TTL: process.env.ACCESS_TOKEN_TTL || "15m",
   REFRESH_TOKEN_TTL_DAYS: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS || "30", 10),

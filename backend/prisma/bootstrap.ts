@@ -9,8 +9,9 @@ import { normalizeUzPhone } from "../src/lib/phone";
  * Production bootstrap, run on every deploy after `prisma migrate deploy` (Render build command).
  * Safe to repeat and deletes nothing (unlike prisma/seed.ts, which is for local demo data only):
  *  1. An empty database gets the course catalogue: categories, courses, packages, lesson texts.
- *  2. If there is no administrator yet, one is created from BOOTSTRAP_ADMIN_PHONE / BOOTSTRAP_ADMIN_PASSWORD
- *     (set them once in the hosting dashboard; after the first deploy they can be removed).
+ *  2. If there is no administrator yet: the account registered on the site with BOOTSTRAP_ADMIN_PHONE becomes
+ *     SUPERADMIN (no password in the hosting dashboard needed). Without such an account, one is created when
+ *     BOOTSTRAP_ADMIN_PASSWORD (10+ characters) is set.
  */
 const prisma = new PrismaClient();
 const runContent = (file: string) =>
@@ -34,17 +35,19 @@ async function main() {
   }
   const phone = normalizeUzPhone(process.env.BOOTSTRAP_ADMIN_PHONE ?? "");
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD ?? "";
-  if (!phone || password.length < 10) {
-    console.warn("No administrator yet. Set BOOTSTRAP_ADMIN_PHONE (+998...) and BOOTSTRAP_ADMIN_PASSWORD (10+ characters) and redeploy.");
+  if (!phone) {
+    console.warn("No administrator yet. Set BOOTSTRAP_ADMIN_PHONE (+998...) and redeploy.");
     return;
   }
-  const passwordHash = await bcrypt.hash(password, 12);
   const existing = await prisma.user.findUnique({ where: { phone } });
   if (existing) {
-    // The owner registered on the site first: promote that account (the password is kept as they set it).
+    // The owner registered on the site with their own password: that account becomes the administrator.
     await prisma.user.update({ where: { id: existing.id }, data: { role: "SUPERADMIN", isActive: true } });
+  } else if (password.length >= 10) {
+    await prisma.user.create({ data: { name: "Administrator", phone, passwordHash: await bcrypt.hash(password, 12), role: "SUPERADMIN" } });
   } else {
-    await prisma.user.create({ data: { name: "Administrator", phone, passwordHash, role: "SUPERADMIN" } });
+    console.warn(`No account with ${phone.slice(0, 6)}***${phone.slice(-2)} yet: register on the site with this phone, then redeploy (or set BOOTSTRAP_ADMIN_PASSWORD, 10+ characters).`);
+    return;
   }
   console.log(`Administrator ready: ${phone.slice(0, 6)}***${phone.slice(-2)}`);
 }

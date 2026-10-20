@@ -905,6 +905,15 @@ model SiteSetting {
   @@map("site_settings")
 }
 
+/// Server-generated secrets (JWT_SECRET_FROM_DB). Never exposed through any API.
+model AppSecret {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+
+  @@map("app_secrets")
+}
+
 /// Time a student actually spent in lessons and tests, per Tashkent calendar day.
 /// The browser reports every ~30 s while a lesson or test page is open; the server credits at most the
 /// time that really passed since the previous report, so the counter cannot be inflated.
