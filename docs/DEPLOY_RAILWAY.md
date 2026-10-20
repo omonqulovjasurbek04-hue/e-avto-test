@@ -31,7 +31,7 @@ tasdiqlanmasa "Limited Trial" — tashqi tarmoq cheklanadi (Telegram bot ishlama
 3. Ikkala servis → **Settings → Regions**: **EU West (Amsterdam)** (sayt va baza bir joyda bo'lsin).
 4. App servisi → **Settings**:
    - **Wait for CI** — yoqilgan (faqat yashil GitHub CI'dan keyin deploy).
-   - **Pre-deploy Command**: `npx prisma migrate deploy && npx tsx prisma/bootstrap.ts`
+   - **Pre-deploy Command**: `npm run release` (migratsiya + bootstrap. Railway buyruqni shell'siz ishlatadi, `&&` bilan yozilsa ikkinchi qismi ishlamaydi)
    - **Healthcheck Path**: `/api/health/live`
    - **Custom Build Command** — bo'sh (Dockerfile build qiladi).
    - **Networking → Generate Domain**.
