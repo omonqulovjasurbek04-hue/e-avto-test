@@ -4,11 +4,13 @@ import path from "path";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { normalizeUzPhone } from "../src/lib/phone";
+import { catalog, photoUrl } from "./content/catalog";
 
 /**
  * Production bootstrap, run on every deploy after `prisma migrate deploy` (Render build command).
  * Safe to repeat and deletes nothing (unlike prisma/seed.ts, which is for local demo data only):
- *  1. An empty database gets the course catalogue: categories, courses, packages, lesson texts.
+ *  1. An empty database gets the course catalogue: categories, courses, packages, lesson texts. Courses that
+ *     have no photo get the catalogue one.
  *  2. If there is no administrator yet: the account registered on the site with BOOTSTRAP_ADMIN_PHONE becomes
  *     SUPERADMIN (no password in the hosting dashboard needed). Without such an account, one is created when
  *     BOOTSTRAP_ADMIN_PASSWORD (10+ characters) is set.
@@ -27,6 +29,15 @@ async function main() {
   } else {
     console.log("Catalogue already present: skipped");
   }
+
+  // Courses without a photo get the catalogue one (a photo set in the admin panel is never replaced).
+  let photos = 0;
+  for (const def of catalog) {
+    if (!def.photo) continue;
+    const res = await prisma.course.updateMany({ where: { slug: def.slug, OR: [{ thumbnail: null }, { thumbnail: "" }] }, data: { thumbnail: photoUrl(def.photo) } });
+    photos += res.count;
+  }
+  if (photos) console.log(`Course photos filled: ${photos}`);
 
   const admins = await prisma.user.count({ where: { role: { in: ["ADMIN", "SUPERADMIN"] } } });
   if (admins > 0) {

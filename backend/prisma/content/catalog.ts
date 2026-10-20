@@ -40,7 +40,10 @@ interface CourseDef {
   packages?: { name: string; description: string; days: number; price: number }[];
 }
 
-const catalog: CourseDef[] = [
+/** Unsplash photo id → image URL used as a course thumbnail. */
+export const photoUrl = (id: string) => `https://images.unsplash.com/photo-${id}?w=800&auto=format&fit=crop&q=80`;
+
+export const catalog: CourseDef[] = [
   // ── Main licence categories (launch order from the catalogue plan) ──
   { slug: "b-toifa", adopt: "B toifa", photo: "1722088386429-3c5a5afa77e5", title: "B toifa — yengil avtomobil", category: "yengil-avtomobil", level: "Boshlang'ich", order: 1, published: true, section: "MAIN", studyPeriod: "2–2,5 oy", packages: [{ name: "Standart", description: "Nazariya, amaliyot va ichki sinov", days: 90, price: 5900000 }],
     description: "Birinchi marta haydovchilik guvohnomasini olishga tayyorlanayotganlar uchun: yo'l harakati qoidalari va belgilar, avtomobil boshqaruvi, mexanik yoki avtomatik uzatmalar qutisi, avtodrom va shahar amaliyoti, parkovka, nazariy va amaliy imtihonga tayyorgarlik." },
@@ -88,9 +91,9 @@ const catalog: CourseDef[] = [
       ["Transport vositasini boshqarish asoslari", "Muvozanat, tormozlash va burilish."],
       ["Nazariy imtihon mashqlari", "Test savollari bo'yicha mashq."],
     ] },
-  { slug: "a-toifa", adopt: "A toifa", title: "A toifa — mototsikl", category: "mototsikl", level: "Boshlang'ich", order: 2, published: true, section: "MAIN", studyPeriod: "1–1,5 oy", packages: [{ name: "Standart", description: "Nazariya va amaliy mashg'ulotlar", days: 60, price: 1800000 }],
+  { slug: "a-toifa", adopt: "A toifa", photo: "1558981403-c5f9899a28bc", title: "A toifa — mototsikl", category: "mototsikl", level: "Boshlang'ich", order: 2, published: true, section: "MAIN", studyPeriod: "1–1,5 oy", packages: [{ name: "Standart", description: "Nazariya va amaliy mashg'ulotlar", days: 60, price: 1800000 }],
     description: "Mototsikl boshqarishni o'rganish uchun nazariy va amaliy tayyorgarlik: boshqaruv elementlari, muvozanat va past tezlikda boshqarish, burilish va tormozlash, yo'l belgilari va xavfsiz harakat, imtihonga tayyorgarlik." },
-  { slug: "c-toifa", adopt: "C toifa", title: "C toifa — yuk avtomobili", category: "yuk-avtomobil", level: "O'rta", order: 4, published: true, section: "MAIN", studyPeriod: "2,5 oy", packages: [{ name: "Standart", description: "Yuk transportini boshqarishga tayyorgarlik", days: 90, price: 3400000 }],
+  { slug: "c-toifa", adopt: "C toifa", photo: "1601584115197-04ecc0da31d7", title: "C toifa — yuk avtomobili", category: "yuk-avtomobil", level: "O'rta", order: 4, published: true, section: "MAIN", studyPeriod: "2,5 oy", packages: [{ name: "Standart", description: "Yuk transportini boshqarishga tayyorgarlik", days: 90, price: 3400000 }],
     description: "Og'ir yuk avtomobillarini boshqarishga tayyorgarlik: yuk avtomobilining tuzilishi, o'lchamlari va burilish xususiyatlari, yukni xavfsiz tashish, tormoz tizimi va texnik ko'rik, amaliy boshqaruv va imtihon tayyorgarligi. Qabul talablari avtomaktab litsenziyasi va amaldagi qoidalarga bog'liq." },
   { slug: "d-toifa", photo: "1564694202883-46e7448c1b26", title: "D toifa — avtobus", category: "avtobus", level: "Murakkab", order: 5, published: true, section: "MAIN", studyPeriod: "2 oy", packages: [{ name: "Standart", description: "Nazariya va amaliy mashg'ulotlar", days: 90, price: 4100000 }],
     description: "Yo'lovchi tashishga mo'ljallangan avtobuslarni boshqarish uchun kurs. D toifasi uchun alohida talablar va avvalgi haydovchilik tajribasi talab qilinishi mumkin — qabuldan oldin rasmiy talablarni tekshiring.",
@@ -166,7 +169,7 @@ async function main() {
     else course = await prisma.course.create({ data: { ...data, slug: def.slug } });
 
     if (def.photo && !course.thumbnail) {
-      course = await prisma.course.update({ where: { id: course.id }, data: { thumbnail: `https://images.unsplash.com/photo-${def.photo}?w=800&auto=format&fit=crop&q=80` } });
+      course = await prisma.course.update({ where: { id: course.id }, data: { thumbnail: photoUrl(def.photo) } });
     }
 
     let pkgOrder = 1;
@@ -192,7 +195,7 @@ async function main() {
   }
 }
 
-main()
+if (require.main === module) main()
   .catch((e) => {
     console.error(e);
     process.exitCode = 1;

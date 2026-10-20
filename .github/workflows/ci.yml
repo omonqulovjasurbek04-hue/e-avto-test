@@ -102,10 +102,11 @@ jobs:
                 packages: await p.coursePackage.count(),
                 textLessons: await p.lesson.count({ where: { content: { not: null } } }),
                 admins: await p.user.count({ where: { role: "SUPERADMIN" } }),
+                publishedWithoutPhoto: await p.course.count({ where: { isPublished: true, thumbnail: null } }),
               };
               console.log(r);
               await p.$disconnect();
-              if (r.courses < 10 || r.packages < 1 || r.textLessons < 1 || r.admins !== 1) process.exit(1);
+              if (r.courses < 10 || r.packages < 1 || r.textLessons < 1 || r.admins !== 1 || r.publishedWithoutPhoto !== 0) process.exit(1);
             })();
           '
 

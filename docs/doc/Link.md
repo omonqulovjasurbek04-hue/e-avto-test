@@ -27,3 +27,21 @@
 - [Экзамен-ПДД.рф — biletlar](https://xn----7sbnackuskv0m.xn--p1ai/bilety-pdd/)
 - [pddnew.ru — tanlangan savollar](https://pddnew.ru/test/favorites)
 - [drom.ru/pdd](https://www.drom.ru/pdd/)
+
+## Qo'shimcha qidiruv natijalari — 2026-10-20
+
+Quyidagi havolalar avvalgi ro'yxatda yo'q edi. Imkoniyatlar saytlarning ochiq sahifalaridagi ma'lumotlardan olindi; savollar soni va “rasmiy” degan ta'riflar platformalarning o'z da'volaridir.
+
+### O'zbekiston saytlari va web-ilovalari
+- [AvtoSmart — avtotestu.uz](https://www.avtotestu.uz/) — mavzuli testlar, yo'l belgilari va 64 ta variant/bilet; bepul onlayn tayyorgarlik deb taqdim etiladi.
+- [Avtolingo](https://www.avtolingo.uz/) — web va Android; o'quv xaritasi, kunlik seriya, reyting va progress. Yo'l belgilari, chorraha va yo'l chiziqlari bo'yicha bo'limlari bor.
+- [Avtoprav](https://avtoprav.uz/) — YHQ testlari, biletlar, imtihon rejimi va AI tushuntirish; sahifa ma'lumotlari qidiruv vaqtida yuklanayotgan edi.
+- [Avtotesta](https://avtotesta.uz/) — saytda 1 275 savol, 64 bilet va 37 mavzu ko'rsatilgan; mavzuli testlar, imtihon, savol izohlari va xatolar ustida ishlash.
+- [Hayda](https://hayda.uz/) — web-ilova va Android; bilet, mavzu, 20 savolli imtihon, 1 200+ savolli marafon (to'xtatib davom ettirish), saqlanganlar, xatolar, oflayn va video savollar.
+- [YHQ Test 2026](https://yhq-test.uz/) — 20 savol/25 daqiqalik sinov, mavzular, biletlar, yo'l belgilari katalogi va xato savollarni qayta ishlash.
+- [UzExam — avtotest bo'limi](https://uzexam.uz/c/avtotest/) — YHQ savollari va mock imtihonlar, reyting, xatolarni takrorlash; Telegram orqali kirish.
+- [AvtoBilim](https://avtobilim.uz/) — biletlar, mavzular, real imtihon simulyatsiyasi, marafon, xatolar tahlili va yo'l belgilari ma'lumotnomasi.
+- [Avto Test Pro](https://avtotesting.uz/) — YHQ testlari va biletlar sayti; ko'rilgan sahifa JavaScript talab qilgani sabab imkoniyatlar ro'yxatini mustaqil tekshirish cheklangan.
+
+### Qo'shimcha mobil ilova
+- [AvtoTest Uz — YHQ 2026 (Google Play)](https://play.google.com/store/apps/details?id=uz.avtotest&hl=uz) — mavzular, 20 savolli biletlar, 18/20 o'tishli real imtihon, saqlangan va murakkab savollar, natija tarixi, uch til va tungi rejim.
