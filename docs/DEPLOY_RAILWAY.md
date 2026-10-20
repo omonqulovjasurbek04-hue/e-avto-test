@@ -13,8 +13,7 @@ Railway loyiha "e-avto-test"
      https://<nom>.up.railway.app/api/*  → API
 ```
 
-`main`ga push → Railway avtomatik yangilaydi (servis sozlamasida **Wait for CI** yoqilsa — faqat GitHub CI
-o'tgandan keyin). Har deployda: build → `prisma migrate deploy` + `prisma/bootstrap.ts` (kurslar, birinchi admin)
+`main`ga push → GitHub CI yashil → Railway avtomatik yangilaydi (**Wait for CI**). Har deployda: build → `prisma migrate deploy` + `prisma/bootstrap.ts` (kurslar, birinchi admin)
 → healthcheck `/api/health/live` → yangi versiya. Xato bo'lsa eski versiya ishlashda qoladi.
 
 ## 1. Akkaunt
@@ -24,31 +23,38 @@ tasdiqlanmasa "Limited Trial" — tashqi tarmoq cheklanadi (Telegram bot ishlama
 
 ## 2. Loyiha va servislar
 
-1. **New Project → Deploy from GitHub repo → `e-avto-test`** (GitHub ruxsatini o'zingiz berasiz).
-   Railway `railway.json`ni o'qiydi va Dockerfile bilan build qiladi.
-2. Loyiha ichida **+ Create → Database → PostgreSQL**.
-3. App servisi → **Settings**:
-   - **Networking → Generate Domain** (port so'rasa: `8080`).
-   - **Source → Branch**: `main`; **Wait for CI**: yoqing.
-   - **Region**: Europe (eng yaqin).
+> Railway `railway.json`ni (Config as Code) 2026-08-28 dan beri yangi servislar uchun o'qimaydi —
+> hamma sozlama panelda. `deploy/render.yaml` repo ildizida bo'lmasin: Railway uni ko'rsa ortiqcha servislar yaratadi.
+
+1. **New Project → GitHub Repository → `e-avto-test`** (GitHub ruxsatini o'zingiz berasiz).
+2. **+ Add → Database → PostgreSQL**.
+3. Ikkala servis → **Settings → Regions**: **EU West (Amsterdam)** (sayt va baza bir joyda bo'lsin).
+4. App servisi → **Settings**:
+   - **Wait for CI** — yoqilgan (faqat yashil GitHub CI'dan keyin deploy).
+   - **Pre-deploy Command**: `npx prisma migrate deploy && npx tsx prisma/bootstrap.ts`
+   - **Healthcheck Path**: `/api/health/live`
+   - **Custom Build Command** — bo'sh (Dockerfile build qiladi).
+   - **Networking → Generate Domain**.
 
 ## 3. O'zgaruvchilar (App servisi → Variables → Raw Editor)
 
-Quyidagilarni nusxalab qo'ying — bular sir emas, Railway havolalari:
+Sir emas — Railway havolalari va oddiy sozlamalar:
 
 ```env
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+RAILWAY_DOCKERFILE_PATH=deploy/Dockerfile.railway
 NODE_ENV=production
 PORT=8080
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 CLIENT_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 PUBLIC_API_ORIGIN=https://${{RAILWAY_PUBLIC_DOMAIN}}
 VITE_API_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/api
 REFRESH_COOKIE_SAMESITE=strict
+TRUST_PROXY_HOPS=1
 ENFORCE_ENROLLMENT=true
 MEDIA_UPLOAD_ENABLED=false
 ```
 
-Va **sirlarni o'zingiz** qo'shasiz:
+Va **sirlarni o'zingiz** qo'shasiz (**+ New Variable**):
 
 | Kalit | Qiymat |
 |---|---|
@@ -57,7 +63,7 @@ Va **sirlarni o'zingiz** qo'shasiz:
 | `BOOTSTRAP_ADMIN_PASSWORD` | Yangi parol, 10+ belgi |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | Ixtiyoriy. Qo'yilsa — lokal backend'ni to'xtating (bitta token faqat bitta joyda) |
 
-**Deploy** tugmasi → 5–8 daqiqa.
+O'zgaruvchi saqlanganda Railway o'zi qayta deploy qiladi (5–8 daqiqa).
 
 ## 4. Tekshirish
 
