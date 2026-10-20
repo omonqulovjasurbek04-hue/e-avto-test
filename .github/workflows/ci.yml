@@ -109,6 +109,28 @@ jobs:
             })();
           '
 
+  # The Railway image (deploy/Dockerfile.railway): builds, starts in production mode and serves both
+  # the site and the API from one origin.
+  railway-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -f deploy/Dockerfile.railway --build-arg VITE_API_URL=https://ci.example.invalid/api -t eavto-railway .
+      - name: Start and probe
+        run: |
+          docker run -d --name app -p 8080:8080             -e PORT=8080             -e DATABASE_URL=postgresql://none:none@127.0.0.1:5432/none             -e JWT_SECRET=ci-only-0123456789abcdef0123456789abcdef             -e CLIENT_URL=https://ci.example.invalid             -e PUBLIC_API_ORIGIN=https://ci.example.invalid             eavto-railway
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/api/health/live && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8080/api/health/live | grep -q alive
+          curl -fsS -D headers.txt http://127.0.0.1:8080/courses -o page.html
+          grep -q 'id="root"' page.html
+          grep -qi "frame-src https://www.google.com" headers.txt
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/nope)" = 404
+      - name: Logs
+        if: always()
+        run: docker logs app || true
+
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import express, { Application, Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -40,8 +42,38 @@ if (env.NODE_ENV === "production") app.set("trust proxy", env.TRUST_PROXY_HOPS);
 
 const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim()).filter(Boolean);
 
+// One-service hosting: the API also serves the built site, so the browser talks to a single origin
+// (first-party cookies, no CORS). The same CSP as deploy/nginx.conf.template then applies to the HTML.
+const webDist = env.WEB_DIST_DIR ? path.resolve(env.WEB_DIST_DIR) : "";
+const serveWeb = Boolean(webDist) && fs.existsSync(path.join(webDist, "index.html"));
+if (env.WEB_DIST_DIR && !serveWeb) console.warn(`WEB_DIST_DIR set but ${webDist}/index.html is missing: serving the API only`);
+
 app.use(metricsMiddleware);
-app.use(helmet());
+app.use(
+  helmet(
+    serveWeb
+      ? {
+          contentSecurityPolicy: {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", "data:", "https:"],
+              mediaSrc: ["'self'", "https:", "blob:"],
+              fontSrc: ["'self'", "data:"],
+              connectSrc: ["'self'"],
+              frameSrc: ["https://www.google.com"],
+              frameAncestors: ["'none'"],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+              formAction: ["'self'"],
+            },
+          },
+          referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+        }
+      : undefined
+  )
+);
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -134,6 +166,17 @@ app.use("/api/admin/groups", adminGroupRoutes);
 app.use("/api/admin/reports", reportRoutes);
 app.use("/api/admin/system", systemRoutes);
 app.use("/api/admin", adminRoutes);
+
+if (serveWeb) {
+  // Hashed build files never change: cache for a year. index.html is always revalidated.
+  app.use("/assets", express.static(path.join(webDist, "assets"), { immutable: true, maxAge: "1y", index: false }));
+  app.use(express.static(webDist, { index: false, maxAge: "1h" }));
+  // Client-side routes (React Router) get the app; unknown /api paths still answer with JSON 404 below.
+  app.get(/^(?!\/api(\/|$)).*/, (_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-cache");
+    res.sendFile(path.join(webDist, "index.html"));
+  });
+}
 
 app.use((_req: Request, res: Response) => {
   error(res, "Not found", 404);

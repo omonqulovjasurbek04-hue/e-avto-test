@@ -103,6 +103,8 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL || "",
   // How many proxies stand in front of the API in production (each appends to X-Forwarded-For):
   // 1 = host nginx (VPS); Render static-site rewrite + Render's load balancer = 2.
+  // One-service hosting (Railway): folder with the built React app (frontend/dist). Empty = API only.
+  WEB_DIST_DIR: process.env.WEB_DIST_DIR || "",
   TRUST_PROXY_HOPS: Math.max(0, Number.parseInt(process.env.TRUST_PROXY_HOPS || "1", 10) || 0),
   // Public base URL Telegram posts webhook updates to (defaults to Render's own address, then PUBLIC_API_ORIGIN).
   TELEGRAM_WEBHOOK_BASE: (process.env.TELEGRAM_WEBHOOK_BASE || process.env.RENDER_EXTERNAL_URL || "").replace(/\/+$/, ""),
