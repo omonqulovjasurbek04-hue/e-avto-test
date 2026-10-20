@@ -103,10 +103,12 @@ jobs:
                 textLessons: await p.lesson.count({ where: { content: { not: null } } }),
                 admins: await p.user.count({ where: { role: "SUPERADMIN" } }),
                 publishedWithoutPhoto: await p.course.count({ where: { isPublished: true, thumbnail: null } }),
+                questions: await p.question.count(),
+                lessonsWithQuestions: (await p.question.groupBy({ by: ["lessonId"] })).length,
               };
               console.log(r);
               await p.$disconnect();
-              if (r.courses < 10 || r.packages < 1 || r.textLessons < 1 || r.admins !== 1 || r.publishedWithoutPhoto !== 0) process.exit(1);
+              if (r.courses < 10 || r.packages < 1 || r.textLessons < 1 || r.admins !== 1 || r.publishedWithoutPhoto !== 0 || r.questions !== 80 || r.lessonsWithQuestions !== 15) process.exit(1);
             })();
           '
 

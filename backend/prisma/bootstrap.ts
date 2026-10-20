@@ -10,7 +10,7 @@ import { catalog, photoUrl } from "./content/catalog";
  * Production bootstrap, run on every deploy after `prisma migrate deploy` (Render build command).
  * Safe to repeat and deletes nothing (unlike prisma/seed.ts, which is for local demo data only):
  *  1. An empty database gets the course catalogue: categories, courses, packages, lesson texts. Courses that
- *     have no photo get the catalogue one.
+ *     have no photo get the catalogue one. A database without questions gets the A/B/C question bank.
  *  2. If there is no administrator yet: the account registered on the site with BOOTSTRAP_ADMIN_PHONE becomes
  *     SUPERADMIN (no password in the hosting dashboard needed). Without such an account, one is created when
  *     BOOTSTRAP_ADMIN_PASSWORD (10+ characters) is set.
@@ -28,6 +28,12 @@ async function main() {
     runContent("courses.ts");
   } else {
     console.log("Catalogue already present: skipped");
+  }
+
+  // Test questions for the A, B and C lessons, once: a database that already has questions keeps its own.
+  if ((await prisma.question.count()) === 0) {
+    console.log("No questions yet: loading the question bank");
+    runContent("questions.ts");
   }
 
   // Courses without a photo get the catalogue one (a photo set in the admin panel is never replaced).
