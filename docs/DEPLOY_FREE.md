@@ -23,7 +23,7 @@ orqali ishlaydi — uxlab yotgan API'ni bot xabari uyg'otadi, birinchi javob kec
 ## 2. Render — sayt va API (10 daqiqa)
 
 1. <https://render.com> → **Get Started** → "GitHub" bilan kiring (o'zingiz).
-2. **New → Blueprint** → GitHub'ga ruxsat berib, `e-avto-test` repo'ni tanlang → branch `main`.
+2. **New → Blueprint** → `e-avto-test` repo → branch `main` → **Blueprint Path: `deploy/render.yaml`**.
 3. Render `render.yaml`ni o'qiydi va quyidagilarni so'raydi — o'zingiz kiritasiz:
 
    | Kalit | Qiymat |
