@@ -1,0 +1,51 @@
+# Host nginx on the VPS: the only public entry (ports 80/443). Rendered by deploy/server-setup.sh,
+# which replaces __DOMAIN__. Certbot then adds the 443/TLS parts to these server blocks.
+#
+#   https://__DOMAIN__, https://www.__DOMAIN__  → web container  127.0.0.1:8080
+#   https://api.__DOMAIN__                      → api container  127.0.0.1:5000
+#
+# With Cloudflare proxy on, the real visitor IP comes in CF-Connecting-IP; it is trusted only from
+# Cloudflare's addresses (cloudflare-realip.conf, refreshed by server-setup.sh).
+
+include /etc/nginx/snippets/cloudflare-realip.conf;
+
+# Bounded request rate per client in front of the API (the API has its own limits too).
+limit_req_zone $binary_remote_addr zone=eavto_api:10m rate=20r/s;
+
+server {
+  listen 80;
+  listen [::]:80;
+  server_name __DOMAIN__ www.__DOMAIN__;
+  server_tokens off;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 80;
+  listen [::]:80;
+  server_name api.__DOMAIN__;
+  server_tokens off;
+
+  # Image uploads (MAX_IMAGE_MB) and, if enabled, private videos.
+  client_max_body_size 200m;
+
+  location / {
+    limit_req zone=eavto_api burst=40 nodelay;
+    proxy_pass http://127.0.0.1:5000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    # One trusted hop: the API (trust proxy = 1) reads the visitor IP from here.
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+  }
+}

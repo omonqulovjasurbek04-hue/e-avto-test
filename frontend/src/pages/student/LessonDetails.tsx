@@ -17,6 +17,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDuration } from "@/utils/formatTime";
 import SafeHtml from "@/components/common/SafeHtml";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
 
 // Lesson text is stored as simple HTML (h2/h3, p, ul/ol, strong); Tailwind's reset strips their default look.
 const LESSON_TEXT =
@@ -30,6 +31,8 @@ export default function LessonDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const { startTest, starting } = useStartTest();
+  // Reading or watching an open lesson counts as study time.
+  useStudyTimer("lesson", Boolean(lesson && !lesson.locked));
 
   const load = useCallback(async () => {
     if (!lessonId) return;

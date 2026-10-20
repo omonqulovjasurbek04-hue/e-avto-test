@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTest } from "@/hooks/useTest";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
 import { ROUTES } from "@/constants/routes";
 import { FullSpinner } from "@/components/ui/Spinner";
 import { ProgressBar } from "@/components/ui/Progress";
@@ -21,6 +22,8 @@ export default function TestPage() {
 
   // The attempt is created on the tests/lesson screens; opening a stale URL goes back to the hub.
   const hasActiveTest = test.status === "active" && test.id === testId;
+  // Time in a running test counts as study time.
+  useStudyTimer("test", hasActiveTest);
   useEffect(() => {
     if (!hasActiveTest && !(test.status === "finished" && test.result)) {
       navigate(ROUTES.tests, { replace: true });

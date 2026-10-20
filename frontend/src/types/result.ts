@@ -10,6 +10,9 @@ export interface AnswerReview {
   explanation?: string;
 }
 
+/** EXAM follows the course rules; MISTAKES / SAVED are practice and stay out of the leaderboard. */
+export type TestMode = "EXAM" | "MISTAKES" | "SAVED";
+
 export interface TestResultSummary {
   id: string;
   courseId?: string;
@@ -21,6 +24,9 @@ export interface TestResultSummary {
   skippedAnswers?: number;
   score: number;
   passed: boolean;
+  mode?: TestMode;
+  /** Wrong + unanswered allowed by the exam rule (official exam: 2 of 20); absent = no limit. */
+  maxMistakes?: number;
   timeSpent: number;
   createdAt: string;
 }
@@ -31,7 +37,7 @@ export interface TestResultDetail extends TestResultSummary {
 }
 
 export interface StartTestResponse {
-  test: { id: string; totalQuestions: number; duration?: number; startedAt?: string };
+  test: { id: string; totalQuestions: number; duration?: number; startedAt?: string; mode?: TestMode; maxMistakes?: number | null };
   questions: TestQuestion[];
 }
 

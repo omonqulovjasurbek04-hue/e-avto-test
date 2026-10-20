@@ -77,7 +77,7 @@
       "items": {
         "test": {
           "title": "Interaktiv testlar",
-          "description": "150 ta mavzu va 100 ta savol bankidan 50 ta savol aralashtirib tanlanadi"
+          "description": "Har urinishda savollar aralashtirib beriladi: 20 tagacha savolga 20 daqiqa, 50 tagacha savolga 45 daqiqa."
         },
         "results": {
           "title": "Batafsil natijalar",
@@ -130,7 +130,7 @@
       "title": "Nima uchun biz?",
       "items": {
         "official": "Rasmiy test topshiriqlari asosida",
-        "free": "To'liq bepul",
+        "free": "Ro'yxatdan o'tish bepul",
         "convenient": "Qulay va tushunarli interfeys",
         "mobile": "Mobil qurilmalarga mos"
       }
@@ -144,19 +144,19 @@
       "items": {
         "q1": {
           "q": "Savollar bazasi rasmiy imtihon savollariga mos keladimi?",
-          "a": "Ha, albatta. E-Avto platformasidagi barcha savollar O'zbekiston Respublikasi Yo'l Harakati Qoidalarining 2025-yildagi eng so'nggi tahriri hamda Davlat Yo'l Harakati Xavfsizligi Xizmati tasdiqlagan rasmiy imtihon bazasi asosida tuzilgan."
+          "a": "Savollar O'zbekiston Respublikasi Yo'l harakati qoidalari asosida tuziladi. Rasmiy imtihon tartibi va talablarini rasmiy manbada tekshiring."
         },
         "q2": {
-          "q": "50 talik katta imtihondan o'tish sharti qanday?",
-          "a": "Imtihon topshirish uchun sizga 45 daqiqa vaqt ajratiladi. 50 ta savoldan kamida 45 tasiga to'g'ri javob berganingizda (90% aniqlik) test muvaffaqiyatli topshirilgan deb hisoblanadi va sertifikat taqdim etiladi."
+          "q": "Testdan o'tish sharti qanday?",
+          "a": "Testda 50 tagacha savol va 45 daqiqa vaqt bo'ladi. Kamida 70% savolga to'g'ri javob bersangiz, test topshirilgan hisoblanadi. Natija va har bir savol tahlili darhol ko'rsatiladi."
         },
         "q3": {
           "q": "Platformadan telefonda foydalanish qulaymi?",
           "a": "Ha, sayt to'liq moslashuvchan (responsive) qilib yaratilgan. Siz Android yoki iOS qurilmalaringizdagi brauzer orqali kompyuterdagi kabi qulaylikda test yechishingiz va videolarni tomosha qilishingiz mumkin."
         },
         "q4": {
-          "q": "Xatolar marafoni qanday ishlaydi?",
-          "a": "Har qanday test davomida xato belgilangan har bir savol sizning shaxsiy profil hisobingizga avtomatik saqlanib boradi. Marafon rejimida tizim faqat shu adashgan savollaringizni ketma-ket chiqarib, to'g'ri yodlaguningizcha siz bilan ishlaydi."
+          "q": "Xatolarimni qanday ko'raman?",
+          "a": "Har bir testdan keyin qaysi savolda xato qilganingiz va to'g'ri javob ko'rsatiladi. \"Testlar\" bo'limidagi \"Xatolar ustida ishlash\" mashqi oxirgi marta xato javob bergan savollaringizni qayta beradi; qiyin savollarni tahlilda saqlab, alohida mashq qilish mumkin."
         }
       },
       "telegram": {
@@ -167,7 +167,7 @@
     },
     "cta": {
       "title": "Guvohnoma olishga bir qadam qoldi!",
-      "description": "Hoziroq bepul sinov testini boshlang va haqiqiy bilim darajangizni aniqlang.",
+      "description": "Hoziroq ro'yxatdan o'ting, kursni tanlang va bilim darajangizni sinab ko'ring.",
       "button": "Ro'yxatdan o'ting"
     },
     "eyebrows": {
@@ -227,7 +227,8 @@
     "title": "Biz haqimizda",
     "mission": {
       "title": "Bizning maqsadimiz",
-      "description": "E-Avto Test platformasi O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlarni oshirish va haydovchilik imtihoniga tayyorlash maqsadida yaratilgan."
+      "description": "E-Avto Test platformasi O'zbekiston Respublikasi Yo'l harakati qoidalari bo'yicha bilimlarni oshirish va haydovchilik imtihoniga tayyorlash maqsadida yaratilgan.",
+      "goal": "Har bir o'quvchi yo'l harakati qoidalarini yodlab emas, tushunib o'rganishi va imtihonga ishonch bilan borishi uchun: darslar, testlar va xatolar tahlili bitta joyda, o'z sur'atingizda."
     },
     "values": {
       "title": "Bizning qadriyatlarimiz",
@@ -236,8 +237,8 @@
         "description": "Yuqori sifatli kontent va xizmat"
       },
       "accessibility": {
-        "title": "Ochiqlik",
-        "description": "Hammaga ochiq va bepul"
+        "title": "Shaffoflik",
+        "description": "Narxlar ochiq: to'lovdan oldin nima olishingizni aniq ko'rasiz"
       },
       "innovation": {
         "title": "Innovatsiya",
@@ -263,38 +264,48 @@
       "messagePlaceholder": "Xabaringizni yozing...",
       "send": "Xabar yuborish",
       "success": "Xabar muvaffaqiyatli yuborildi!",
-      "error": "Xabar yuborishda xatolik yuz berdi"
+      "error": "Xabar yuborishda xatolik yuz berdi",
+      "phone": "Telefon raqam",
+      "phoneInvalid": "Telefon raqamni to'liq kiriting: +998 90 123-45-67"
     },
     "info": {
       "title": "Aloqa ma'lumotlari",
       "email": "Email",
       "phone": "Telefon",
       "address": "Manzil"
-    }
+    },
+    "map": {
+      "title": "Bizning markazlar",
+      "open": "Xaritada ochish",
+      "frameTitle": "{{name}} xaritada"
+    },
+    "call": "Qo'ng'iroq qilish",
+    "telegram": "Telegram bot",
+    "email": "E-pochta"
   },
   "faq": {
     "title": "Ko'p beriladigan savollar",
     "description": "Eng ko'p beriladigan savollarga javoblar",
     "questions": {
       "q1": {
-        "q": "Platforma bepulmi?",
-        "a": "Ha, E-Avto Test platformasi to'liq bepul."
+        "q": "Platforma pullikmi?",
+        "a": "Ro'yxatdan o'tish bepul. Darslar va testlar kurs sotib olingandan keyin ochiladi; narxlar har bir kurs sahifasida ko'rsatilgan."
       },
       "q2": {
         "q": "Qancha vaqtda test topshirish mumkin?",
-        "a": "Har bir test uchun 25 daqiqa vaqt beriladi."
+        "a": "Vaqt savollar soniga bog'liq: 20 tagacha savol — 20 daqiqa, 50 tagacha — 45 daqiqa. Kurs uchun alohida vaqt belgilangan bo'lsa, o'shanisi amal qiladi."
       },
       "q3": {
         "q": "Nechta savol beriladi?",
-        "a": "Har bir testda 50 ta savol beriladi."
+        "a": "Odatda 50 tagacha savol beriladi; kursda savollar kamroq bo'lsa, borlari beriladi."
       },
       "q4": {
         "q": "O'tish bali necha?",
-        "a": "O'tish bali 70% dan boshlanadi."
+        "a": "O'tish bali — 70% (kurs uchun boshqacha belgilangan bo'lishi mumkin)."
       },
       "q5": {
         "q": "Qayta topshirish mumkinmi?",
-        "a": "Ha, istalgan vaqtda qayta topshirish mumkin."
+        "a": "Ha. Kursda urinishlar soni cheklanmagan bo'lsa, xohlagancha qayta topshirasiz; reytingda eng yaxshi natijangiz hisoblanadi."
       }
     }
   },
@@ -429,7 +440,7 @@
   },
   "tests": {
     "title": "Test topshirish",
-    "description": "150 ta mavzu va 100 ta savol bankidan har bir urinishda 50 ta savol aralashtirib tanlanadi.",
+    "description": "Har urinishda kursning ochiq darslaridagi savollar aralashtirib beriladi (50 tagacha). O'tish bali — 70%.",
     "startTest": "Testni boshlash",
     "previousResults": "Oldingi natijalar",
     "noTests": "Hali testlar topshirmagansiz",
@@ -442,7 +453,19 @@
     "buyCourse": "Kursni sotib olish",
     "lockedTitle": "Testlar yopiq",
     "lockedHint": "Test topshirish uchun avval kursni sotib oling. Sotib olingan kursning darslari va testlari darhol ochiladi.",
-    "owned": "Sotib olingan"
+    "owned": "Sotib olingan",
+    "practice": {
+      "mistakesTitle": "Xatolar ustida ishlash",
+      "mistakesDesc": "Oxirgi marta xato javob bergan savollaringiz. To'g'ri javob bersangiz, ro'yxatdan chiqadi.",
+      "noMistakes": "Hozircha xatolar yo'q. Test ishlang — xato savollar shu yerda yig'iladi.",
+      "savedTitle": "Saqlangan savollar",
+      "savedDesc": "Test tahlilida belgilagan savollaringizdan mashq.",
+      "noSaved": "Test tahlilida qiyin savollarni saqlang — ular shu yerda bo'ladi.",
+      "start": "Mashq qilish",
+      "badge": "Mashq",
+      "save": "Saqlash",
+      "unsave": "Saqlangan"
+    }
   },
   "testPage": {
     "question": "Savol {{current}} / {{total}}",
@@ -504,7 +527,10 @@
     "testsCompleted": "Tugallangan testlar",
     "avgScore": "O'rtacha ball",
     "studyTime": "O'qish vaqti",
-    "noData": "Hozircha ma'lumot yo'q"
+    "noData": "Hozircha ma'lumot yo'q",
+    "weekTotal": "Bu hafta",
+    "minShort": "daq",
+    "weekEmpty": "Bu hafta hali dars yoki test ishlanmadi. Vaqt dars va test sahifalarida avtomatik hisoblanadi."
   },
   "leaderboard": {
     "title": "Reyting",
@@ -529,7 +555,8 @@
     "newPassword": "Yangi parol",
     "confirmPassword": "Parolni tasdiqlang",
     "updatePassword": "Parolni yangilash",
-    "description": "Shaxsiy ma'lumotlaringiz va test natijalaringiz"
+    "description": "Shaxsiy ma'lumotlaringiz va test natijalaringiz",
+    "bestScore": "Eng yaxshi natija"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -544,7 +571,7 @@
     "pushNotifications": "Push bildirishnomalar",
     "account": "Hisob",
     "deleteAccount": "Hisobni o'chirish",
-    "deleteAccountDesc": "Bu amal qaytarib bo'lmaydi"
+    "deleteAccountDesc": "Ushbu qurilmadagi sessiyani yakunlaydi"
   },
   "errors": {
     "notFound": {
@@ -600,8 +627,8 @@
   "orders": {
     "title": "Buyurtmalar va to'lovlar",
     "emptyTitle": "Buyurtmalar yo'q",
-    "emptyDesc": "Kurs sotib olish uchun narxlar sahifasiga o'ting.",
-    "toPricing": "Narxlar",
+    "emptyDesc": "Kurs sotib olish uchun \"Kurslar\" bo'limiga o'ting.",
+    "toPricing": "Kurslar",
     "waiting": "To'lov provayder tomonidan tasdiqlangach kursga kirish avtomatik ochiladi. Sahifa o'zi yangilanadi.",
     "discount": "Chegirma",
     "status": {
@@ -623,7 +650,40 @@
       "PLANNED": "Rejalashtirilgan",
       "DONE": "O'tkazilgan",
       "CANCELLED": "Bekor qilingan"
-    }
+    },
+    "weekdaysShort": [
+      "Du",
+      "Se",
+      "Ch",
+      "Pa",
+      "Ju",
+      "Sh",
+      "Ya"
+    ],
+    "months": [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr"
+    ],
+    "days": {
+      "ODD": "Toq kunlar",
+      "EVEN": "Juft kunlar"
+    },
+    "today": "Bugun",
+    "noLessonsDay": "Bu kunda dars yo'q.",
+    "prevMonth": "Oldingi oy",
+    "nextMonth": "Keyingi oy",
+    "lessonsCount_one": "{{count}} ta dars",
+    "lessonsCount_other": "{{count}} ta dars"
   },
   "attendance": {
     "title": "Davomat",
@@ -854,6 +914,7 @@
       "minutes": "Vaqt (daqiqa, bo'sh = avtomatik)",
       "passScore": "O'tish bali (%)",
       "maxAttempts": "Urinishlar soni (bo'sh = cheksiz)",
+      "maxMistakes": "Ruxsat etilgan xatolar (bo'sh = cheklanmagan; rasmiy imtihon: 2)",
       "rulesHint": "Bu qoidalar o'quvchi yuborgan qiymatlardan ustun. Natija va ball serverda hisoblanadi.",
       "saved": "Imtihon qoidalari saqlandi",
       "bankTitle": "Savollar banki: import / eksport",
@@ -1056,7 +1117,12 @@
       "tplTEST_FAILED": "Test natijasi: o'tmadi",
       "tplANNOUNCEMENT": "E'lon",
       "tabImages": "Rasmlar",
-      "cover": "Muqova rasmi (URL)"
+      "cover": "Muqova rasmi (URL)",
+      "branches": "Markazlar (Bog'lanish sahifasidagi xarita)",
+      "branchesHint": "Har bir markaz nomi va manzili. Manzil xaritada qidiriladi, shuning uchun aniq yozing: viloyat, shahar, ko'cha, uy.",
+      "branchName": "Markaz nomi",
+      "branchAddress": "Manzil",
+      "branchAdd": "Markaz qo'shish"
     },
     "groups": {
       "title": "Guruhlar va jadval",
@@ -1387,5 +1453,11 @@
   "access": {
     "buyFirst": "Darslar va testlar kurs sotib olingandan keyin ochiladi. Avval kursni tanlang.",
     "locked": "Yopiq: kurs sotib olinmagan"
+  },
+  "guide": {
+    "section": "Platformadan foydalanish",
+    "sectionHint": "Sayt bo'yicha qisqa qo'llanmalar — doim ochiq, kurs sotib olish shart emas.",
+    "minutes": "{{count}} daqiqa",
+    "back": "Dashboard"
   }
 }

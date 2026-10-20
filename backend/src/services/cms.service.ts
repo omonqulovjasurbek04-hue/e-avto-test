@@ -1,3 +1,5 @@
+import { isTelegramConfigured } from "./telegram.service";
+import { notifyContactMessage } from "./telegramAdmin.service";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
 import { badRequest, conflict, notFound } from "../utils/errors";
@@ -118,15 +120,19 @@ export const getAdminSettings = async () => {
 
 export const getPublicSettings = async (lang: Language = BASE_LANGUAGE) => {
   const { translations, ...values } = await getAdminSettings();
-  return { ...values, ...(lang === BASE_LANGUAGE ? {} : translations[lang]) };
+  // The bot link for the contact page comes from the server config, so it always matches the running bot.
+  const telegramBot = isTelegramConfigured() ? `https://t.me/${env.TELEGRAM_BOT_USERNAME}` : undefined;
+  return { ...values, ...(lang === BASE_LANGUAGE ? {} : translations[lang]), ...(telegramBot ? { telegramBot } : {}) };
 };
 
 export const submitContact = async (input: { name: string; contact: string; message: string; website?: string }) => {
   // Bots fill the hidden field; answer "ok" without storing so they learn nothing.
   if (input.website) return { received: true };
-  await prisma.contactMessage.create({
+  const saved = await prisma.contactMessage.create({
     data: { name: toPlainText(input.name), contact: toPlainText(input.contact), message: toPlainText(input.message) },
   });
+  // Staff signed in to the Telegram bot get it at once (the visitor does not wait for Telegram).
+  if (isTelegramConfigured()) void notifyContactMessage(saved).catch((e: Error) => console.error("Contact → Telegram failed:", e.message));
   return { received: true };
 };
 
@@ -270,10 +276,9 @@ const computeStats = async () => {
   const [users, questions, finished, passed] = await Promise.all([
     prisma.user.count({ where: { role: "USER", isActive: true } }),
     prisma.question.count({ where: { isPublished: true } }),
-    prisma.test.count({ where: { finishedAt: { not: null } } }),
-    prisma.test.count({ where: { finishedAt: { not: null }, passed: true } }),
+    prisma.test.count({ where: { finishedAt: { not: null }, mode: "EXAM" } }),
+    prisma.test.count({ where: { finishedAt: { not: null }, mode: "EXAM", passed: true } }),
   ]);
   return { users, questions, testsTaken: finished, passRate: finished > 0 ? Math.round((passed / finished) * 100) : null };
 };
 export const getPublicStats = ttlCache(computeStats, () => env.LEADERBOARD_CACHE_SECONDS * 1000);
-export const resetStatsCache = () => getPublicStats.clear();

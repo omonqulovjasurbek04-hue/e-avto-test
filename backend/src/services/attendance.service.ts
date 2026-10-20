@@ -5,7 +5,7 @@ import { hasPermission } from "../lib/permissions";
 import { summarize, toCsv } from "../lib/attendance";
 import { writeAudit } from "./audit.service";
 import { Actor, loadAccessibleGroup } from "./group.service";
-import { dispatchEmails, notify } from "./notification.service";
+import { cancelTelegramReminders, dispatchEmails, dispatchTelegramReminders, notify } from "./notification.service";
 
 interface Mark {
   studentId: string;
@@ -44,6 +44,8 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
   if (finalized && !hasPermission(actor.role, "attendance:edit")) throw forbidden("This attendance is finalized; ask an administrator to change it");
 
   const emailIds: (string | null)[] = [];
+  // Set inside the transaction: how many students were newly marked absent (they get Telegram reminders).
+  let newlyAbsentCount = 0;
   const records = await prisma.$transaction(async (tx) => {
     const session = slot.session ?? (await tx.attendanceSession.upsert({
       where: { slotId },
@@ -81,16 +83,20 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
         tx
       );
       if (m.status === "ABSENT") newlyAbsent.push(m.studentId);
+      // Corrected from "absent" to anything else: the student was there after all, stop the reminders.
+      else if (prev?.status === "ABSENT") await cancelTelegramReminders(m.studentId, `absent:${session.id}`, tx);
     }
 
+    newlyAbsentCount = newlyAbsent.length;
     // Absence notice; the student can switch the "attendance" category off. One per lesson and student.
     for (const studentId of newlyAbsent) {
-      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, template: "ATTENDANCE_ABSENT", vars: { group: slot.group.name, date: slot.startsAt }, email: true }, tx));
+      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, template: "ATTENDANCE_ABSENT", vars: { group: slot.group.name, date: slot.startsAt }, email: true, telegram: true }, tx));
     }
 
     return tx.attendanceRecord.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: "asc" } });
   });
   dispatchEmails(emailIds);
+  if (newlyAbsentCount > 0) dispatchTelegramReminders();
   return records;
 };
 

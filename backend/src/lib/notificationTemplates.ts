@@ -49,14 +49,14 @@ export const BUILTIN_TEMPLATES: Record<TemplateKey, Record<Language, TemplateTex
     ru: { subject: "Занятие отменено", body: "Группа \"{group}\": занятие {date} отменено. Проверьте раздел «Расписание»." },
   },
   TEST_PASSED: {
-    uz: { subject: "Test muvaffaqiyatli topshirildi", body: "Natija: {score}% ({correct}/{total}). Tahlilni Tarix bo'limida ko'ring." },
-    uz_cyrl: { subject: "Тест муваффақиятли топширилди", body: "Натижа: {score}% ({correct}/{total}). Таҳлилни Тарих бўлимида кўринг." },
-    ru: { subject: "Тест успешно сдан", body: "Результат: {score}% ({correct}/{total}). Разбор — в разделе «История»." },
+    uz: { subject: "Test muvaffaqiyatli topshirildi", body: "Natija: {score}% ({correct}/{total}). Tahlilni \"Testlar\" bo'limidagi oldingi natijalarda ko'ring." },
+    uz_cyrl: { subject: "Тест муваффақиятли топширилди", body: "Натижа: {score}% ({correct}/{total}). Таҳлилни \"Тестлар\" бўлимидаги олдинги натижаларда кўринг." },
+    ru: { subject: "Тест успешно сдан", body: "Результат: {score}% ({correct}/{total}). Разбор — в разделе «Тесты», в прошлых результатах." },
   },
   TEST_FAILED: {
-    uz: { subject: "Test yakunlandi: o'tish bali yetmadi", body: "Natija: {score}% ({correct}/{total}). Tahlilni Tarix bo'limida ko'ring." },
-    uz_cyrl: { subject: "Тест якунланди: ўтиш бали етмади", body: "Натижа: {score}% ({correct}/{total}). Таҳлилни Тарих бўлимида кўринг." },
-    ru: { subject: "Тест завершён: проходной балл не набран", body: "Результат: {score}% ({correct}/{total}). Разбор — в разделе «История»." },
+    uz: { subject: "Test yakunlandi: o'tish bali yetmadi", body: "Natija: {score}% ({correct}/{total}). Tahlilni \"Testlar\" bo'limidagi oldingi natijalarda ko'ring." },
+    uz_cyrl: { subject: "Тест якунланди: ўтиш бали етмади", body: "Натижа: {score}% ({correct}/{total}). Таҳлилни \"Тестлар\" бўлимидаги олдинги натижаларда кўринг." },
+    ru: { subject: "Тест завершён: проходной балл не набран", body: "Результат: {score}% ({correct}/{total}). Разбор — в разделе «Тесты», в прошлых результатах." },
   },
   ANNOUNCEMENT: {
     uz: { subject: "{title}", body: "{body}" },
@@ -64,8 +64,6 @@ export const BUILTIN_TEMPLATES: Record<TemplateKey, Record<Language, TemplateTex
     ru: { subject: "{title}", body: "{body}" },
   },
 };
-
-export const isTemplateKey = (v: string): v is TemplateKey => Object.prototype.hasOwnProperty.call(TEMPLATE_DEFS, v);
 
 const TOKEN = /\{([a-zA-Z]+)\}/g;
 

@@ -16,6 +16,7 @@ import VideoPlayer from "@/components/video/VideoPlayer";
 import { Alert } from "@/components/ui/Alert";
 import LessonLockNotice from "@/components/lesson/LessonLockNotice";
 import { useAuth } from "@/hooks/useAuth";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
 
 /** Plays a video from private storage through short-lived signed URLs (renewed while watching). */
 function PrivateVideo({ videoId, onProgress }: { videoId: string; onProgress: (pct: number) => void }) {
@@ -47,6 +48,8 @@ export default function VideoLesson() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // Reading or watching an open lesson counts as study time.
+  useStudyTimer("lesson", Boolean(lesson && !lesson.locked));
   const { startTest, starting } = useStartTest();
 
   const load = useCallback(async () => {

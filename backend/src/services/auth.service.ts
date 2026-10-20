@@ -78,7 +78,14 @@ export const register = async (input: RegisterInput, userAgent?: string) => {
   return { user, session: await startSession(user, userAgent), emailVerification };
 };
 
-export const login = async (input: LoginInput, userAgent?: string): Promise<LoginOutcome> => {
+export const login = async (input: LoginInput, userAgent?: string): Promise<LoginOutcome> =>
+  completeLogin(await checkPassword(input), userAgent);
+
+/**
+ * Password check with the per-account lockout, without opening a session. Used by the site login
+ * and by the staff menu of the Telegram bot.
+ */
+export const checkPassword = async (input: LoginInput): Promise<User> => {
   const user = input.phone
     ? await prisma.user.findUnique({ where: { phone: input.phone } })
     : await prisma.user.findUnique({ where: { email: input.email! } });
@@ -104,8 +111,7 @@ export const login = async (input: LoginInput, userAgent?: string): Promise<Logi
   if (user.failedLogins > 0 || user.lockedUntil) {
     await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
   }
-
-  return completeLogin(user, userAgent);
+  return user;
 };
 
 /**

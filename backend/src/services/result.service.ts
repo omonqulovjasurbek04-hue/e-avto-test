@@ -17,6 +17,7 @@ export const listResults = async (userId: string) => {
       wrongAnswers: true,
       score: true,
       passed: true,
+      mode: true,
       timeSpent: true,
       finishedAt: true,
       course: { select: { title: true } },
@@ -33,6 +34,7 @@ export const listResults = async (userId: string) => {
     skippedAnswers: t.totalQuestions - t.correctAnswers - t.wrongAnswers,
     score: t.score,
     passed: t.passed,
+    mode: t.mode,
     timeSpent: t.timeSpent,
     createdAt: t.finishedAt,
   }));
@@ -71,6 +73,8 @@ export const buildResult = async (id: string, userId: string) => {
     skippedAnswers: test.totalQuestions - test.correctAnswers - test.wrongAnswers,
     score: test.score,
     passed: test.passed,
+    mode: test.mode,
+    maxMistakes: test.maxMistakes ?? undefined,
     timeSpent: test.timeSpent,
     createdAt: test.finishedAt,
     answers: test.answers.map((a) => {

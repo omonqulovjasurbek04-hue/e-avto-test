@@ -70,7 +70,7 @@ async function main() {
       title: "B Toifa — Yengil Avtomobillar (YHQ 2026)",
       description:
         "B toifadagi transport vositalarini boshqarish huquqini beruvchi to'liq o'quv dasturi, barcha 150 ta mavzu va YHQ qoidalari.",
-      thumbnail: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80",
+      thumbnail: "https://images.unsplash.com/photo-1722088386429-3c5a5afa77e5?w=800&auto=format&fit=crop&q=80",
       level: "Boshlang'ich",
       order: 1,
     },

@@ -54,7 +54,7 @@ test.describe("phone layout (375px)", () => {
 
   test("student pages fit the screen and the sidebar opens", async ({ page }) => {
     await loginViaUi(page, state().emails.student);
-    for (const path of ["/dashboard", "/orders", "/schedule", "/attendance", "/notifications", "/settings", "/lessons"]) {
+    for (const path of ["/dashboard", "/orders", "/notifications", "/settings", "/lessons"]) {
       await expectNoHorizontalOverflow(page, path);
     }
     await page.goto("/dashboard");

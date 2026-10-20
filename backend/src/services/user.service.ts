@@ -1,3 +1,4 @@
+import { totalStudyMinutes } from "./studyTime.service";
 import { prisma } from "../config/database";
 import { getMe } from "./auth.service";
 
@@ -43,7 +44,7 @@ export const getProfile = async (userId: string) => {
 };
 
 export const getStatistics = async (userId: string) => {
-  const [tests, completedLessons, lessonProgress] = await Promise.all([
+  const [tests, completedLessons, lessonProgress, trackedMinutes] = await Promise.all([
     prisma.test.findMany({
       where: { userId, finishedAt: { not: null } },
       select: { score: true, passed: true, timeSpent: true, finishedAt: true },
@@ -53,6 +54,7 @@ export const getStatistics = async (userId: string) => {
       where: { userId },
       select: { percent: true, lesson: { select: { duration: true } } },
     }),
+    totalStudyMinutes(userId),
   ]);
 
   const totalTests = tests.length;
@@ -70,8 +72,9 @@ export const getStatistics = async (userId: string) => {
     failedTests: tests.filter((t) => !t.passed).length,
     completedLessons,
     studyStreakDays: streak,
-    // Minutes spent in tests plus the watched share of lesson videos.
-    learningTime: Math.round((testSeconds + lessonSeconds) / 60),
+    // Real time on lesson and test pages; accounts from before tracking fall back to the old estimate
+    // (test time plus the watched share of lesson videos).
+    learningTime: Math.max(trackedMinutes, Math.round((testSeconds + lessonSeconds) / 60)),
   };
 };
 

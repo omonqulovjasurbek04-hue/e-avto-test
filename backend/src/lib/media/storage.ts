@@ -49,13 +49,7 @@ const localDriver: StorageDriver = {
   },
 };
 
-let override: StorageDriver | null = null;
-/** Tests swap in a fake driver. */
-export const setDriverForTests = (d: StorageDriver | null) => {
-  override = d;
-};
-
-export const driver = (): StorageDriver => override ?? (env.STORAGE_DRIVER === "s3" ? s3Driver() : localDriver);
+export const driver = (): StorageDriver => (env.STORAGE_DRIVER === "s3" ? s3Driver() : localDriver);
 
 export class UploadTooLargeError extends Error {}
 

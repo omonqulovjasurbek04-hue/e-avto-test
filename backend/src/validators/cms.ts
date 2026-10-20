@@ -56,7 +56,6 @@ export const faqSchema = z.object({
 export const faqUpdateSchema = faqSchema.partial();
 
 /** Settings that have a text per language (the rest — logo, colour, phone, e-mail, links — are shared). */
-export const LOCALIZED_SETTING_KEYS = ["siteName", "tagline", "address", "workingHours", "heroTitle", "heroSubtitle"] as const;
 const localizedSettings = {
   siteName: z.string().trim().max(80).optional(),
   tagline: z.string().trim().max(160).optional(),
@@ -80,6 +79,10 @@ export const siteSettingsSchema = z
     workingHours: z.string().trim().max(120),
     heroTitle: z.string().trim().max(160),
     heroSubtitle: z.string().trim().max(300),
+    // Training centres shown on the contact page map (name + address, shared across languages).
+    branches: z
+      .array(z.object({ name: z.string().trim().min(1).max(80), address: z.string().trim().min(3).max(240) }).strict())
+      .max(20),
     social: z.object({ telegram: safeUrl.optional(), instagram: safeUrl.optional(), youtube: safeUrl.optional(), facebook: safeUrl.optional() }).strict(),
     translations: translations(localizedSettings),
   })

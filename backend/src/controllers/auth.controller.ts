@@ -7,7 +7,6 @@ import * as emailVerificationService from "../services/emailVerification.service
 import {
   registerSchema,
   loginSchema,
-  updateProfileSchema,
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -81,11 +80,6 @@ export const completeRegistration = async (req: AuthRequest, res: Response): Pro
 
 export const me = async (req: AuthRequest, res: Response): Promise<void> => {
   success(res, await authService.getMe(requireUserId(req)));
-};
-
-export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
-  const input = updateProfileSchema.parse(req.body);
-  success(res, await authService.updateProfile(requireUserId(req), input));
 };
 
 export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
@@ -27,6 +27,16 @@ export const MainLayout: React.FC = () => {
   const { theme, toggleTheme } = useUIStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // The phone menu closes on navigation and with Esc.
+  useEffect(() => setMobileMenuOpen(false), [pathname]);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMobileMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileMenuOpen]);
 
   const handleLogout = () => {
     void logout();
@@ -36,6 +46,7 @@ export const MainLayout: React.FC = () => {
   const publicLinks = [
     { to: "/courses", label: t("nav.courses") },
     { to: "/leaderboard", label: t("nav.leaderboard") },
+    { to: "/contact", label: t("nav.contact") },
   ];
 
   return (
@@ -109,8 +120,9 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
 
+        {/* Phone menu: opens over the page (the hero stays where it is); a tap outside or Esc closes it. */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 space-y-3 animate-fade-in">
+          <div className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-b-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-2xl md:hidden dark:border-slate-800 dark:bg-slate-900 space-y-3 animate-fade-in">
             <div className="sm:hidden pb-1"><LanguageSwitcher /></div>
             {publicLinks.map((l) => (
               <Link key={l.to} to={l.to} onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{l.label}</Link>
@@ -124,6 +136,10 @@ export const MainLayout: React.FC = () => {
           </div>
         )}
       </header>
+      {/* Dims the page under the open phone menu (outside the header: its backdrop blur would trap a fixed child). */}
+      {mobileMenuOpen && (
+        <div aria-hidden="true" onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-[2px] md:hidden animate-fade-in" />
+      )}
 
       <main className="flex-1">
         <Outlet />
@@ -162,7 +178,7 @@ export const MainLayout: React.FC = () => {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-3">{t("nav.contact")}</h4>
               <ul className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                {[site.address || DEFAULT_CONTACT.address, site.phone || DEFAULT_CONTACT.phone, site.email, site.workingHours]
+                {[site.address || DEFAULT_CONTACT.address, site.phone, site.email, site.workingHours]
                   .filter(Boolean)
                   .map((v) => <li key={v}>{v}</li>)}
               </ul>

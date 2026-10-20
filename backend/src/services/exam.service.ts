@@ -10,6 +10,8 @@ export const testConfigSchema = z.object({
   durationSeconds: z.number().int().min(60).max(4 * 3600).nullable().optional(),
   passScore: z.number().int().min(1).max(100),
   maxAttempts: z.number().int().min(1).max(100).nullable().optional(),
+  // Official exam: 20 questions, at most 2 wrong or unanswered.
+  maxMistakes: z.number().int().min(0).max(100).nullable().optional(),
 });
 
 export const getConfig = async (courseId: string) => {
@@ -20,7 +22,7 @@ export const getConfig = async (courseId: string) => {
 export const saveConfig = async (actorId: string, courseId: string, input: z.infer<typeof testConfigSchema>) => {
   if (!(await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } }))) throw notFound("Course not found");
   const before = await prisma.testConfig.findUnique({ where: { courseId } });
-  const data = { questionCount: input.questionCount, durationSeconds: input.durationSeconds ?? null, passScore: input.passScore, maxAttempts: input.maxAttempts ?? null };
+  const data = { questionCount: input.questionCount, durationSeconds: input.durationSeconds ?? null, passScore: input.passScore, maxAttempts: input.maxAttempts ?? null, maxMistakes: input.maxMistakes ?? null };
   const config = await prisma.testConfig.upsert({ where: { courseId }, create: { courseId, ...data }, update: data });
   await writeAudit({ actorId, action: "testconfig.save", entity: "TestConfig", entityId: config.id, before, after: config });
   return config;

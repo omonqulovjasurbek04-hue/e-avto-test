@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle, History, Lock, ShoppingCart, CheckCircle2 } from "lucide-react";
+import { PlayCircle, History, Lock, ShoppingCart, CheckCircle2, XCircle, Bookmark } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { resultService } from "@/services/result.service";
-import { studentService } from "@/services/platform.service";
+import { studentService, type PracticeSummary } from "@/services/platform.service";
 import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
 import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Course } from "@/types/course";
-import type { TestResultSummary } from "@/types/result";
+import type { TestMode, TestResultSummary } from "@/types/result";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -18,6 +18,9 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatTime } from "@/utils/formatTime";
+
+// Practice draws from the student's own lists; at most this many questions per round.
+const PRACTICE_MAX_QUESTIONS = 20;
 
 export default function Tests() {
   const { t } = useTranslation();
@@ -29,21 +32,25 @@ export default function Tests() {
   const [startingId, setStartingId] = useState<string | null>(null);
   // Which courses this student bought: the server decides, the page only mirrors it (null = still loading).
   const [access, setAccess] = useState<{ all: boolean; courseIds: string[] } | null>(null);
+  // Practice counts; null when the request failed (the cards are then hidden, nothing else breaks).
+  const [practice, setPractice] = useState<PracticeSummary | null>(null);
   const canOpen = (courseId: string) => !access || access.all || access.courseIds.includes(courseId);
 
   const load = async () => {
     setLoading(true);
     setError(false);
     try {
-      const [cs, rs, ac] = await Promise.all([
+      const [cs, rs, ac, pr] = await Promise.all([
         courseService.getCourses(),
         resultService.list(),
         // If this fails the buttons stay enabled and the server still refuses a locked test.
         studentService.courseAccess().catch(() => null),
+        studentService.practice().catch(() => null),
       ]);
       setCourses(cs);
       setResults(rs);
       setAccess(ac);
+      setPractice(pr);
     } catch {
       setError(true);
     } finally {
@@ -60,6 +67,19 @@ export default function Tests() {
     await startTest(courseId);
     setStartingId(null);
   };
+
+  const handlePractice = async (mode: Exclude<TestMode, "EXAM">) => {
+    setStartingId(mode);
+    await startTest(undefined, PRACTICE_MAX_QUESTIONS, mode);
+    setStartingId(null);
+  };
+
+  const practiceCards = practice
+    ? [
+        { mode: "MISTAKES" as const, count: practice.mistakes, icon: XCircle, tone: "text-rose-600 bg-rose-50 dark:bg-rose-500/10", title: t("tests.practice.mistakesTitle"), desc: t("tests.practice.mistakesDesc") },
+        { mode: "SAVED" as const, count: practice.saved, icon: Bookmark, tone: "text-amber-600 bg-amber-50 dark:bg-amber-500/10", title: t("tests.practice.savedTitle"), desc: t("tests.practice.savedDesc") },
+      ]
+    : [];
 
   return (
     <div className="container-page py-8">
@@ -86,6 +106,35 @@ export default function Tests() {
               <Link to="/my-courses" className="font-semibold underline">{t("nav.courses")}</Link>
             </Alert>
           )}
+          {practiceCards.length > 0 && (
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {practiceCards.map((p) => (
+                <Card key={p.mode}>
+                  <CardContent className="flex items-center gap-4">
+                    <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", p.tone)}>
+                      <p.icon className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                        {p.title} <span className="text-slate-400">({p.count})</span>
+                      </h3>
+                      <p className="text-sm text-slate-500">{p.count > 0 ? p.desc : t(p.mode === "MISTAKES" ? "tests.practice.noMistakes" : "tests.practice.noSaved")}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={p.count === 0}
+                      loading={starting && startingId === p.mode}
+                      onClick={() => handlePractice(p.mode)}
+                    >
+                      {t("tests.practice.start")}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((c) => {
               const open = canOpen(c.id);
@@ -155,9 +204,12 @@ export default function Tests() {
                     <div>
                       <p className="font-medium text-slate-800 dark:text-slate-100">
                         {r.courseTitle || t("tests.generalTest")}
+                        {r.mode && r.mode !== "EXAM" && (
+                          <Badge variant="neutral" className="ml-2">{t("tests.practice.badge")}</Badge>
+                        )}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {t("common.questions", { count: r.totalQuestions })} · {formatTime(r.timeSpent)} ·{" "}
+                        {t("tests.questionsCount", { count: r.totalQuestions })} · {formatTime(r.timeSpent)} ·{" "}
                         {new Date(r.createdAt).toLocaleDateString()}
                       </p>
                     </div>

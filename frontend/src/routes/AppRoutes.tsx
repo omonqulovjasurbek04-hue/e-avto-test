@@ -7,6 +7,7 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 import RequireCourse from "./RequireCourse";
+import CourseLinkRoute from "./CourseLinkRoute";
 import { AdminRoute, RequirePerm } from "./AdminRoute";
 import { TeacherRoute } from "./TeacherRoute";
 import { FullSpinner } from "@/components/ui/Spinner";
@@ -14,6 +15,7 @@ import { ROUTES } from "@/constants/routes";
 
 const Home = lazy(() => import("@/pages/public/Home"));
 const Courses = lazy(() => import("@/pages/public/Courses"));
+const Guide = lazy(() => import("@/pages/student/Guide"));
 const CourseDetails = lazy(() => import("@/pages/public/CourseDetails"));
 const About = lazy(() => import("@/pages/public/About"));
 const Contact = lazy(() => import("@/pages/public/Contact"));
@@ -40,8 +42,6 @@ const TestReview = lazy(() => import("@/pages/student/TestReview"));
 const Leaderboard = lazy(() => import("@/pages/public/Leaderboard"));
 const Profile = lazy(() => import("@/pages/student/Profile"));
 const Orders = lazy(() => import("@/pages/student/Orders"));
-const Schedule = lazy(() => import("@/pages/student/Schedule"));
-const Attendance = lazy(() => import("@/pages/student/Attendance"));
 const Notifications = lazy(() => import("@/pages/student/Notifications"));
 const TeacherGroups = lazy(() => import("@/pages/teacher/TeacherGroups"));
 const TeacherGroupDetail = lazy(() => import("@/pages/teacher/TeacherGroupDetail"));
@@ -77,7 +77,7 @@ export default function AppRoutes() {
             <Route path={ROUTES.home} element={<Home />} />
           </Route>
           <Route path={ROUTES.courses} element={<Courses />} />
-          <Route path="/courses/:courseId" element={<CourseDetails />} />
+          <Route path="/courses/:courseId" element={<CourseLinkRoute />} />
           <Route path={ROUTES.about} element={<About />} />
           <Route path={ROUTES.contact} element={<Contact />} />
           <Route path={ROUTES.faq} element={<Faq />} />
@@ -104,6 +104,7 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route element={<StudentLayout />}>
             <Route path={ROUTES.dashboard} element={<Dashboard />} />
+            <Route path="/guide/:slug" element={<Guide />} />
             {/* The course catalogue inside the student panel (same page as the public /courses). */}
             <Route path="/my-courses" element={<Courses />} />
             <Route path="/my-courses/:courseId" element={<CourseDetails />} />
@@ -121,8 +122,6 @@ export default function AppRoutes() {
             <Route path={ROUTES.settings} element={<Settings />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/orders" element={<Orders />} />
-            <Route path="/schedule" element={<Schedule />} />
-            <Route path="/attendance" element={<Attendance />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teacher" element={<TeacherRoute><TeacherGroups /></TeacherRoute>} />
             <Route path="/teacher/groups/:groupId" element={<TeacherRoute><TeacherGroupDetail /></TeacherRoute>} />

@@ -78,7 +78,7 @@ export const confirmSetup = async (userId: string, code: string) => {
  * Checks a TOTP code or a recovery code. A valid TOTP advances totpLastStep (no replay);
  * a recovery code is consumed.
  */
-const checkSecondFactor = async (user: User, code: string): Promise<boolean> => {
+export const checkSecondFactor = async (user: User, code: string): Promise<boolean> => {
   if (!user.totpSecret) return false;
   const trimmed = code.trim();
   if (/^\d{6}$/.test(trimmed)) {

@@ -24,3 +24,5 @@ storage/
 deploy/.env.production
 backups/
 *.dump
+deploy/.deployed_tag
+deploy/.previous_tag

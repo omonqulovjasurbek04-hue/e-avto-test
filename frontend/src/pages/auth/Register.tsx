@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,12 +56,15 @@ const TELEGRAM_PLACEHOLDER = "Telegram foydalanuvchi";
 export default function Register() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // A guest sent here from a course card returns to that course once signed up.
+  const from = (useLocation().state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const next = from || ROUTES.dashboard;
   const { user, isAuthenticated, loading, register: registerUser, updateUser } = useAuth();
   const [telegramUnavailable, setTelegramUnavailable] = useState(false);
 
   if (loading) return null;
   // Already a full account: nothing to register.
-  if (isAuthenticated && user?.hasPassword !== false) return <Navigate to={ROUTES.dashboard} replace />;
+  if (isAuthenticated && user?.hasPassword !== false) return <Navigate to={next} replace />;
 
   const needsProfile = isAuthenticated && user?.hasPassword === false;
   const step = needsProfile ? 2 : 1;
@@ -71,7 +74,7 @@ export default function Register() {
     // This Telegram account was registered before: just signed in.
     if (fresh?.hasPassword) {
       toast.success(t("auth.register.alreadyRegistered"));
-      navigate(ROUTES.dashboard);
+      navigate(next);
     }
     // Otherwise the page re-renders into step 2 (needsProfile).
   };
@@ -80,12 +83,12 @@ export default function Register() {
     const updated = await authService.completeRegistration(v);
     updateUser(updated);
     toast.success(t("auth.register.done"));
-    navigate(ROUTES.dashboard);
+    navigate(next);
   };
 
   const plainRegister: FormSubmit = async (v) => {
     await registerUser(v);
-    navigate(ROUTES.dashboard);
+    navigate(next);
   };
 
   return (
@@ -136,7 +139,7 @@ export default function Register() {
       {step === 1 && (
         <p className="text-center text-sm text-slate-600 dark:text-slate-400">
           {t("auth.register.hasAccount")}{" "}
-          <Link to={ROUTES.login} className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400">
+          <Link to={ROUTES.login} state={from ? { from: { pathname: from } } : undefined} className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400">
             {t("auth.register.login")}
           </Link>
         </p>

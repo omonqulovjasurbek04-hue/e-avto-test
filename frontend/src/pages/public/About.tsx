@@ -74,10 +74,10 @@ function AboutDefault() {
 
       <section className="rounded-2xl border border-slate-200 bg-slate-50 p-8 dark:border-slate-800 dark:bg-slate-900/50">
         <h2 className="mb-4 text-2xl font-bold text-slate-800 dark:text-slate-100">
-          {t("about.values.title")}
+          {t("about.mission.title")}
         </h2>
         <p className="text-slate-600 dark:text-slate-300">
-          {t("about.mission.description")}
+          {t("about.mission.goal")}
         </p>
       </section>
     </div>

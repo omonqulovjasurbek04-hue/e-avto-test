@@ -86,6 +86,23 @@ export interface ScheduleItem {
   group: { id: string; name: string };
 }
 
+export interface MyGroup {
+  id: string;
+  name: string;
+  course: string;
+  /** ODD = Mon/Wed/Fri (toq kunlar), EVEN = Tue/Thu/Sat (juft kunlar). */
+  days: "ODD" | "EVEN" | "CUSTOM";
+  /** 1 = Monday … 7 = Sunday. */
+  weekdays: number[];
+  time: string | null;
+}
+
+export interface StudyWeek {
+  today: string;
+  totalMinutes: number;
+  days: { date: string; lessonMinutes: number; testMinutes: number }[];
+}
+
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED" | "ONLINE";
 export interface AttendanceSummary {
   total: number;
@@ -203,7 +220,7 @@ export interface NotificationTemplateText { subject: string; body: string; custo
 export interface NotificationTemplate { key: NotificationTemplateKey; placeholders: string[]; required: string[]; languages: Record<"uz" | "uz_cyrl" | "ru", NotificationTemplateText> }
 export interface ContactMessage { id: string; name: string; contact: string; message: string; status: "NEW" | "READ" | "ARCHIVED"; createdAt: string }
 
-export interface TestConfig { courseId: string; questionCount: number; durationSeconds: number | null; passScore: number; maxAttempts: number | null }
+export interface TestConfig { courseId: string; questionCount: number; durationSeconds: number | null; passScore: number; maxAttempts: number | null; maxMistakes: number | null }
 
 /* ───────── public & student ───────── */
 
@@ -215,10 +232,16 @@ export const shopService = {
   order: (id: string) => apiGet<Order>(`/orders/${id}`),
 };
 
+export interface PracticeSummary { mistakes: number; saved: number; savedIds: string[] }
+
 export const studentService = {
   enrollments: () => apiGet<Enrollment[]>("/me/enrollments"),
   /** Courses the student may open now (bought and active); `all` for staff or when the paywall is off. */
   courseAccess: () => apiGet<{ all: boolean; courseIds: string[] }>("/me/course-access"),
+  /** Practice lists: questions last answered wrong and bookmarked questions. */
+  practice: () => apiGet<PracticeSummary>("/me/practice"),
+  saveQuestion: (questionId: string) => apiPut<{ saved: boolean }>(`/me/saved-questions/${questionId}`),
+  unsaveQuestion: (questionId: string) => apiDelete<{ saved: boolean }>(`/me/saved-questions/${questionId}`),
   notifications: () => apiGet<{ items: AppNotification[]; unread: number }>("/me/notifications"),
   preferences: () => apiGet<NotificationPrefs>("/me/notification-preferences"),
   savePreferences: (d: Partial<NotificationPrefs>) => apiPut<NotificationPrefs>("/me/notification-preferences", d),
@@ -226,6 +249,11 @@ export const studentService = {
   markAllRead: () => apiPost<{ updated: number }>("/me/notifications/read-all"),
   schedule: (from: string, to: string) => apiGet<ScheduleItem[]>("/me/schedule", { from, to }),
   attendance: () => apiGet<MyAttendance>("/me/attendance"),
+  /** The student's groups: name, course, rhythm (juft/toq kunlar) and usual lesson time. */
+  groups: () => apiGet<MyGroup[]>("/me/groups"),
+  /** Seconds spent on a lesson or test page since the previous report (the server credits real time only). */
+  reportStudyTime: (kind: "lesson" | "test", seconds: number) => apiPost<{ credited: number }>("/me/study-time", { kind, seconds }),
+  studyWeek: () => apiGet<StudyWeek>("/me/study-time/week"),
 };
 
 /* ───────── teacher ───────── */

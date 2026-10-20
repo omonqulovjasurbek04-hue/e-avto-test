@@ -14,10 +14,9 @@ import StatCard from "@/components/common/StatCard";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { EmptyState } from "@/components/ui/EmptyState";
-import LessonCard from "@/components/lesson/LessonCard";
-import WeeklyActivityChart from "@/components/common/WeeklyActivityChart";
-import { formatMinutesToDuration } from "@/utils/formatTime";
+import GuideList from "@/components/guide/GuideList";
+import WeeklyActivityChart, { formatStudyMinutes } from "@/components/common/WeeklyActivityChart";
+import UpcomingSchedule from "@/components/common/UpcomingSchedule";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -51,7 +50,6 @@ export default function Dashboard() {
     void load();
   }, []);
 
-  const recommended = lessons.slice(0, 6);
   // The next lesson to study: open (bought and already unlocked) and not finished yet.
   const continueLearning = lessons.find((l) => !l.locked && !l.completed) ?? lessons.find((l) => !l.locked);
 
@@ -106,13 +104,17 @@ export default function Dashboard() {
             />
             <StatCard
               label={t("progress.studyTime")}
-              value={formatMinutesToDuration(stats?.learningMinutes ?? 0)}
+              value={formatStudyMinutes(t, stats?.learningMinutes ?? 0)}
               icon={<Clock className="h-6 w-6" />}
               color="brand"
             />
           </div>
 
-          {stats && <WeeklyActivityChart weekly={stats.weekly} className="mt-8" />}
+          {/* Class timetable and weekly activity side by side on wide screens. */}
+          <div className="mt-8 grid gap-6 xl:grid-cols-2">
+            <UpcomingSchedule />
+            <WeeklyActivityChart />
+          </div>
 
           {continueLearning && (
             <Card className="mt-8">
@@ -133,23 +135,14 @@ export default function Dashboard() {
             </Card>
           )}
 
-          <div className="mt-8">
-            <h2 className="mb-4 text-lg font-semibold text-slate-800 dark:text-slate-100">
-              {t("dashboard.recommended.title")}
+          {/* Always-open guides about the site (instead of course lessons that may still be locked). */}
+          <section className="mt-8" aria-labelledby="guide-title">
+            <h2 id="guide-title" className="mb-1 text-lg font-semibold text-slate-800 dark:text-slate-100">
+              {t("guide.section")}
             </h2>
-            {recommended.length === 0 ? (
-              <EmptyState
-                title={t("dashboard.recommended.empty")}
-                description={t("dashboard.recommended.emptyDesc")}
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {recommended.map((l, i) => (
-                  <LessonCard key={l.id} lesson={l} index={i} courseId={l.courseId} />
-                ))}
-              </div>
-            )}
-          </div>
+            <p className="mb-4 text-sm text-slate-500">{t("guide.sectionHint")}</p>
+            <GuideList />
+          </section>
         </>
       )}
     </div>

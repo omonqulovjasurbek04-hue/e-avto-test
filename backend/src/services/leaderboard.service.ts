@@ -48,7 +48,7 @@ const aggregate = async (courseId: string | null, period: LeaderboardPeriod): Pr
              ROW_NUMBER() OVER (PARTITION BY t."userId", t."courseId" ORDER BY t."finishedAt", t.id) AS n
       FROM tests t
       JOIN users u ON u.id = t."userId"
-      WHERE t."finishedAt" IS NOT NULL AND u."isActive" = true AND u.role = 'USER' ${courseFilter}
+      WHERE t."finishedAt" IS NOT NULL AND t.mode = 'EXAM' AND u."isActive" = true AND u.role = 'USER' ${courseFilter}
     ),
     per_course AS (
       SELECT a."userId", a."courseId",

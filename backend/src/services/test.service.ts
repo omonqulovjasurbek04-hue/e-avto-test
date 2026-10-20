@@ -5,6 +5,7 @@ import { TestStartInput, TestAnswerInput, TestFinishInput } from "../validators/
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { buildResult } from "./result.service";
 import { notify } from "./notification.service";
+import { mistakeQuestionIds, savedQuestionIds } from "./practice.service";
 import { accessibleCourseIds, canAccessCourse, canAccessLesson, lessonStates } from "./access.service";
 
 export const PASS_THRESHOLD = 70;
@@ -36,7 +37,14 @@ const elapsedSeconds = (startedAt: Date): number =>
 
 export const startTest = async (userId: string, input: TestStartInput, role = "USER") => {
   const viewer = { userId, role };
+  const mode = input.mode ?? "EXAM";
+  const practice = mode !== "EXAM";
   const where: Prisma.QuestionWhereInput = { isPublished: true };
+  if (practice) {
+    const ids = mode === "MISTAKES" ? await mistakeQuestionIds(userId) : await savedQuestionIds(userId);
+    if (ids.length === 0) throw badRequest(mode === "MISTAKES" ? "You have no mistakes to practise" : "You have no saved questions");
+    where.id = { in: ids };
+  }
 
   // A test on a course (or one of its lessons) needs the same access as watching it.
   let targetCourseId = input.courseId ?? null;
@@ -65,10 +73,10 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
   }
 
   // Exam rules of the course (if the admin configured any) override whatever the client asks for.
-  // (Also when the test was started from one of the course's lessons.)
-  const config = targetCourseId ? await prisma.testConfig.findUnique({ where: { courseId: targetCourseId } }) : null;
+  // (Also when the test was started from one of the course's lessons.) Practice ignores them.
+  const config = targetCourseId && !practice ? await prisma.testConfig.findUnique({ where: { courseId: targetCourseId } }) : null;
   if (config?.maxAttempts) {
-    const used = await prisma.test.count({ where: { userId, courseId: targetCourseId! } });
+    const used = await prisma.test.count({ where: { userId, courseId: targetCourseId!, mode: "EXAM" } });
     if (used >= config.maxAttempts) throw conflict("Attempt limit reached for this course");
   }
   if (input.courseId) where.courseId = input.courseId;
@@ -108,6 +116,8 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
       totalQuestions,
       duration,
       passScore: config?.passScore ?? PASS_THRESHOLD,
+      maxMistakes: config?.maxMistakes ?? null,
+      mode,
       answers: {
         create: prepared.map(({ question, optionOrder }) => ({
           questionId: question.id,
@@ -137,6 +147,8 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
       totalQuestions: test.totalQuestions,
       duration: test.duration,
       startedAt: test.startedAt,
+      mode: test.mode,
+      maxMistakes: test.maxMistakes,
     },
     questions,
   };
@@ -222,6 +234,9 @@ export const finishTest = async (testId: string, userId: string, input: TestFini
     const correctAnswers = answered.filter((a) => a.isCorrect).length;
     const wrongAnswers = answered.length - correctAnswers;
     const score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
+    // Unanswered questions count as mistakes, as in the official exam.
+    const withinMistakes = current.maxMistakes === null || total - correctAnswers <= current.maxMistakes;
+    const passed = score >= current.passScore && withinMistakes;
 
     await tx.test.update({
       where: { id: testId },
@@ -231,15 +246,15 @@ export const finishTest = async (testId: string, userId: string, input: TestFini
         correctAnswers,
         wrongAnswers,
         score,
-        passed: score >= current.passScore,
+        passed,
         timeSpent: Math.min(elapsedSeconds(current.startedAt), current.duration),
       },
     });
-    return { score, correctAnswers, total, passed: score >= current.passScore };
+    return { score, correctAnswers, total, passed, practice: current.mode !== "EXAM" };
   });
 
   // Only the request that actually closed the attempt notifies (double submits stay silent); in-app only, no e-mail.
-  if (outcome) {
+  if (outcome && !outcome.practice) {
     clearLeaderboardCache(); // the new result shows up in the ranking right away
     const { score, correctAnswers, total, passed } = outcome;
     await notify({ userId, type: "TEST_RESULT", dedupeKey: `test:${testId}`, template: passed ? "TEST_PASSED" : "TEST_FAILED", vars: { score, correct: correctAnswers, total } }).catch(() => undefined);

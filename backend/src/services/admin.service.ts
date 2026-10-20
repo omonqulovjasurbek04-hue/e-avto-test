@@ -95,7 +95,7 @@ export const resetTwoFactor = async (actorId: string, actorRole: string, userId:
 };
 
 export const getStatistics = async () => {
-  const finished = { finishedAt: { not: null } } satisfies Prisma.TestWhereInput;
+  const finished = { finishedAt: { not: null }, mode: "EXAM" } satisfies Prisma.TestWhereInput;
   const [totalUsers, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg] =
     await Promise.all([
       prisma.user.count(),

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Globe, Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
 import LanguageFlag from "./LanguageFlag";
 
 /** Compact labels for the header dropdown; the full name stays in the tooltip and for screen readers. */
@@ -25,7 +25,7 @@ export default function LanguageSwitcher({
     SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
   const handleSelect = (code: string) => {
-    void i18n.changeLanguage(code);
+    void setLanguage(code);
     setOpen(false);
   };
 

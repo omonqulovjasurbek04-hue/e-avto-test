@@ -5,7 +5,7 @@ import { loginViaUi, state } from "./helpers";
 // surface it sits on. (It caught dark:bg-brand-950 classes that generated nothing because the palette
 // had no 950 shade, leaving light-blue text on white badges.) Text over gradients/images is skipped.
 const PUBLIC = ["/", "/courses", "/news", "/faq", "/contact", "/about", "/privacy", "/login", "/register", "/forgot-password"];
-const STUDENT = ["/dashboard", "/lessons", "/tests", "/pricing", "/leaderboard", "/profile", "/settings", "/orders", "/schedule", "/attendance", "/notifications"];
+const STUDENT = ["/dashboard", "/lessons", "/tests", "/pricing", "/leaderboard", "/profile", "/settings", "/orders", "/notifications"];
 
 const lowContrast = () => {
   const lum = (c: number[]) => {
@@ -58,6 +58,6 @@ test("dark mode keeps readable contrast on public and student pages", async ({ p
   for (const p of PUBLIC) await check(page, p, failures);
   const s = state();
   await loginViaUi(page, s.emails.student);
-  for (const p of [...STUDENT, `/courses/${s.ids.course}`, `/lessons/${s.ids.lesson}`]) await check(page, p, failures);
+  for (const p of [...STUDENT, `/my-courses/${s.ids.course}`, `/lessons/${s.ids.lesson}`]) await check(page, p, failures);
   expect(failures).toEqual([]);
 });

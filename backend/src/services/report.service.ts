@@ -7,7 +7,7 @@ const pct = (part: number, whole: number): number => (whole === 0 ? 0 : Math.rou
  * attempt has no score yet. Scores and pass flags are the server-computed values stored on the attempt.
  */
 export const testResults = async (from: Date, to: Date, courseId?: string) => {
-  const where = { finishedAt: { gte: from, lt: to }, ...(courseId ? { courseId } : {}) };
+  const where = { finishedAt: { gte: from, lt: to }, mode: "EXAM" as const, ...(courseId ? { courseId } : {}) };
   const [byCourse, passedByCourse, students, courses] = await Promise.all([
     prisma.test.groupBy({ by: ["courseId"], where, _count: { _all: true }, _avg: { score: true, timeSpent: true } }),
     prisma.test.groupBy({ by: ["courseId"], where: { ...where, passed: true }, _count: { _all: true } }),

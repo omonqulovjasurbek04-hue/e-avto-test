@@ -42,7 +42,7 @@ interface CourseDef {
 
 const catalog: CourseDef[] = [
   // ── Main licence categories (launch order from the catalogue plan) ──
-  { slug: "b-toifa", adopt: "B toifa", title: "B toifa — yengil avtomobil", category: "yengil-avtomobil", level: "Boshlang'ich", order: 1, published: true, section: "MAIN", studyPeriod: "2–2,5 oy", packages: [{ name: "Standart", description: "Nazariya, amaliyot va ichki sinov", days: 90, price: 5900000 }],
+  { slug: "b-toifa", adopt: "B toifa", photo: "1722088386429-3c5a5afa77e5", title: "B toifa — yengil avtomobil", category: "yengil-avtomobil", level: "Boshlang'ich", order: 1, published: true, section: "MAIN", studyPeriod: "2–2,5 oy", packages: [{ name: "Standart", description: "Nazariya, amaliyot va ichki sinov", days: 90, price: 5900000 }],
     description: "Birinchi marta haydovchilik guvohnomasini olishga tayyorlanayotganlar uchun: yo'l harakati qoidalari va belgilar, avtomobil boshqaruvi, mexanik yoki avtomatik uzatmalar qutisi, avtodrom va shahar amaliyoti, parkovka, nazariy va amaliy imtihonga tayyorgarlik." },
   { slug: "yhq-nazariya", photo: "1573846764373-39f57aaeda0a", title: "Yo'l harakati qoidalari — nazariy kurs", category: "nazariya", level: "Boshlang'ich", order: 11, published: true, section: "EXTRA", studyPeriod: "1–2 hafta", packages: [{ name: "Ekspress — 1 hafta", description: "Nazariy ekspress-kurs", days: 30, price: 700000 }, { name: "Ekspress — 2 hafta", description: "Nazariy ekspress-kurs", days: 45, price: 900000 }],
     description: "Yo'l belgilari, chorrahalar, ustunlik qoidalari, svetofor, to'xtash va to'xtab turish, xavfsiz masofa hamda imtihon savollari bo'yicha to'liq nazariy tayyorgarlik.",
@@ -54,7 +54,7 @@ const catalog: CourseDef[] = [
       ["Xavfsiz masofa va tezlik", "Oraliq masofani tanlash, tezlikni yo'l sharoitiga moslash."],
       ["Imtihon savollari tahlili", "Tipik savollar va ko'p uchraydigan xatolar."],
     ] },
-  { slug: "avtodrom", photo: "1650378611684-1c03d97c4d71", title: "Avtodromda amaliy tayyorgarlik", category: "amaliyot", level: "Boshlang'ich", order: 12, published: true, section: "EXTRA", packages: [{ name: "Boshlang'ich paket", description: "Avtodromga tayyorgarlik", days: 60, price: 2000000 }],
+  { slug: "avtodrom", photo: "1706946140241-5a2587ba9c77", title: "Avtodromda amaliy tayyorgarlik", category: "amaliyot", level: "Boshlang'ich", order: 12, published: true, section: "EXTRA", packages: [{ name: "Boshlang'ich paket", description: "Avtodromga tayyorgarlik", days: 60, price: 2000000 }],
     description: "Avtomobilni joyidan qo'zg'atish, to'xtash, orqaga yurish, parkovka, konuslar orasidan yurish va belgilangan maydonda manevr qilish.",
     outline: [
       ["Joyidan qo'zg'alish va to'xtash", "Ravon start, to'xtash chizig'ida aniq to'xtash."],
@@ -127,7 +127,7 @@ const catalog: CourseDef[] = [
   // ── Additional categories: drafts until the school has the programme and permits ──
   { slug: "be-toifa", photo: "1520101244246-293f77ffc39e", title: "BE toifa — tirkamali yengil avtomobil", category: "tirkamali", level: "O'rta", order: 7, published: true, section: "COMBINED", studyPeriod: "1 oy", packages: [{ name: "Standart", description: "Tirkama bilan boshqarish", days: 45, price: 1725000 }],
     description: "B toifadagi avtomobil bilan tegishli og'ir tirkamani boshqarish." },
-  { slug: "ce-toifa", photo: "1473445730015-841f29a9490b", title: "CE toifa — tirkamali yuk avtomobili", category: "tirkamali", level: "Murakkab", order: 8, published: true, section: "COMBINED", studyPeriod: "1,5–2,5 oy", packages: [{ name: "Standart", description: "Yuk avtomobili va tirkama", days: 90, price: 3200000 }],
+  { slug: "ce-toifa", photo: "1788972013158-2e82e093b044", title: "CE toifa — tirkamali yuk avtomobili", category: "tirkamali", level: "Murakkab", order: 8, published: true, section: "COMBINED", studyPeriod: "1,5–2,5 oy", packages: [{ name: "Standart", description: "Yuk avtomobili va tirkama", days: 90, price: 3200000 }],
     description: "C toifadagi yuk avtomobili bilan tegishli tirkamani boshqarish." },
   { slug: "de-toifa", photo: "1756723701257-46513cd36fc1", title: "DE toifa — tirkamali yoki bo'g'imli avtobus", category: "tirkamali", level: "Murakkab", order: 9, published: false, section: "COMBINED",
     description: "D toifadagi transport vositasi bilan tegishli tirkama yoki bo'g'imli avtobusni boshqarish." },

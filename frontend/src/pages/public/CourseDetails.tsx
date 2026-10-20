@@ -3,24 +3,23 @@ import { useParams, Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import type { Course } from "@/types/course";
-import type { Lesson } from "@/types/lesson";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import CoursePackages from "@/components/course/CoursePackages";
+import type { PublicPackage } from "@/services/platform.service";
 import {
   ArrowLeft,
   BookOpen,
+  CalendarDays,
   Clock,
-  PlayCircle,
 } from "lucide-react";
 
 export default function CourseDetails() {
   const { t } = useTranslation();
   const { courseId } = useParams<{ courseId: string }>();
   const [course, setCourse] = useState<Course | null>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [packages, setPackages] = useState<PublicPackage[]>([]);
   // Opened from the student panel ("Kurslar"): back link and layout stay in the panel.
   const location = useLocation();
   const inPanel = location.pathname.startsWith("/my-courses");
@@ -28,14 +27,9 @@ export default function CourseDetails() {
 
   useEffect(() => {
     if (!courseId) return;
-    Promise.all([
-      courseService.getCourse(courseId),
-      courseService.getLessons(courseId),
-    ])
-      .then(([cData, lData]) => {
-        setCourse(cData);
-        setLessons(lData);
-      })
+    courseService
+      .getCourse(courseId)
+      .then(setCourse)
       .finally(() => setLoading(false));
   }, [courseId]);
 
@@ -75,87 +69,59 @@ export default function CourseDetails() {
         <ArrowLeft className="h-4 w-4" /> {t("courses.title")}
       </Link>
 
-      <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 p-8 text-white shadow-xl space-y-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {course.category && (
-            <Badge variant="primary" className="bg-brand-600 text-white font-bold">
-              {course.category}
-            </Badge>
-          )}
-          {course.difficulty && (
-            <Badge variant="neutral" className="bg-white/10 text-white border-white/20">
-              {t(`courses.difficulty.${course.difficulty}`)}
-            </Badge>
-          )}
-        </div>
-
-        <h1 className="text-2xl sm:text-4xl font-black">{course.title}</h1>
-        <p className="text-sm sm:text-base text-slate-300 max-w-3xl leading-relaxed">
-          {course.description}
-        </p>
-
-        <div className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-slate-300 pt-2 border-t border-slate-800">
-          <span className="flex items-center gap-1.5">
-            <BookOpen className="h-4 w-4 text-brand-400" />
-            {t("courseDetails.lessonCount", { count: course.totalLessons || lessons.length })}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-brand-400" />
-            {(course.totalDurationMinutes ?? 0) >= 60
-              ? t("courses.hours", { count: Math.round((course.totalDurationMinutes ?? 0) / 60) })
-              : t("courses.minutes", { count: course.totalDurationMinutes ?? 0 })}
-          </span>
-        </div>
-      </div>
-
-      {/* Packages and prices of this course, with the buy button (the old "Narxlar" page lives here now). */}
-      <section id="packages" className="space-y-4 scroll-mt-24">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t("pricing.title")}</h2>
-        <CoursePackages courseId={course.id} />
-      </section>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          {t("courseDetails.lessonsList")}
-        </h2>
-
-        <div className="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-          {lessons.length > 0 ? (
-            lessons.map((lesson: Lesson, idx: number) => (
-              <div
-                key={lesson.id || idx}
-                className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-2xl transition"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-xs font-black text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      {lesson.title}
-                    </h4>
-                    <span className="text-xs text-slate-400">
-                      {/* Real numbers only: a lesson without questions shows just its length. */}
-                      {lesson.durationMinutes} {t("common.min")}
-                      {lesson.questionCount ? ` · ${lesson.questionCount} ${t("common.question")}` : ""}
-                    </span>
-                  </div>
-                </div>
-
-                <Link to={`/lessons/${lesson.id}`}>
-                  <Button size="sm" variant="outline" leftIcon={<PlayCircle className="h-4 w-4 text-brand-600" />}>
-                    {t("lessonDetails.startLesson")}
-                  </Button>
-                </Link>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 text-center text-xs text-slate-400">
-              {t("courseDetails.noLessons")}
+      {/*
+        Course header: on wider screens the photo fills the right half and fades into the dark
+        gradient; the title sits on the left and the price with the buy button at the bottom right.
+        On phones the photo is a banner on top and everything stacks under it.
+      */}
+      <section
+        id="packages"
+        className="relative scroll-mt-24 overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white shadow-xl"
+      >
+        {course.thumbnail && (
+          <>
+            <img src={course.thumbnail} alt="" aria-hidden="true" className="h-56 w-full object-cover sm:h-72 md:hidden" />
+            <img
+              src={course.thumbnail}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-y-0 right-0 hidden h-full w-[55%] object-cover object-[center_70%] md:block [mask-image:linear-gradient(to_right,transparent,black_40%)]"
+            />
+            {/* Darkens the bottom of the photo so the price over it stays readable. */}
+            <div aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-1/2 bg-gradient-to-t from-slate-950/80 to-transparent md:block" />
+          </>
+        )}
+        <div className="relative grid gap-8 p-6 sm:p-10 md:min-h-[480px] md:grid-cols-2 md:items-end lg:p-12">
+          <div className="space-y-6 md:self-center">
+            <h1 className="text-3xl font-black leading-tight sm:text-5xl">{course.title}</h1>
+            <p className="text-sm leading-relaxed text-slate-300 sm:text-lg">{course.description}</p>
+            <div className="flex flex-wrap items-center gap-6 border-t border-white/10 pt-4 text-sm text-slate-300 sm:text-base">
+              <span className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-brand-400" />
+                {t("courseDetails.lessonCount", { count: course.totalLessons ?? 0 })}
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-brand-400" />
+                {(course.totalDurationMinutes ?? 0) >= 60
+                  ? t("courses.hours", { count: Math.round((course.totalDurationMinutes ?? 0) / 60) })
+                  : t("courses.minutes", { count: course.totalDurationMinutes ?? 0 })}
+              </span>
+              {/* Access period; with several packages each one shows its own next to its price. */}
+              {packages.length === 1 && (
+                <span className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-brand-400" />
+                  {packages[0].durationDays ? t("pricing.days", { count: packages[0].durationDays }) : t("pricing.unlimited")}
+                </span>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Price and buy button of this course (the old "Narxlar" page lives here now). */}
+          <div className="w-full md:pl-8">
+            <CoursePackages courseId={course.id} variant="hero" onLoaded={setPackages} />
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

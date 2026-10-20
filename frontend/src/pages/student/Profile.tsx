@@ -131,7 +131,8 @@ export default function Profile() {
                 <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                   {loading ? "—" : `${stats.best}%`}
                 </p>
-                <p className="text-xs text-slate-500">{t("leaderboard.avgScore")}</p>
+                {/* The best single test result (the dashboard shows the average). */}
+                <p className="text-xs text-slate-500">{t("profile.bestScore")}</p>
               </div>
             </div>
           </CardContent>

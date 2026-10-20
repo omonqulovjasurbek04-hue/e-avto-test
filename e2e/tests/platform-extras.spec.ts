@@ -75,7 +75,7 @@ test.describe.serial("categories, CMS images, watermarked video", () => {
 
     // Public catalogue: the card is a clean picture + title; the category is shown on the course page.
     await page.goto("/courses");
-    const card = page.locator('a[href^="/courses/"]', { hasText: `E2E Kurs ${s.run}` });
+    const card = page.locator('a[href^="/my-courses/"]', { hasText: `E2E Kurs ${s.run}` });
     await expect(card).toBeVisible();
     await expect(card).not.toContainText(name);
     await card.click();

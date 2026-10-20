@@ -210,6 +210,43 @@ export const mySchedule = async (actor: Actor, from: Date, to: Date) =>
     include: { group: { select: { id: true, name: true } } },
   });
 
+const TZ_OFFSET_MS = 5 * 60 * 60 * 1000; // Asia/Tashkent, no DST
+const hhmm = (d: Date) => new Date(d.getTime() + TZ_OFFSET_MS).toISOString().slice(11, 16);
+
+/**
+ * The student's current groups with their rhythm, read from the group's lessons around today:
+ * Mon/Wed/Fri = "ODD" (toq kunlar), Tue/Thu/Sat = "EVEN" (juft kunlar), anything else "CUSTOM"
+ * (with the weekdays), plus the usual lesson time in Tashkent.
+ */
+export const studentGroups = async (studentId: string, now = new Date()) => {
+  const groups = await prisma.teacherGroup.findMany({
+    where: { status: "ACTIVE", members: { some: { studentId, leftAt: null } } },
+    select: {
+      id: true,
+      name: true,
+      course: { select: { title: true } },
+      slots: {
+        where: { status: { not: "CANCELLED" }, startsAt: { gte: new Date(now.getTime() - 28 * 86_400_000), lt: new Date(now.getTime() + 56 * 86_400_000) } },
+        select: { startsAt: true, endsAt: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+  return groups.map((g) => {
+    // Monday = 1 … Sunday = 7, in Tashkent.
+    const weekdays = [...new Set(g.slots.map((s) => new Date(s.startsAt.getTime() + TZ_OFFSET_MS).getUTCDay() || 7))].sort();
+    const within = (set: number[]) => weekdays.length > 0 && weekdays.every((d) => set.includes(d));
+    const days = within([1, 3, 5]) ? "ODD" : within([2, 4, 6]) ? "EVEN" : "CUSTOM";
+    const times = new Map<string, number>();
+    for (const s of g.slots) {
+      const key = `${hhmm(s.startsAt)}–${hhmm(s.endsAt)}`;
+      times.set(key, (times.get(key) ?? 0) + 1);
+    }
+    const time = [...times.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    return { id: g.id, name: g.name, course: g.course.title, days, weekdays, time };
+  });
+};
+
 /** A student's schedule: only groups they are currently a member of. */
 export const studentSchedule = async (studentId: string, from: Date, to: Date) =>
   prisma.scheduleSlot.findMany({

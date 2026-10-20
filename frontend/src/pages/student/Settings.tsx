@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/Input";
 import { Tabs } from "@/components/ui/Tabs";
 import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
-import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
 import LanguageFlag from "@/components/common/LanguageFlag";
 import NotificationPreferences from "@/components/settings/NotificationPreferences";
 import SecuritySettings from "@/components/settings/SecuritySettings";
@@ -157,7 +157,7 @@ export default function Settings() {
                     key={lang.code}
                     type="button"
                     onClick={() => {
-                      void i18n.changeLanguage(lang.code);
+                      void setLanguage(lang.code);
                       toast.success(`${lang.name} tanlandi`);
                     }}
                     className={cn(

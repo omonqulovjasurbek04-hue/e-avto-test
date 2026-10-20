@@ -1,13 +1,14 @@
 import { apiPost, apiClient } from "./api";
 import { env } from "../config/env";
 import type { Question } from "../types/question";
-import type { StartTestResponse, TestResultDetail } from "../types/result";
+import type { StartTestResponse, TestMode, TestResultDetail } from "../types/result";
 import { PASS_THRESHOLD, DEFAULT_QUESTION_COUNT } from "../constants/config";
 import { resultService } from "./result.service";
 
 export interface StartTestOptions {
   courseId?: string;
   count?: number;
+  mode?: TestMode;
   /** Mock mode only: prefer questions of this topic. */
   topicId?: string;
 }
@@ -114,6 +115,7 @@ export const testService = {
     return apiPost<StartTestResponse>("/tests/start", {
       courseId: options.courseId,
       count: options.count ?? DEFAULT_QUESTION_COUNT,
+      mode: options.mode,
     });
   },
 

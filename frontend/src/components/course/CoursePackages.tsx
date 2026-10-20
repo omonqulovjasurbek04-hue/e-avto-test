@@ -21,13 +21,30 @@ import { formatMoney } from "@/utils/money";
  * Packages (tariffs) with their prices and the buy flow: coupon check, server-side quote, order.
  * With `courseId` only that course's packages are listed (the course page); without it, all of them.
  */
-export default function CoursePackages({ courseId, showCourseTitle = !courseId }: { courseId?: string; showCourseTitle?: boolean }) {
+export default function CoursePackages({
+  courseId,
+  showCourseTitle = !courseId,
+  variant = "cards",
+  onLoaded,
+}: {
+  courseId?: string;
+  showCourseTitle?: boolean;
+  /** "hero": compact price + buy rows on a dark background (inside the course page header). */
+  variant?: "cards" | "hero";
+  /** Called with this course's packages once they are loaded (the course page shows the access days). */
+  onLoaded?: (packages: PublicPackage[]) => void;
+}) {
   const { t } = useTranslation();
   const { data, loading, error, reload } = useLoad(() => shopService.packages(), []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const packages = (data ?? []).filter((p) => !courseId || p.courseId === courseId);
+  useEffect(() => {
+    if (data) onLoaded?.(data.filter((p) => !courseId || p.courseId === courseId));
+    // Only when the list arrives; the callback identity does not matter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, courseId]);
 
   // A course the student already bought is marked instead of offered again.
   const [owned, setOwned] = useState<Set<string>>(new Set());
@@ -99,9 +116,40 @@ export default function CoursePackages({ courseId, showCourseTitle = !courseId }
     }
   };
 
+  const hero = variant === "hero";
+
   return (
     <>
-      {loading ? (
+      {hero ? (
+        loading ? (
+          <Skeleton className="h-24 rounded-2xl bg-white/10" />
+        ) : error || packages.length === 0 ? null : (
+          <div className="space-y-4">
+            {packages.map((p) => {
+              const bought = owned.has(p.courseId);
+              return (
+                <div key={p.id} className="flex flex-wrap items-end justify-between gap-4 md:flex-nowrap">
+                  <div className="min-w-0 drop-shadow-lg">
+                    {packages.length > 1 && (
+                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-300">
+                        {p.name} · {p.durationDays ? t("pricing.days", { count: p.durationDays }) : t("pricing.unlimited")}
+                      </p>
+                    )}
+                    <p className="whitespace-nowrap text-3xl font-black md:text-2xl lg:text-4xl">{formatMoney(p.price.amount, p.price.currency)}</p>
+                  </div>
+                  {bought ? (
+                    <Badge variant="success" className="py-2 text-sm">
+                      <CheckCircle2 className="mr-1.5 h-4 w-4" /> {t("tests.owned")}
+                    </Badge>
+                  ) : (
+                    <Button size="lg" className="shrink-0 shadow-lg" onClick={() => open(p)} leftIcon={<ShoppingCart className="h-4 w-4" />}>{t("pricing.buy")}</Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : loading ? (
         <div className="grid gap-6 md:grid-cols-3">
           {[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
         </div>

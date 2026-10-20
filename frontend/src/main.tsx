@@ -6,16 +6,18 @@ import App from "./App";
 import { ThemeProvider } from "./store/ui.store";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/plus-jakarta-sans";
-import "./i18n";
+import { i18nReady } from "./i18n";
 import "./index.css";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <App />
-        <Toaster position="top-center" richColors closeButton />
-      </ThemeProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+void i18nReady.then(() =>
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <ThemeProvider>
+          <App />
+          <Toaster position="top-center" richColors closeButton />
+        </ThemeProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  )
 );

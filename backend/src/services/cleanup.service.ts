@@ -1,6 +1,6 @@
 import { prisma } from "../config/database";
 import { expireStaleOrders } from "./payment.service";
-import { processEmailQueue } from "./notification.service";
+import { processEmailQueue, processTelegramReminders } from "./notification.service";
 import { pruneRefreshTokens } from "./session.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -28,6 +28,8 @@ export const startCleanupJob = (): NodeJS.Timeout => {
   // Unpaid orders expire quickly, so they get their own, shorter cycle.
   const expire = () => {
     void processEmailQueue().catch((e: Error) => console.error("Notification e-mail queue failed:", e.message));
+    // Telegram reminders (missed class: now, +1 hour, next day) ride on the same 5-minute cycle.
+    void processTelegramReminders().catch((e: Error) => console.error("Telegram reminders failed:", e.message));
     return expireStaleOrders().catch((e: Error) => console.error("Order expiry failed:", e.message));
   };
   void expire();

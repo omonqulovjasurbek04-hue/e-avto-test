@@ -16,7 +16,13 @@ export interface SiteSettings {
   brandColor?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  /** Training centres for the contact page map. */
+  branches?: Branch[];
+  /** https://t.me/<bot>, sent by the server when the Telegram bot is configured. */
+  telegramBot?: string;
 }
+
+export interface Branch { name: string; address: string }
 
 export interface PublicPage { slug: string; title: string; content: string; seoTitle: string | null; seoDescription: string | null; updatedAt: string }
 export interface NewsItem { slug: string; title: string; summary: string | null; coverUrl: string | null; publishedAt: string }

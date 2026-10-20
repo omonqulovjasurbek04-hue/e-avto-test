@@ -45,8 +45,6 @@ test.describe("language switching", () => {
     await expect(page.getByRole("heading", { name: "Заказы и платежи" })).toBeVisible();
     await page.goto("/notifications");
     await expect(page.getByRole("heading", { name: /Уведомления/ })).toBeVisible();
-    await page.goto("/attendance");
-    await expect(page.getByRole("heading", { name: "Посещаемость" })).toBeVisible();
     await page.goto("/news");
     await expect(page.getByRole("heading", { name: "Новости" })).toBeVisible();
   });

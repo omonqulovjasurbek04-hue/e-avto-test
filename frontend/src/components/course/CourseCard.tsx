@@ -1,18 +1,22 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { BookOpen, CalendarDays, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Course } from "@/types/course";
 import { ROUTES } from "@/constants/routes";
+import { useAuthStore } from "@/store/auth.store";
 import { Progress } from "@/components/ui/Progress";
 import { formatMoney } from "@/utils/money";
 
 export default function CourseCard({ course }: { course: Course }) {
   const { t } = useTranslation();
-  // Inside the student panel the course page opens in the panel too.
-  const inPanel = useLocation().pathname.startsWith("/my-courses");
+  // Signed in: the course opens in the student panel. A guest is sent to sign up first and
+  // comes back to this course afterwards.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const panelPath = `/my-courses/${course.id}`;
   return (
     <Link
-      to={inPanel ? `/my-courses/${course.id}` : ROUTES.courseDetails(course.id)}
+      to={isAuthenticated ? panelPath : ROUTES.register}
+      state={isAuthenticated ? undefined : { from: { pathname: panelPath } }}
       className="group block overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
     >
       <div className="relative h-44 w-full overflow-hidden bg-slate-900">

@@ -12,8 +12,6 @@ import {
   Trophy,
   User as UserIcon,
   ShoppingBag,
-  CalendarDays,
-  ClipboardCheck,
   Bell,
   GraduationCap,
   Shield,
@@ -24,6 +22,7 @@ import {
   X,
   ChevronDown,
   Library,
+  Settings as SettingsIcon,
   Lock,
 } from "lucide-react";
 import { cn } from "../utils/cn";
@@ -107,9 +106,6 @@ export const StudentLayout: React.FC = () => {
     { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
     { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
-    { to: "/orders", label: t("nav.orders"), icon: <ShoppingBag className="h-5 w-5" /> },
-    { to: "/schedule", label: t("nav.schedule"), icon: <CalendarDays className="h-5 w-5" /> },
-    { to: "/attendance", label: t("nav.attendance"), icon: <ClipboardCheck className="h-5 w-5" /> },
     ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
       ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
       : []),
@@ -342,6 +338,14 @@ function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: nu
           <NavLink to="/profile" role="menuitem" className={itemClass}>
             <UserIcon className="h-4 w-4" />
             <span>{t("nav.profile")}</span>
+          </NavLink>
+          <NavLink to="/orders" role="menuitem" className={itemClass}>
+            <ShoppingBag className="h-4 w-4" />
+            <span>{t("nav.orders")}</span>
+          </NavLink>
+          <NavLink to="/settings" role="menuitem" className={itemClass}>
+            <SettingsIcon className="h-4 w-4" />
+            <span>{t("nav.settings")}</span>
           </NavLink>
           <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
           <button

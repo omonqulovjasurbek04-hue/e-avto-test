@@ -34,8 +34,3 @@ export const requireAnyPermission =
     }
     next();
   };
-
-/** Full back-office access (ADMIN and SUPERADMIN). Narrower roles use requirePermission per route. */
-export const adminMiddleware = requirePermission("users:manage");
-
-export default adminMiddleware;

@@ -1,3 +1,4 @@
+import { localizeServerError } from "../lib/serverErrors";
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { env } from "../config/env";
 import { getAccessToken, pendingRefresh, refreshSession, setAccessToken } from "./session";
@@ -69,9 +70,8 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const message = error.response
-      ? error.response.data?.message || error.message
-      : "Server bilan ulanishda xatolik yuz berdi. Internet aloqasini tekshiring.";
+    // Shown in the UI language: known server messages are translated, network/5xx get a plain text.
+    const message = localizeServerError(error.response ? error.response.data?.message || error.message : "", error.response ? (status ?? 0) : 0);
 
     return Promise.reject(new ApiError(message, status, error.response?.data?.errors));
   }

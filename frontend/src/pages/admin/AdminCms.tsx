@@ -351,7 +351,8 @@ const FIELDS = ["siteName", "tagline", "phone", "email", "address", "workingHour
 /** Only these have a text per language; logo, colour, phone and e-mail are shared. */
 const LOCALIZED = ["siteName", "tagline", "address", "workingHours", "heroTitle", "heroSubtitle"];
 
-type SettingsForm = { base: Record<string, string>; tr: Record<ExtraLang, Record<string, string>> };
+type BranchRow = { name: string; address: string };
+type SettingsForm = { base: Record<string, string>; tr: Record<ExtraLang, Record<string, string>>; branches: BranchRow[] };
 
 function Settings() {
   const { t } = useTranslation();
@@ -364,6 +365,7 @@ function Settings() {
   const current: SettingsForm = vals ?? {
     base: Object.fromEntries(FIELDS.map((key) => [key, typeof data?.[key] === "string" ? (data[key] as string) : ""])),
     tr: toTr(LOCALIZED, data?.translations),
+    branches: Array.isArray(data?.branches) ? (data.branches as BranchRow[]) : [],
   };
   const shown = lang === "uz" ? FIELDS : LOCALIZED;
   const valueOf = (key: string) => (lang === "uz" ? current.base[key] : current.tr[lang][key]);
@@ -372,7 +374,12 @@ function Settings() {
 
   const save = async () => {
     // Only non-empty uz fields are sent; every language version is sent whole (empty = use the uz text).
-    const payload = { ...Object.fromEntries(Object.entries(current.base).filter(([, v]) => v.trim() !== "")), translations: current.tr };
+    const payload = {
+      ...Object.fromEntries(Object.entries(current.base).filter(([, v]) => v.trim() !== "")),
+      translations: current.tr,
+      // Empty rows are dropped; an empty list hides nothing (the contact page then shows the site address).
+      branches: current.branches.map((b) => ({ name: b.name.trim(), address: b.address.trim() })).filter((b) => b.name && b.address),
+    };
     setBusy(true);
     setErr(null);
     try {
@@ -396,9 +403,36 @@ function Settings() {
       <div className="grid gap-4 sm:grid-cols-2">
         {shown.map((key) => <Input key={`${lang}-${key}`} label={t(`admin.cms.field${key}`)} value={valueOf(key)} placeholder={lang === "uz" ? undefined : current.base[key]} onChange={(e) => set(key, e.target.value)} />)}
       </div>
+      {lang === "uz" && <BranchesEditor rows={current.branches} onChange={(branches) => setVals({ ...current, branches })} />}
       {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
       <Button loading={busy} onClick={save}>{t("admin.common.save")}</Button>
     </div>
+  );
+}
+
+/** Training centres shown with a map on the contact page. */
+function BranchesEditor({ rows, onChange }: { rows: BranchRow[]; onChange: (rows: BranchRow[]) => void }) {
+  const { t } = useTranslation();
+  const update = (i: number, patch: Partial<BranchRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  return (
+    <fieldset className="space-y-3 rounded-2xl border border-slate-700/60 p-4">
+      <legend className="px-1 text-sm font-semibold">{t("admin.cms.branches")}</legend>
+      <p className="text-xs text-slate-400">{t("admin.cms.branchesHint")}</p>
+      {rows.map((r, i) => (
+        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
+          <Input label={t("admin.cms.branchName")} value={r.name} maxLength={80} onChange={(e) => update(i, { name: e.target.value })} />
+          <Input label={t("admin.cms.branchAddress")} value={r.address} maxLength={240} onChange={(e) => update(i, { address: e.target.value })} />
+          <Button variant="outline" aria-label={t("admin.common.delete")} onClick={() => onChange(rows.filter((_, j) => j !== i))}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      {rows.length < 20 && (
+        <Button size="sm" variant="outline" leftIcon={<Plus className="h-4 w-4" />} onClick={() => onChange([...rows, { name: "", address: "" }])}>
+          {t("admin.cms.branchAdd")}
+        </Button>
+      )}
+    </fieldset>
   );
 }
 

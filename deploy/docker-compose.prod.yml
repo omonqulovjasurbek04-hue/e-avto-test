@@ -1,11 +1,17 @@
 # Production stack: PostgreSQL (private network only), Redis (shared rate limits), one-off migration job,
 # API, static web, and optionally ClamAV (`--profile antivirus`, needs ~1.5 GB RAM).
-# TLS is terminated in front of this stack (Caddy/Traefik/host nginx/Cloudflare) - see docs/DEPLOYMENT.md.
-# Usage (from the repository root):
-#   cp deploy/.env.production.example deploy/.env.production   # then fill in real values
+# TLS is terminated in front of this stack by the host nginx (+ Cloudflare) - see docs/DEPLOYMENT.md.
+#
+# CI/CD (normal way): GitHub Actions builds the images, pushes them to GHCR and runs deploy/deploy.sh on the
+# server, which sets IMAGE_REGISTRY / IMAGE_TAG and pulls them.
+# Manual build on the server (no registry):
 #   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
-#   with antivirus:  ... --profile antivirus up -d --build   (and CLAMAV_HOST=clamav in .env.production)
 name: eavto
+
+x-api-image: &api-build
+  context: ..
+  dockerfile: deploy/Dockerfile.api
+
 services:
   db:
     image: postgres:16-alpine
@@ -48,7 +54,8 @@ services:
       start_period: 300s # first start downloads the signature database
 
   migrate:
-    build: { context: .., dockerfile: deploy/Dockerfile.api, target: migrate }
+    image: ${IMAGE_REGISTRY:-eavto}/e-avto-test-migrate:${IMAGE_TAG:-local}
+    build: { <<: *api-build, target: migrate }
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
     depends_on:
@@ -56,45 +63,26 @@ services:
     restart: "no"
 
   api:
-    build: { context: .., dockerfile: deploy/Dockerfile.api, target: runtime }
+    image: ${IMAGE_REGISTRY:-eavto}/e-avto-test-api:${IMAGE_TAG:-local}
+    build: { <<: *api-build, target: runtime }
     restart: unless-stopped
     env_file: .env.production
     environment:
       NODE_ENV: production
       PORT: "5000"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      REDIS_URL: redis://redis:6379
     volumes:
       - media:/app/storage/private
     depends_on:
-      redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    # Counters only: no persistence needed, bounded memory.
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "volatile-ttl"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-  clamav:
-    image: clamav/clamav:stable
-    profiles: ["antivirus"]
-    restart: unless-stopped
-    volumes:
-      - clamdb:/var/lib/clamav
-    healthcheck:
-      test: ["CMD", "clamdcheck.sh"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-      start_period: 300s # first start downloads the signature database
-
-  migrate: { condition: service_completed_successfully }
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
     ports:
-      - "127.0.0.1:5000:5000" # only the local reverse proxy can reach it
+      - "127.0.0.1:5000:5000" # only the host nginx can reach it
 
   web:
+    image: ${IMAGE_REGISTRY:-eavto}/e-avto-test-web:${IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: deploy/Dockerfile.web
@@ -106,7 +94,7 @@ services:
       API_UPSTREAM: http://api:5000
     depends_on: [api]
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8080:80" # only the host nginx can reach it
 
 volumes:
   pgdata:

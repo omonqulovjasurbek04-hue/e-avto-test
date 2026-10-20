@@ -3,6 +3,8 @@ import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { badRequest, HttpError } from "../utils/errors";
 import { completeLogin } from "./auth.service";
+import { handleAdminCallback, handleAdminMessage } from "./telegramAdmin.service";
+import { sendMessage, tgCall, type TgUpdate, type TgUser } from "../lib/telegramApi";
 
 const CODE_TTL_MS = 5 * 60 * 1000; // time to type the code on the site
 
@@ -18,42 +20,17 @@ const hashCode = (code: string) => crypto.createHmac("sha256", env.JWT_SECRET).u
 /** "Ali Valiyev" from Telegram's first and last name (either may be missing). */
 const fullName = (u: TgUser) => [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || null;
 
-// ---------------------------------------------------------------------------
-// Telegram Bot API (plain fetch, no extra dependency)
-// ---------------------------------------------------------------------------
-interface TgUser {
-  id: number;
-  is_bot?: boolean;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-}
-
-interface TgUpdate {
-  update_id: number;
-  message?: {
-    text?: string;
-    chat: { id: number; type: string };
-    from?: TgUser;
-  };
-}
-
-async function tgCall<T>(method: string, body: object, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal,
-  });
-  const json = (await res.json()) as { ok: boolean; result: T; description?: string };
-  if (!json.ok) throw new Error(`Telegram ${method} failed: ${json.description ?? res.status}`);
-  return json.result;
-}
-
-const sendMessage = (chatId: number, text: string) =>
-  tgCall("sendMessage", { chat_id: chatId, text }).catch((e: Error) => {
-    console.error(e.message);
-  });
+/** A notice to a linked Telegram account (e.g. a missed class). true = Telegram accepted the message. */
+export const sendTelegramNotice = async (telegramId: string, text: string): Promise<boolean> => {
+  if (!isTelegramConfigured()) return false;
+  try {
+    await tgCall("sendMessage", { chat_id: telegramId, text });
+    return true;
+  } catch (e) {
+    console.error((e as Error).message);
+    return false;
+  }
+};
 
 /** The code with a "copy" button under it (Bot API copy_text); older clients just see the text. */
 const sendCode = (chatId: number, code: string) =>
@@ -123,11 +100,18 @@ export const verifyLogin = async (code: string, userAgent?: string) => {
 
 /** Step 2 (bot): the user pressed Start (or sent /code); give them a fresh random one-time code. */
 export async function handleUpdate(update: TgUpdate): Promise<void> {
+  // Inline buttons exist only in the staff menu.
+  if (update.callback_query) {
+    if (update.callback_query.message?.chat.type === "private") await handleAdminCallback(update.callback_query);
+    return;
+  }
   const msg = update.message;
   if (!msg?.text || msg.chat.type !== "private" || !msg.from || msg.from.is_bot) return;
 
   const command = msg.text.trim().split(/\s+/)[0].split("@")[0];
   if (command !== "/start" && command !== "/code") {
+    // Staff: /admin, the sign-in steps and the menu. The bot never hands out lessons or tests.
+    if (await handleAdminMessage(msg)) return;
     await sendMessage(msg.chat.id, "Saytga kirish yoki ro'yxatdan o'tish uchun kod olish: /start");
     return;
   }
@@ -190,7 +174,7 @@ export function startBot(): void {
         pollAbort = new AbortController();
         const updates = await tgCall<TgUpdate[]>(
           "getUpdates",
-          { offset, timeout: 25, allowed_updates: ["message"] },
+          { offset, timeout: 25, allowed_updates: ["message", "callback_query"] },
           pollAbort.signal
         );
         for (const u of updates) {

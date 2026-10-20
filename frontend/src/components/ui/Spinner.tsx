@@ -15,13 +15,6 @@ export const Spinner: React.FC<{ size?: "sm" | "md" | "lg"; className?: string }
   return <Loader2 className={cn("animate-spin text-brand-600", sizeClasses[size], className)} />;
 };
 
-export const LoadingScreen: React.FC<{ text?: string }> = ({ text = "Yuklanmoqda..." }) => (
-  <div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3">
-    <Spinner size="lg" />
-    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{text}</p>
-  </div>
-);
-
 export const FullSpinner: React.FC = () => (
   <div className="flex min-h-screen w-full items-center justify-center">
     <Spinner size="lg" />

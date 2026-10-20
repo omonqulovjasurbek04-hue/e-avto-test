@@ -31,7 +31,7 @@ export default function AdminExam() {
   const { t } = useTranslation();
   const courses = useLoad(() => adminService.listCourses(), []);
   const [courseId, setCourseId] = useState("");
-  const [f, setF] = useState({ questionCount: "20", minutes: "", passScore: "70", maxAttempts: "" });
+  const [f, setF] = useState({ questionCount: "20", minutes: "", passScore: "70", maxAttempts: "", maxMistakes: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "danger"; text: string } | null>(null);
   const [importErrors, setImportErrors] = useState<{ row: number; message: string }[]>([]);
@@ -41,7 +41,7 @@ export default function AdminExam() {
     if (!courseId) return;
     setMsg(null);
     api.testConfig(courseId).then((c) => {
-      setF(c ? { questionCount: String(c.questionCount), minutes: c.durationSeconds ? String(Math.round(c.durationSeconds / 60)) : "", passScore: String(c.passScore), maxAttempts: c.maxAttempts ? String(c.maxAttempts) : "" } : { questionCount: "20", minutes: "", passScore: "70", maxAttempts: "" });
+      setF(c ? { questionCount: String(c.questionCount), minutes: c.durationSeconds ? String(Math.round(c.durationSeconds / 60)) : "", passScore: String(c.passScore), maxAttempts: c.maxAttempts ? String(c.maxAttempts) : "", maxMistakes: c.maxMistakes !== null ? String(c.maxMistakes) : "" } : { questionCount: "20", minutes: "", passScore: "70", maxAttempts: "", maxMistakes: "" });
     }).catch((e: Error) => setMsg({ type: "danger", text: e.message }));
   }, [courseId]);
 
@@ -55,6 +55,7 @@ export default function AdminExam() {
         durationSeconds: f.minutes ? Number(f.minutes) * 60 : null,
         passScore: Number(f.passScore),
         maxAttempts: f.maxAttempts ? Number(f.maxAttempts) : null,
+        maxMistakes: f.maxMistakes !== "" ? Number(f.maxMistakes) : null,
       });
       setMsg({ type: "success", text: t("admin.exam.saved") });
     } catch (e) {
@@ -112,6 +113,7 @@ export default function AdminExam() {
               <Input label={t("admin.exam.minutes")} type="number" min={1} value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} />
               <Input label={t("admin.exam.passScore")} type="number" min={1} max={100} value={f.passScore} onChange={(e) => setF({ ...f, passScore: e.target.value })} />
               <Input label={t("admin.exam.maxAttempts")} type="number" min={1} value={f.maxAttempts} onChange={(e) => setF({ ...f, maxAttempts: e.target.value })} />
+              <Input label={t("admin.exam.maxMistakes")} type="number" min={0} max={100} value={f.maxMistakes} onChange={(e) => setF({ ...f, maxMistakes: e.target.value })} />
             </div>
             <p className="text-xs text-slate-500">{t("admin.exam.rulesHint")}</p>
             <Button loading={busy} onClick={saveConfig}>{t("admin.common.save")}</Button>

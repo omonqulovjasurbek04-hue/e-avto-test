@@ -23,6 +23,11 @@ describe("languages and templates (unit)", () => {
     expect(pageSchema.safeParse({ title: "Sahifa", content: "x", translations: { ru: { isAdmin: true } } }).success).toBe(false);
     expect(siteSettingsSchema.safeParse({ translations: { ru: { logoUrl: "/x.png" } } }).success).toBe(false);
     expect(siteSettingsSchema.safeParse({ translations: { ru: { heroTitle: "Привет" }, uz_cyrl: null } }).success).toBe(true);
+    // Contact page centres: name + address only, at most 20.
+    expect(siteSettingsSchema.safeParse({ branches: [{ name: "Yangiyer", address: "Sirdaryo v., Yangiyer sh." }] }).success).toBe(true);
+    expect(siteSettingsSchema.safeParse({ branches: [{ name: "Yangiyer", address: "Yangiyer", lat: 1 }] }).success).toBe(false);
+    expect(siteSettingsSchema.safeParse({ branches: [{ name: "", address: "Yangiyer" }] }).success).toBe(false);
+    expect(siteSettingsSchema.safeParse({ branches: Array.from({ length: 21 }, () => ({ name: "M", address: "Manzil" })) }).success).toBe(false);
   });
 
   it("rejects unknown placeholders, stray braces and a missing required one", () => {
@@ -184,6 +189,11 @@ describe.skipIf(!enabled)("multilingual CMS and notification templates", () => {
 
     const admin = await request(app).get("/api/admin/cms/site-settings").set(bearer("admin"));
     expect(admin.body.data).toMatchObject({ heroTitle: "Haydovchilik nazariyasi", translations: { ru: { heroTitle: "Теория вождения онлайн" } } });
+
+    // Centres are shared by every language.
+    const branches = [{ name: "Yangiyer markazi", address: "Sirdaryo v., Yangiyer sh." }];
+    await request(app).put("/api/admin/cms/site-settings").set(bearer("admin")).send({ branches }).expect(200);
+    expect((await request(app).get("/api/site-settings?lang=ru")).body.data.branches).toEqual(branches);
 
     // Removing the ru text brings back the uz one for ru visitors.
     await request(app).put("/api/admin/cms/site-settings").set(bearer("admin")).send({ translations: { ru: { heroTitle: "" } } }).expect(200);

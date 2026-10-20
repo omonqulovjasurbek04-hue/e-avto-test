@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { TestQuestion } from "../types/question";
-import type { TestResultDetail } from "../types/result";
+import type { TestMode, TestResultDetail } from "../types/result";
 import { testService } from "../services/test.service";
 import { DEFAULT_QUESTION_COUNT } from "../constants/config";
 
@@ -19,7 +19,7 @@ interface TestState {
   status: "idle" | "active" | "finished";
   finishing: boolean;
   result: TestResultDetail | null;
-  start: (courseId?: string, count?: number, topicId?: string) => Promise<string>;
+  start: (courseId?: string, count?: number, topicId?: string, mode?: TestMode) => Promise<string>;
   setAnswer: (qid: string, idx: number) => void;
   next: () => void;
   prev: () => void;
@@ -64,8 +64,8 @@ export const useTestStore = create<TestState>()(
     (set, get) => ({
       ...initial,
 
-      start: async (courseId, count = DEFAULT_QUESTION_COUNT, topicId) => {
-        const res = await testService.start({ courseId, count, topicId });
+      start: async (courseId, count = DEFAULT_QUESTION_COUNT, topicId, mode) => {
+        const res = await testService.start({ courseId, count, topicId, mode });
         const duration = res.test.duration ?? 45 * 60;
         set({
           ...initial,
