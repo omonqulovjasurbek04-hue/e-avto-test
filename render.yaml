@@ -1,0 +1,119 @@
+# Render Blueprint: the whole site on Render's free plan, database on Neon (free, does not expire).
+# Render → New → Blueprint → this repository. Every push to main deploys again, but only after the
+# GitHub CI checks pass (autoDeployTrigger: checksPass). Step-by-step: docs/DEPLOY_FREE.md
+#
+#   https://eavto-test-uz.onrender.com        static site (React build, free, never sleeps)
+#     /api/*  → rewritten to the API below, so the browser sees one site (first-party cookies, no CORS)
+#   https://eavto-test-uz-api.onrender.com    API (free web service: sleeps after 15 min idle, ~1 min to wake)
+#
+# If Render says a name is taken, change both names here (and the URLs below) to the same new prefix.
+
+services:
+  - type: web
+    name: eavto-test-uz-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    rootDir: backend
+    autoDeployTrigger: checksPass
+    # Dev dependencies are needed for the build (TypeScript, Prisma CLI, tsx). Migrations and the
+    # catalogue/first-admin bootstrap run here, once per deploy, not on every wake-up.
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build && npx prisma migrate deploy && npx tsx prisma/bootstrap.ts
+    startCommand: node dist/server.js
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      # Neon connection string (postgresql://...?sslmode=require). Entered by you when the Blueprint is created.
+      - key: DATABASE_URL
+        sync: false
+      # The site's public address: same origin for the browser (the static site rewrites /api/*).
+      - key: CLIENT_URL
+        value: https://eavto-test-uz.onrender.com
+      - key: PUBLIC_API_ORIGIN
+        value: https://eavto-test-uz.onrender.com
+      - key: REFRESH_COOKIE_SAMESITE
+        value: strict
+      # Static-site rewrite + Render's load balancer stand in front of the API.
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      # Secrets Render generates itself (nobody has to type or see them).
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TOTP_ENCRYPTION_KEY
+        generateValue: true
+      - key: MEDIA_SIGNING_SECRET
+        generateValue: true
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      # Telegram bot (from @BotFather). Leave empty to run without Telegram login.
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
+      # First administrator, created on the first deploy (phone +998..., password 10+ characters).
+      - key: BOOTSTRAP_ADMIN_PHONE
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      - key: ENFORCE_ENROLLMENT
+        value: "true"
+      # Payments stay off until a real provider (Payme/Click) is connected.
+      - key: PAYMENT_PROVIDER
+        value: ""
+      # The free plan has no persistent disk: no private media uploads.
+      - key: MEDIA_UPLOAD_ENABLED
+        value: "false"
+
+  - type: web
+    name: eavto-test-uz
+    runtime: static
+    branch: main
+    rootDir: frontend
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: VITE_API_URL
+        value: https://eavto-test-uz.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://eavto-test-uz-api.onrender.com/api/*
+      - type: rewrite
+        source: /sitemap.xml
+        destination: https://eavto-test-uz-api.onrender.com/sitemap.xml
+      - type: rewrite
+        source: /robots.txt
+        destination: https://eavto-test-uz-api.onrender.com/robots.txt
+      # Client-side routing (React Router): every other path is the app.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self'; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache

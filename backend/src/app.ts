@@ -36,7 +36,7 @@ import { safeEqual } from "./utils/safeEqual";
 const app: Application = express();
 
 // Needed so rate limiting sees the real client IP behind a hosting proxy.
-if (env.NODE_ENV === "production") app.set("trust proxy", 1);
+if (env.NODE_ENV === "production") app.set("trust proxy", env.TRUST_PROXY_HOPS);
 
 const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim()).filter(Boolean);
 

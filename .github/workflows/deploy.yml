@@ -7,9 +7,10 @@
 # Optional: Settings → Environments → "production" → required reviewers, to approve each deploy by hand.
 name: Deploy
 
+# The site currently runs on Render (render.yaml, deploys itself after CI passes). This VPS pipeline is
+# kept for a later move to an own server: start it by hand (Actions → Deploy → Run workflow), or put the
+# "push: branches: [main]" trigger back once the server and the secrets below exist.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       rollback:

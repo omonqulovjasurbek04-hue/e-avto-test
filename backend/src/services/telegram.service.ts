@@ -158,7 +158,15 @@ export function startBot(): void {
     return;
   }
   if (env.TELEGRAM_WEBHOOK_SECRET) {
-    console.log("Telegram login: webhook mode");
+    // Register the webhook on every start, so a new address (or a token that polled before) just works.
+    const base = env.TELEGRAM_WEBHOOK_BASE || env.PUBLIC_API_ORIGIN;
+    void tgCall("setWebhook", {
+      url: `${base}/api/telegram/webhook/${env.TELEGRAM_WEBHOOK_SECRET}`,
+      allowed_updates: ["message", "callback_query"],
+      drop_pending_updates: false,
+    })
+      .then(() => console.log("Telegram login: webhook mode"))
+      .catch((e: Error) => console.error("Telegram setWebhook failed:", e.message));
     return;
   }
 

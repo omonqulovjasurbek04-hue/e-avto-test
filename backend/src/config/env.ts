@@ -101,6 +101,11 @@ export const env = {
   ORDER_TTL_MINUTES: parseInt(process.env.ORDER_TTL_MINUTES || "60", 10),
   // Shared store for rate limits (redis://...). Empty = per-process memory.
   REDIS_URL: process.env.REDIS_URL || "",
+  // How many proxies stand in front of the API in production (each appends to X-Forwarded-For):
+  // 1 = host nginx (VPS); Render static-site rewrite + Render's load balancer = 2.
+  TRUST_PROXY_HOPS: Math.max(0, Number.parseInt(process.env.TRUST_PROXY_HOPS || "1", 10) || 0),
+  // Public base URL Telegram posts webhook updates to (defaults to Render's own address, then PUBLIC_API_ORIGIN).
+  TELEGRAM_WEBHOOK_BASE: (process.env.TELEGRAM_WEBHOOK_BASE || process.env.RENDER_EXTERNAL_URL || "").replace(/\/+$/, ""),
   // Error tracking (Sentry or a compatible service such as GlitchTip). Empty = disabled.
   SENTRY_DSN: process.env.SENTRY_DSN || "",
   SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT || nodeEnv,
