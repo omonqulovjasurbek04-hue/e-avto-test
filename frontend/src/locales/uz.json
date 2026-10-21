@@ -748,6 +748,7 @@
     "TEACHER": "O'qituvchi",
     "MODERATOR": "Moderator",
     "FINANCE": "Moliya xodimi",
+    "MANAGER": "Menejer",
     "ADMIN": "Administrator",
     "SUPERADMIN": "Superadmin"
   },

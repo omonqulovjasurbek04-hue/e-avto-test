@@ -55,7 +55,7 @@ export const questionCreateSchema = questionBase.refine(
 export const questionUpdateSchema = questionBase.partial();
 
 export const userRoleSchema = z.object({
-  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "ADMIN", "SUPERADMIN"]),
+  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]),
 });
 
 export const userStatusSchema = z.object({
@@ -67,7 +67,7 @@ export const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
   search: z.string().trim().max(100).optional(),
   // Only used by the user list (e.g. to pick teachers/students for a group).
-  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "ADMIN", "SUPERADMIN"]).optional(),
+  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]).optional(),
   // User list: "student" = bought a course (has a student number), "user" = only signed up.
   kind: z.enum(["student", "user"]).optional(),
 });

@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as groups from "../services/group.service";
 import * as attendance from "../services/attendance.service";
 import { authMiddleware, requireUserId, AuthRequest } from "../middleware/auth.middleware";
-import { requirePermission } from "../middleware/admin.middleware";
+import { requireAnyPermission, requirePermission } from "../middleware/admin.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { success } from "../utils/apiResponse";
 import { attendanceSchema, groupSchema, groupUpdateSchema, memberSchema, slotSchema, slotUpdateSchema } from "../validators/groups";
@@ -17,10 +17,11 @@ const rangeSchema = z.object({
   to: z.coerce.date().default(() => new Date(Date.now() + 30 * 86_400_000)),
 });
 
-// ───────────── staff: /api/groups, /api/slots (teachers see only their own; admins all) ─────────────
+// ───────────── staff: /api/groups, /api/slots (teachers see only their own; groups:manage sees all) ─────────────
+// Group planners (MANAGER) read groups and slots here too; marking attendance is still checked per action.
 export const staffRoutes = Router();
 staffRoutes.use(["/groups", "/slots", "/teacher"], asyncHandler(authMiddleware));
-staffRoutes.use(["/groups", "/slots", "/teacher"], requirePermission("teaching:access"));
+staffRoutes.use(["/groups", "/slots", "/teacher"], requireAnyPermission("teaching:access", "groups:manage"));
 
 staffRoutes.get("/groups", h(async (req, res) => success(res, await groups.listGroups(actorOf(req)))));
 staffRoutes.get("/groups/:id", h(async (req, res) => success(res, await groups.getGroup(actorOf(req), uuid.parse(req.params.id)))));

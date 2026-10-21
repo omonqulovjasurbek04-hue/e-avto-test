@@ -17,6 +17,7 @@ const ACCOUNTS: { role: Role; name: string; email: string; phone: string }[] = [
   { role: "MODERATOR", name: "Test Moderator", email: "moderator@test.local", phone: "+998900000013" },
   { role: "FINANCE", name: "Test Finance", email: "finance@test.local", phone: "+998900000014" },
   { role: "ADMIN", name: "Test Admin", email: "admin@test.local", phone: "+998900000015" },
+  { role: "MANAGER", name: "Test Manager", email: "manager@test.local", phone: "+998900000016" },
 ];
 
 async function main() {
