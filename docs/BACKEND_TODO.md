@@ -1,13 +1,13 @@
 # E-Avto Test — backend: qilinadigan ishlar
 
 > Holat: 2026-10-20. Production — Railway (`vigilant-tenderness`), https://e-avto-test-production.up.railway.app.
-> API to'liq ro'yxati: [API.md](API.md). Belgilar: 🔴 shoshilinch · 🟠 muhim · 🟡 kerak · 🟢 yaxshilash.
+> API to'liq ro'yxati: [API.md](API.md). Rollar va vazifalar: [ROLES.md](ROLES.md). Belgilar: 🔴 shoshilinch · 🟠 muhim · 🟡 kerak · 🟢 yaxshilash.
 
 ## 🔴 Shoshilinch (foydalanuvchiga hozir ta'sir qiladi)
 
 | # | Vazifa | Nega | Qayerda |
 |---|---|---|---|
-| 2 | **Yuklangan rasmlar o'chib ketadi** | `STORAGE_DRIVER=local` → rasmlar konteyner ichida (`storage/private`), Railway har deployda tozalaydi. Admin CMS'da yuklagan rasm keyingi push'da yo'qoladi | Railway: app servisiga **Volume** (`/app/backend/storage`) ulash va `USER node` yozish huquqini tekshirish, **yoki** `STORAGE_DRIVER=s3` (Cloudflare R2) |
+| 2 | **Yuklangan rasmlar o'chib ketadi** | `STORAGE_DRIVER=local` → rasmlar konteyner ichida (`storage/private`), Railway har deployda tozalaydi. Admin CMS'da yuklagan rasm keyingi push'da yo'qoladi | Railway: app servisiga **Volume** (`/app/backend/storage`) ulash + `RAILWAY_RUN_UID=0` o'zgaruvchisi (volume root'niki, image esa `node` bilan ishlaydi), **yoki** `STORAGE_DRIVER=s3` (Cloudflare R2) |
 | 3 | **Railway sinov muddati** | 30 kun yoki $5 tugagach servislar to'xtaydi | Railway → Hobby ($5/oy) ga o'tish, muddatdan oldin |
 | 4 | **Ro'yxatdan o'tishda telefon tasdiqlanmaydi** | Begona odam boshqa birovning raqami bilan ro'yxatdan o'ta oladi | `POST /api/auth/register`: telefonni Telegram bot kodi bilan tasdiqlash (`telegram/start`→`verify` oqimi bor) yoki SMS |
 
@@ -32,7 +32,7 @@
 | 14 | Admin ro'yxatlarida filtr | `GET /api/admin/questions` faqat `page/limit/search` — `courseId`, `lessonId` filtrlari kerak (savollar ko'payganda) |
 | 15 | Email funksiyalari | SMTP yo'q: `verify-email`, `forgot-password`, email bildirishnomalar ishlamaydi. Yoki SMTP ulash, yoki kod va UI'dan olib tashlash |
 | 16 | Eslatma ishlari uyquda | Bildirishnoma/Telegram eslatmalari 5 daqiqalik ichki taymer bilan ishlaydi — bir nechta instans bo'lsa takrorlanishi mumkin (hozir 1 ta). Ko'paytirishda Redis lock yoki Railway Cron |
-| 17 | Lokal ishlab chiqish bazasi | Kompyuterda PostgreSQL ishlamayapti (Windows servis/Docker yo'q). `docker-compose.yml` dagi Postgres uchun Docker Desktop o'rnatish yoki Postgres o'rnatish |
+| 17 | Lokal Telegram bot | Lokal `.env` dagi `TELEGRAM_BOT_TOKEN` yaroqsiz (Unauthorized). Prod tokenini **ishlatmaslik** (ikki joyda polling prod'dagi Telegram kirishni buzadi) — @BotFather'da alohida test bot ochish |
 | 18 | E2E testlar CI'da yo'q | Playwright (`e2e/`) faqat lokal (msedge). CI'ga chromium bilan qo'shish |
 
 ## 🟢 Yaxshilash
@@ -46,6 +46,10 @@
 | 23 | Rasm hajmi | Unsplash rasmlari `w=800` — kartalar uchun `w=600&q=70` va `srcset` |
 
 ## ✅ Bajarilgan (bu bosqichda)
+
+- 2026-10-21: Railway image'da yuklash papkasi (`storage/private`) `node` foydalanuvchisiga tegishli qilindi — oldin `/app/backend` root'niki bo'lgani uchun rasm/video yuklash `EACCES` bilan yiqilishi kerak edi; CI endi papkaga yozishni tekshiradi
+- 2026-10-21: Node 20 (2026-04 da qo'llab-quvvatlash tugagan) → Node 22 LTS: barcha Dockerfile'lar, CI, `engines`
+- 2026-10-21: Lokal muhit: PostgreSQL 18 (port 5433, prod bilan bir xil versiya), prod nusxasi `railway ssh` + `pg_dump` bilan; rollar uchun sinov akkauntlari `npm run seed:roles`
 
 - Railway: sayt + API bitta servisda, Postgres, EU West, `main`ga push → CI → avtomatik deploy, `npm run release` (migratsiya + bootstrap)
 - JWT kaliti bazada (`JWT_SECRET_FROM_DB`), birinchi admin telefon orqali (`BOOTSTRAP_ADMIN_PHONE`)
