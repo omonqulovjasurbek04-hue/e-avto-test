@@ -126,11 +126,23 @@ describe.skipIf(!enabled)("Telegram bot staff menu", () => {
     expect(last(chat)).toContain("Telegram ulangan");
     expect(last(chat)).toContain(`${run} student`);
 
-    const { studentNumber } = await prisma.user.findUniqueOrThrow({ where: { id: uid.student } });
+    // No course bought: found by the sign-up number and shown as user####.
+    const { userNumber } = await prisma.user.findUniqueOrThrow({ where: { id: uid.student } });
+    const userId = `user${String(userNumber).padStart(4, "0")}`;
     await say(chat, "🔎 Qidirish");
-    await say(chat, `student${String(studentNumber).padStart(4, "0")}`);
+    await say(chat, userId);
     expect(last(chat)).toContain(`${run} student`);
+    expect(last(chat)).toContain(userId);
     expect(last(chat)).toContain("✅ ulangan");
+
+    // A buyer is found by the student number and shown as student####.
+    const top = await prisma.user.aggregate({ _max: { studentNumber: true } });
+    const studentNumber = (top._max.studentNumber ?? 0) + 1_000;
+    await prisma.user.update({ where: { id: uid.student }, data: { studentNumber } });
+    await say(chat, "🔎 Qidirish");
+    await say(chat, `student${studentNumber}`);
+    expect(last(chat)).toContain(`${run} student`);
+    expect(last(chat)).toContain(`student${studentNumber} (${userId})`);
 
     await say(chat, "🔎 Qidirish");
     await say(chat, `nobody-${run}`);

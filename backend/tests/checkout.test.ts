@@ -76,6 +76,10 @@ describe.skipIf(!enabled)("checkout flow", () => {
 
     // browser-side "success" has no way to mark paid; enrollment is still absent
     expect(await prisma.enrollment.count({ where: { userId: student.id, courseId } })).toBe(0);
+    // Only signed up so far: a user number, no student number.
+    const before = (await request(app).get("/api/auth/me").set(bearer(student.token))).body.data;
+    expect(typeof before.userNumber).toBe("number");
+    expect(before.studentNumber).toBeUndefined();
 
     expect((await hook(event, "wrong-secret")).status).toBe(401);
     expect(await prisma.enrollment.count({ where: { userId: student.id, courseId } })).toBe(0);
@@ -87,6 +91,29 @@ describe.skipIf(!enabled)("checkout flow", () => {
 
     const paid = await request(app).get(`/api/orders/${order.id}`).set(bearer(student.token));
     expect(paid.body.data.status).toBe("PAID");
+
+    // The paid course makes the account a student; the sign-up number stays.
+    const after = (await request(app).get("/api/auth/me").set(bearer(student.token))).body.data;
+    expect(after.studentNumber).toBeGreaterThan(0);
+    expect(after.userNumber).toBe(before.userNumber);
+  });
+
+  it("gives the student number once, in purchase order, and keeps it on renewal", async () => {
+    const { studentNumber: first } = await prisma.user.findUniqueOrThrow({ where: { id: student.id } });
+
+    // A renewal after the access ran out (second paid order for the same account) keeps the number.
+    await prisma.enrollment.updateMany({ where: { userId: student.id, courseId }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    const renewal = await request(app).post("/api/orders").set(bearer(student.token)).send({ packageId });
+    const renewalPayment = renewal.body.data.payments[0].id;
+    expect((await hook({ eventId: `${run}-renew`, paymentId: `mock_${renewalPayment}`, state: "PAID", amount: 100_000, currency: "UZS" })).body.data.status).toBe("processed");
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: student.id } })).studentNumber).toBe(first);
+
+    // The admin list tells buyers and non-buyers apart.
+    const students = await request(app).get("/api/admin/users").query({ kind: "student", search: `student${first}` }).set(bearer(admin.token));
+    expect(students.body.data.map((u: { id: string }) => u.id)).toEqual([student.id]);
+    const notBought = await request(app).get("/api/admin/users").query({ kind: "user", search: run }).set(bearer(admin.token));
+    expect(notBought.body.data.map((u: { id: string }) => u.id)).not.toContain(student.id);
+    expect(notBought.body.data.map((u: { id: string }) => u.id)).toContain(other.id);
   });
 
   it("rejects a paid event with a different amount", async () => {
@@ -109,6 +136,10 @@ describe.skipIf(!enabled)("checkout flow", () => {
     expect(statuses.filter((x) => x === "duplicate")).toHaveLength(5);
     expect(await prisma.enrollment.count({ where: { userId: other.id, courseId } })).toBe(1);
     expect(await prisma.notification.count({ where: { userId: other.id, type: "PAYMENT_PAID" } })).toBe(1);
+
+    // Six concurrent callbacks still draw a single student number: the next one after the first buyer.
+    const [first, second] = await Promise.all([student.id, other.id].map((id) => prisma.user.findUniqueOrThrow({ where: { id } })));
+    expect(second.studentNumber).toBe((first.studentNumber ?? 0) + 1);
   });
 
   it("a coupon with one use left is granted to exactly one of several simultaneous buyers", async () => {

@@ -21,7 +21,7 @@ interface Page<T> {
 export const adminService = {
   getStatistics: () => apiGet<AdminStats>("/admin/statistics"),
 
-  listUsers: (params: { page?: number; search?: string; role?: string; limit?: number }): Promise<Page<AdminUser>> =>
+  listUsers: (params: { page?: number; search?: string; role?: string; kind?: "student" | "user"; limit?: number }): Promise<Page<AdminUser>> =>
     apiGetPage<AdminUser>("/admin/users", { limit: 10, ...params }),
   setUserActive: (id: string, isActive: boolean) =>
     apiPatch<{ id: string; isActive: boolean }>(`/admin/users/${id}/status`, { isActive }),

@@ -1,6 +1,7 @@
-import type { TelegramAdminSession, User } from "@prisma/client";
+import type { Prisma, TelegramAdminSession, User } from "@prisma/client";
 import { prisma } from "../config/database";
 import { hasPermission, type Permission } from "../lib/permissions";
+import { accountIdFilter, formatAccountId, formatUserId } from "../lib/accountNumbers";
 import { normalizeUzPhone } from "../lib/phone";
 import { answerCallback, deleteMessage, editMessage, esc, sendMessage, type TgCallbackQuery, type TgMessage } from "../lib/telegramApi";
 import { HttpError } from "../utils/errors";
@@ -39,7 +40,6 @@ const NEEDS: Record<Exclude<keyof typeof BTN, "logout">, Permission> = {
   messages: "content:manage",
 };
 
-const studentNo = (n: number) => `student${String(n).padStart(4, "0")}`;
 const TZ = "Asia/Tashkent";
 const fmtDate = (d: Date) => d.toLocaleDateString("ru-RU", { timeZone: TZ });
 const fmtDateTime = (d: Date) => d.toLocaleString("ru-RU", { timeZone: TZ, dateStyle: "short", timeStyle: "short" });
@@ -285,7 +285,7 @@ async function studentsOverview(): Promise<string> {
       where: { ...students, telegramId: { not: null } },
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: { name: true, studentNumber: true, phone: true, createdAt: true },
+      select: { name: true, userNumber: true, studentNumber: true, phone: true, createdAt: true },
     }),
   ]);
   const lines = [
@@ -297,7 +297,7 @@ async function studentsOverview(): Promise<string> {
   ];
   if (recent.length) {
     lines.push("", "<b>Telegram ulangan oxirgi hisoblar:</b>");
-    recent.forEach((u, i) => lines.push(`${i + 1}. ${esc(u.name)} — ${studentNo(u.studentNumber)}${u.phone ? `, ${esc(u.phone)}` : ""} (${fmtDate(u.createdAt)})`));
+    recent.forEach((u, i) => lines.push(`${i + 1}. ${esc(u.name)} — ${formatAccountId(u)}${u.phone ? `, ${esc(u.phone)}` : ""} (${fmtDate(u.createdAt)})`));
   }
   lines.push("", `Batafsil: ${BTN.search}`);
   return lines.join("\n");
@@ -305,10 +305,9 @@ async function studentsOverview(): Promise<string> {
 
 async function searchStudents(query: string): Promise<string> {
   const q = query.trim().slice(0, 80);
-  const num = /^student0*(\d+)$/i.exec(q) ?? /^#?(\d{1,6})$/.exec(q);
   const digits = q.replace(/\D/g, "");
-  const where =
-    num ? { studentNumber: Number(num[1]) } : digits.length >= 7 ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" as const } };
+  const where: Prisma.UserWhereInput =
+    accountIdFilter(q) ?? (digits.length >= 7 ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" } });
   const users = await prisma.user.findMany({ where: { role: "USER", ...where }, orderBy: { createdAt: "desc" }, take: 5 });
   if (!users.length) return `"${esc(q)}" bo'yicha o'quvchi topilmadi.`;
 
@@ -325,7 +324,7 @@ async function searchStudents(query: string): Promise<string> {
       ]);
       const courses = enrollments.map((e) => `${esc(e.course.title)}${e.expiresAt ? ` (${fmtDate(e.expiresAt)} gacha)` : ""}`).join(", ");
       return [
-        `<b>${esc(u.name)}</b> — ${studentNo(u.studentNumber)}${u.isActive ? "" : " ⛔ bloklangan"}`,
+        `<b>${esc(u.name)}</b> — ${formatAccountId(u)}${u.studentNumber ? ` (${formatUserId(u.userNumber)})` : ""}${u.isActive ? "" : " ⛔ bloklangan"}`,
         `📞 ${esc(u.phone ?? "—")} · Telegram: ${u.telegramId ? "✅ ulangan" : "❌ ulanmagan"}`,
         `📅 Ro'yxatdan o'tgan: ${fmtDate(u.createdAt)}`,
         `📚 Kurslar: ${courses || "yo'q"}`,

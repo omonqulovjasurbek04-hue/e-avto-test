@@ -26,7 +26,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "../utils/cn";
-import { formatStudentId } from "../utils/studentId";
+import { formatAccountId } from "../utils/studentId";
 import { useCourseAccess } from "../hooks/useCourseAccess";
 import { can } from "../lib/permissions";
 import { env } from "../config/env";
@@ -140,12 +140,16 @@ export const StudentLayout: React.FC = () => {
             <div className="lg:hidden">
               <Logo compact />
             </div>
-            {/* The student's own account number (e.g. "student0001") instead of a page title. */}
+            {/* The account's own number instead of a page title: "student0001" after a bought course, otherwise "user0001". */}
             <span
               title={t("nav.profile")}
-              className="hidden max-w-[12rem] truncate rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-semibold tracking-wide text-slate-600 sm:inline-block dark:bg-slate-800 dark:text-slate-300"
+              className={`hidden max-w-[12rem] truncate rounded-lg px-2.5 py-1 font-mono text-xs font-semibold tracking-wide sm:inline-block ${
+                user?.studentNumber
+                  ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              }`}
             >
-              {formatStudentId(user?.studentNumber) || t("nav.dashboard")}
+              {formatAccountId(user) || t("nav.dashboard")}
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -320,8 +324,8 @@ function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: nu
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 font-bold text-white">{initial}</span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name}</span>
-              {user?.studentNumber && (
-                <span className="block truncate font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">{formatStudentId(user.studentNumber)}</span>
+              {formatAccountId(user) && (
+                <span className="block truncate font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">{formatAccountId(user)}</span>
               )}
               {user?.phone && <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{user.phone}</span>}
             </span>

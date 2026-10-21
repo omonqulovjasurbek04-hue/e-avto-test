@@ -68,6 +68,8 @@ export const listQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   // Only used by the user list (e.g. to pick teachers/students for a group).
   role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "ADMIN", "SUPERADMIN"]).optional(),
+  // User list: "student" = bought a course (has a student number), "user" = only signed up.
+  kind: z.enum(["student", "user"]).optional(),
 });
 
 export type CourseCreateInput = z.infer<typeof courseCreateSchema>;

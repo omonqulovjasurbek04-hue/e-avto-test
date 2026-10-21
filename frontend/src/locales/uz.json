@@ -829,7 +829,8 @@
       "questions": "Savollar",
       "tests": "Yakunlangan testlar",
       "avgScore": "O'rtacha ball",
-      "passRate": "O'tish foizi"
+      "passRate": "O'tish foizi",
+      "students": "O'quvchilar (kurs olgan)"
     },
     "audit": {
       "title": "Audit jurnali",
@@ -879,7 +880,7 @@
     },
     "users": {
       "title": "Foydalanuvchilar",
-      "searchPlaceholder": "Ism yoki email bo'yicha qidirish",
+      "searchPlaceholder": "Ism, telefon, email yoki ID (student0001 / user0001)",
       "byRole": "Rol bo'yicha",
       "allRoles": "Barcha rollar",
       "empty": "Foydalanuvchilar topilmadi",
@@ -905,7 +906,12 @@
       "reset2faTitle": "2FA ni bekor qilish: {{name}}",
       "reset2faConfirm": "Foydalanuvchi autentifikator va zaxira kodlarni yo'qotgan bo'lsa ishlating. Uning sessiyalari yopiladi; keyin u faqat parol bilan kiradi va 2FA ni qaytadan yoqishi kerak. Amal audit jurnaliga yoziladi.",
       "reset2faDone": "2FA bekor qilindi",
-      "reset2faError": "2FA ni bekor qilib bo'lmadi"
+      "reset2faError": "2FA ni bekor qilib bo'lmadi",
+      "id": "ID",
+      "byKind": "Turi bo'yicha",
+      "allKinds": "Hammasi",
+      "kindStudent": "O'quvchi (kurs olgan)",
+      "kindUser": "Foydalanuvchi (kurs olmagan)"
     },
     "exam": {
       "title": "Imtihon sozlamalari va savollar importi",

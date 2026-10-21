@@ -52,6 +52,16 @@ Xato kodlari: `400` noto'g'ri so'rov · `401` kirilmagan / token eskirgan · `40
 | `reports:read` | | | | ✅ | ✅ | ✅ |
 | `audit:read`, `settings:manage` | | | | | ✅ | ✅ |
 
+### Hisob raqamlari
+
+| Maydon | Qachon beriladi | Ko'rinishi |
+|---|---|---|
+| `userNumber` | Ro'yxatdan o'tishda, har bir hisobga | `user0001`, `user0002`, … |
+| `studentNumber` | **Birinchi kurs to'langanda** (to'lov provayderi tasdiqlaganda), alohida ketma-ketlik | `student0001`, `student0002`, … |
+
+Ikkalasi ham doimiy, hech qachon qayta ishlatilmaydi. Kurs muddati tugasa ham `studentNumber` saqlanadi, qayta sotib olishda yangisi berilmaydi.
+`studentNumber` yo'q = kurs sotib olmagan. Saytda ko'rinadigan ID: `studentNumber` bo'lsa `student####`, aks holda `user####`.
+
 ### Rate limit (cheklovlar)
 
 `auth` (login/register/2FA/telegram) · `telegramCode` (kod tekshirish 10/15 daq) · `refresh` · `passwordReset` ·
@@ -81,7 +91,7 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | POST | `/refresh` | cookie + XHR | — | yangi `token` (refresh aylantiriladi) |
 | POST | `/logout` | cookie + XHR | — | sessiya tugatiladi |
 | POST | `/logout-all` | 🔑 | — | barcha qurilmalardan chiqish |
-| GET | `/me` | 🔑 | — | joriy `user` (rol, `studentNumber`, `hasPassword`, `twoFactorEnabled`) |
+| GET | `/me` | 🔑 | — | joriy `user` (rol, `userNumber`, `studentNumber?`, `hasPassword`, `twoFactorEnabled`) — qarang: «Hisob raqamlari» |
 | POST | `/complete-registration` | 🔑 | `name` (ism va familiya), `phone`, `password` | Telegram orqali kirganning 2-bosqichi |
 | PUT | `/password` | 🔑 | `currentPassword`, `newPassword` | parol almashadi, boshqa sessiyalar tugaydi |
 | POST | `/forgot-password` | 🌐 | `email` | ⚠️ email asosida (SMTP sozlanmagan) |
@@ -206,11 +216,11 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 
 | Metod | Yo'l | 🛡 | Yuboriladi / so'rov |
 |---|---|---|---|
-| GET | `/users` | `users:manage` | `?page&limit&search&role` |
+| GET | `/users` | `users:manage` | `?page&limit&search&role&kind=student\|user` — `search`: ism, email, telefon yoki `student0001`/`user0001`; javobda `userNumber`, `studentNumber`, `phone` |
 | PATCH | `/users/:id/role` | `users:manage` (+ ADMIN/SUPERADMIN uchun `roles:manage`) | `{ role }` |
 | PATCH | `/users/:id/status` | `users:manage` | `{ isActive }` |
 | DELETE | `/users/:id/two-factor` | `users:manage` | 2FA ni tiklash |
-| GET | `/statistics` | `users:manage` | umumiy statistika |
+| GET | `/statistics` | `users:manage` | umumiy statistika (`totalUsers`, `totalStudents` — kurs sotib olganlar, …) |
 | GET | `/courses` | katalog/test | |
 | POST · PUT `/:id` · DELETE `/:id` | `/courses` | `catalog:manage` | `title`, `description`, `thumbnail?`, `level?`, `order?`, `isPublished?`, `categoryId?`, `studyPeriod?`, `section?` (`MAIN`\|`COMBINED`\|`EXTRA`), `price?` |
 | GET | `/lessons` | katalog/test | `?courseId` |

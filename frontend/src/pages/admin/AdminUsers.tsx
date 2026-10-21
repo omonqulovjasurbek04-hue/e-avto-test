@@ -17,6 +17,7 @@ import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAssignRole, ROLE_LABEL } from "@/lib/permissions";
+import { formatStudentId, formatUserId } from "@/utils/studentId";
 import type { UserRole } from "@/types/user";
 
 export default function AdminUsers() {
@@ -33,6 +34,8 @@ export default function AdminUsers() {
   const [nextRole, setNextRole] = useState<UserRole>("USER");
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleFilter, setRoleFilter] = useState("");
+  // "student" = bought a course, "user" = only signed up.
+  const [kindFilter, setKindFilter] = useState<"" | "student" | "user">("");
   const [resetting, setResetting] = useState<AdminUser | null>(null);
 
   const resetTwoFactor = async () => {
@@ -64,7 +67,7 @@ export default function AdminUsers() {
     setLoading(true);
     setError(null);
     adminService
-      .listUsers({ page, search: debounced || undefined, role: roleFilter || undefined })
+      .listUsers({ page, search: debounced || undefined, role: roleFilter || undefined, kind: kindFilter || undefined })
       .then((res) => {
         if (id !== requestId.current) return; // a newer request is on its way
         setItems(res.items);
@@ -74,8 +77,8 @@ export default function AdminUsers() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [page, debounced, roleFilter]);
-  useEffect(() => setPage(1), [debounced, roleFilter]);
+  useEffect(load, [page, debounced, roleFilter, kindFilter]);
+  useEffect(() => setPage(1), [debounced, roleFilter, kindFilter]);
 
   const openRole = (u: AdminUser) => {
     setNextRole(u.role);
@@ -115,6 +118,16 @@ export default function AdminUsers() {
         </div>
         <div className="w-48">
           <Select aria-label={t("admin.users.byRole")} options={[{ value: "", label: t("admin.users.allRoles") }, ...ALL_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} />
+          <Select
+            aria-label={t("admin.users.byKind")}
+            options={[
+              { value: "", label: t("admin.users.allKinds") },
+              { value: "student", label: t("admin.users.kindStudent") },
+              { value: "user", label: t("admin.users.kindUser") },
+            ]}
+            value={kindFilter}
+            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user")}
+          />
         </div>
       </div>
 
@@ -130,6 +143,7 @@ export default function AdminUsers() {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-950 text-xs uppercase text-slate-400">
                 <tr>
+                  <th className="px-4 py-3">{t("admin.users.id")}</th>
                   <th className="px-4 py-3">{t("admin.users.name")}</th>
                   <th className="px-4 py-3">{t("admin.users.email")}</th>
                   <th className="px-4 py-3">{t("admin.users.role")}</th>
@@ -141,7 +155,21 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-slate-800">
                 {items.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3 font-medium text-white">{u.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {/* student#### = bought a course; the sign-up number stays visible under it. */}
+                      {u.studentNumber ? (
+                        <>
+                          <Badge variant="success">{formatStudentId(u.studentNumber)}</Badge>
+                          <div className="mt-1 text-slate-500">{formatUserId(u.userNumber)}</div>
+                        </>
+                      ) : (
+                        <Badge variant="neutral">{formatUserId(u.userNumber)}</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-white">
+                      {u.name}
+                      {u.phone && <div className="text-xs font-normal text-slate-400">{u.phone}</div>}
+                    </td>
                     <td className="px-4 py-3">
                       {u.email ?? "Telegram"}
                       {u.email && !u.emailVerifiedAt && <div className="text-xs text-amber-400">{t("admin.users.emailUnverified")}</div>}

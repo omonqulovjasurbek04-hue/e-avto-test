@@ -3,19 +3,28 @@ import { prisma } from "../config/database";
 import { ListQuery } from "../validators/course";
 import { badRequest, forbidden, notFound } from "../utils/errors";
 import { canAssignRole } from "../lib/permissions";
+import { accountIdFilter } from "../lib/accountNumbers";
 import { writeAudit } from "./audit.service";
 import { revokeAllSessions } from "./session.service";
 import { getPagination } from "../utils/pagination";
 
 export const listUsers = async (query: ListQuery) => {
   const { page, limit, skip, take } = getPagination(query.page, query.limit);
+  const digits = query.search?.replace(/\D/g, "") ?? "";
   const where: Prisma.UserWhereInput = {
     ...(query.role ? { role: query.role } : {}),
+    ...(query.kind === "student" ? { studentNumber: { not: null } } : query.kind === "user" ? { studentNumber: null } : {}),
     ...(query.search
       ? {
-          OR: [
-            { name: { contains: query.search, mode: "insensitive" } },
-            { email: { contains: query.search, mode: "insensitive" } },
+          // "student0007" / "user0042" → that account; otherwise name, e-mail or phone.
+          AND: [
+            accountIdFilter(query.search) ?? {
+              OR: [
+                { name: { contains: query.search, mode: "insensitive" } },
+                { email: { contains: query.search, mode: "insensitive" } },
+                ...(digits.length >= 4 ? [{ phone: { contains: digits.slice(-9) } }] : []),
+              ],
+            },
           ],
         }
       : {}),
@@ -26,7 +35,19 @@ export const listUsers = async (query: ListQuery) => {
       orderBy: { createdAt: "desc" },
       skip,
       take,
-      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, emailVerifiedAt: true, totpEnabledAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        userNumber: true,
+        studentNumber: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        emailVerifiedAt: true,
+        totpEnabledAt: true,
+      },
     }),
     prisma.user.count({ where }),
   ]);
@@ -96,9 +117,10 @@ export const resetTwoFactor = async (actorId: string, actorRole: string, userId:
 
 export const getStatistics = async () => {
   const finished = { finishedAt: { not: null }, mode: "EXAM" } satisfies Prisma.TestWhereInput;
-  const [totalUsers, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg] =
+  const [totalUsers, totalStudents, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg] =
     await Promise.all([
       prisma.user.count(),
+      prisma.user.count({ where: { studentNumber: { not: null } } }),
       prisma.course.count(),
       prisma.lesson.count(),
       prisma.question.count(),
@@ -109,6 +131,8 @@ export const getStatistics = async () => {
 
   return {
     totalUsers,
+    // Accounts that bought a course (have a student number); the rest only signed up.
+    totalStudents,
     totalCourses,
     totalLessons,
     totalQuestions,
