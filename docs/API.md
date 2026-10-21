@@ -35,22 +35,25 @@ Xato kodlari: `400` noto'g'ri so'rov · `401` kirilmagan / token eskirgan · `40
 
 ### Rollar va ruxsatlar
 
-| Ruxsat | USER | TEACHER | MODERATOR | FINANCE | ADMIN | SUPERADMIN |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `admin:access` | | | ✅ | ✅ | ✅ | ✅ |
-| `users:read`, `users:manage` | | | | | ✅ | ✅ |
-| `roles:manage` | | | | | | ✅ |
-| `content:manage` | | | ✅ | | ✅ | ✅ |
-| `catalog:manage` | | | | | ✅ | ✅ |
-| `tests:manage` | | | ✅ | | ✅ | ✅ |
-| `orders:read` | | | | ✅ | ✅ | ✅ |
-| `payments:manage` | | | | ✅ | | ✅ |
-| `groups:manage`, `schedule:manage` | | | | | ✅ | ✅ |
-| `teaching:access`, `attendance:mark` | | ✅ | | | ✅ | ✅ |
-| `attendance:edit` | | | | | ✅ | ✅ |
-| `media:manage` | | | | | ✅ | ✅ |
-| `reports:read` | | | | ✅ | ✅ | ✅ |
-| `audit:read`, `settings:manage` | | | | | ✅ | ✅ |
+| Ruxsat | USER | TEACHER | MODERATOR | FINANCE | MANAGER | ADMIN | SUPERADMIN |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `admin:access` | | | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `users:read` | | | | | ✅ | ✅ | ✅ |
+| `users:manage` | | | | | | ✅ | ✅ |
+| `roles:manage` | | | | | | | ✅ |
+| `content:manage` | | | ✅ | | | ✅ | ✅ |
+| `catalog:manage` | | | | | | ✅ | ✅ |
+| `tests:manage` | | | ✅ | | | ✅ | ✅ |
+| `orders:read` | | | | ✅ | ✅ | ✅ | ✅ |
+| `payments:manage` | | | | ✅ | | | ✅ |
+| `groups:manage`, `schedule:manage` | | | | | ✅ | ✅ | ✅ |
+| `teaching:access`, `attendance:mark` | | ✅ | | | | ✅ | ✅ |
+| `attendance:edit` | | | | | | ✅ | ✅ |
+| `media:manage` | | | | | | ✅ | ✅ |
+| `reports:read` | | | | ✅ | | ✅ | ✅ |
+| `audit:read`, `settings:manage` | | | | | | ✅ | ✅ |
+
+`MANAGER` — qabulxona/operator: o'quvchini guruhga yozadi, dars jadvalini tuzadi, buyurtmalarni ko'radi.
 
 ### Rate limit (cheklovlar)
 
@@ -185,11 +188,13 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | GET | `/api/site-settings` | 🌐 | → sayt nomi, telefon, manzil, `branches[]`, `telegramBot` … |
 | POST | `/api/contact` | 🌐 | `name`, `contact` (telefon), `message` (10+), `website` (honeypot — bo'sh). Botga kirgan adminlarga darhol yuboriladi |
 
-## 11. O'qituvchi (guruh, jadval, davomat) — 🛡 `teaching:access`
+## 11. O'qituvchi (guruh, jadval, davomat) — 🛡 `teaching:access` yoki `groups:manage`
+
+Davomatni belgilash/yakunlash uchun alohida `attendance:mark` kerak (MANAGER'da yo'q).
 
 | Metod | Yo'l | Yuboriladi / so'rov |
 |---|---|---|
-| GET | `/api/groups` | — o'z guruhlari (admin — hammasi) |
+| GET | `/api/groups` | — o'z guruhlari (`groups:manage` — hammasi) |
 | GET | `/api/groups/:id` | — guruh va a'zolar |
 | GET | `/api/groups/:id/slots` | — darslar |
 | GET | `/api/groups/:id/attendance-report` | — davomat hisoboti |
@@ -206,14 +211,14 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 
 | Metod | Yo'l | 🛡 | Yuboriladi / so'rov |
 |---|---|---|---|
-| GET | `/users` | `users:manage` | `?page&limit&search&role` |
+| GET | `/users` | `users:manage` yoki `users:read` | `?page&limit&search&role` |
 | PATCH | `/users/:id/role` | `users:manage` (+ ADMIN/SUPERADMIN uchun `roles:manage`) | `{ role }` |
 | PATCH | `/users/:id/status` | `users:manage` | `{ isActive }` |
 | DELETE | `/users/:id/two-factor` | `users:manage` | 2FA ni tiklash |
 | GET | `/statistics` | `users:manage` | umumiy statistika |
-| GET | `/courses` | katalog/test | |
+| GET | `/courses` | katalog/test/guruh | |
 | POST · PUT `/:id` · DELETE `/:id` | `/courses` | `catalog:manage` | `title`, `description`, `thumbnail?`, `level?`, `order?`, `isPublished?`, `categoryId?`, `studyPeriod?`, `section?` (`MAIN`\|`COMBINED`\|`EXTRA`), `price?` |
-| GET | `/lessons` | katalog/test | `?courseId` |
+| GET | `/lessons` | katalog/test/guruh | `?courseId` |
 | POST · PUT `/:id` · DELETE `/:id` | `/lessons` | `catalog:manage` | `courseId`, `title`, `description?`, `content?` (HTML ≤50 000), `videoUrl?`, `thumbnail?`, `duration?` (soniya), `order?`, `isPublished?` |
 | GET | `/questions` | `tests:manage` | `?page&limit&search` |
 | POST · PUT `/:id` · DELETE `/:id` | `/questions` | `tests:manage` | `courseId?`, `lessonId?`, `text`, `imageUrl?`, `options[2–8]`, `correctIndex`, `explanation?`, `difficulty?` (`EASY`\|`MEDIUM`\|`HARD`), `order?`, `isPublished?` |

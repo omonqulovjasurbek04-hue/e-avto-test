@@ -14,6 +14,15 @@ describe("permission matrix", () => {
     expect(hasPermission("TEACHER", "attendance:mark")).toBe(true);
   });
 
+  it("gives the front desk (MANAGER) groups and schedule, but no prices, settings, audit or money", () => {
+    for (const p of ["admin:access", "users:read", "groups:manage", "schedule:manage", "orders:read"] as const) {
+      expect(hasPermission("MANAGER", p)).toBe(true);
+    }
+    for (const p of ["users:manage", "roles:manage", "catalog:manage", "payments:manage", "settings:manage", "audit:read", "attendance:mark", "teaching:access"] as const) {
+      expect(hasPermission("MANAGER", p)).toBe(false);
+    }
+  });
+
   it("lets only superadmin manage roles", () => {
     expect(hasPermission("ADMIN", "roles:manage")).toBe(false);
     expect(hasPermission("SUPERADMIN", "roles:manage")).toBe(true);
@@ -38,6 +47,14 @@ describe("role escalation guard", () => {
   it("allows an admin to manage ordinary roles", () => {
     expect(canAssignRole("ADMIN", "USER", "TEACHER")).toBe(true);
     expect(canAssignRole("ADMIN", "TEACHER", "MODERATOR")).toBe(true);
+  });
+
+  it("lets an admin hire and remove a MANAGER (every MANAGER right is also an ADMIN right)", () => {
+    expect(canAssignRole("ADMIN", "USER", "MANAGER")).toBe(true);
+    expect(canAssignRole("ADMIN", "MANAGER", "USER")).toBe(true);
+    expect(canAssignRole("SUPERADMIN", "USER", "MANAGER")).toBe(true);
+    expect(canAssignRole("MANAGER", "USER", "TEACHER")).toBe(false);
+    expect(canAssignRole("MANAGER", "USER", "MANAGER")).toBe(false);
   });
 
   it("never lets an admin hand out rights it does not hold itself (FINANCE has payments:manage)", () => {

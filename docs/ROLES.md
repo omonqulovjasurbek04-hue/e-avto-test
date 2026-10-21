@@ -11,6 +11,7 @@
 | `TEACHER` | O'qituvchi | O'z guruhlari, dars jadvali, davomat belgilash | `/teacher` |
 | `MODERATOR` | Kontent muharriri | Test savollari, imtihon sozlamalari, sayt sahifalari, yangiliklar, FAQ, e'lonlar, aloqa xabarlari | `/admin` (Savollar, Imtihon, CMS) |
 | `FINANCE` | Buxgalter / kassir | Buyurtmalar, tushum, qaytarishlar (refund), hisobotlar | `/admin` (Buyurtmalar, Hisobotlar) |
+| `MANAGER` | Qabulxona / operator | O'quvchini guruhga yozish, guruh ochish, dars jadvalini tuzish, buyurtmalarni ko'rish | `/admin` (Guruhlar, Buyurtmalar) |
 | `ADMIN` | Markaz boshqaruvchisi | Foydalanuvchilar, kurslar, narxlar, guruhlar, jadval, media, audit, sayt sozlamalari | `/admin` (deyarli hammasi) |
 | `SUPERADMIN` | Egasi | Hammasi + rollarni berish (ADMIN/SUPERADMIN ham) + to'lovlarni boshqarish | `/admin` |
 
@@ -22,26 +23,26 @@ Qoidalar:
 
 ## 2. Ruxsatlar jadvali
 
-| Ruxsat | Nima beradi | USER | TEACHER | MODERATOR | FINANCE | ADMIN | SUPERADMIN |
-|---|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `admin:access` | `/admin` paneli, Telegram `/admin` menyusi | | | ✅ | ✅ | ✅ | ✅ |
-| `users:read` | Telegram: o'quvchilar ro'yxati, qidirish | | | | | ✅ | ✅ |
-| `users:manage` | Foydalanuvchilar, bloklash, 2FA tiklash, umumiy statistika | | | | | ✅ | ✅ |
-| `roles:manage` | ADMIN/SUPERADMIN rolini berish/olish | | | | | | ✅ |
-| `content:manage` | CMS: sahifa, yangilik, FAQ, e'lon, rasm, aloqa xabarlari | | | ✅ | | ✅ | ✅ |
-| `catalog:manage` | Kurs, dars, toifa, paket, narx, chegirma, kupon | | | | | ✅ | ✅ |
-| `tests:manage` | Savollar, imtihon sozlamasi, import/eksport | | | ✅ | | ✅ | ✅ |
-| `orders:read` | Buyurtmalar, tushum | | | | ✅ | ✅ | ✅ |
-| `payments:manage` | Qaytarishlar (refund) | | | | ✅ | | ✅ |
-| `groups:manage` | Guruh yaratish, a'zo qo'shish, dars (slot) qo'yish | | | | | ✅ | ✅ |
-| `schedule:manage` | Jadvalni (vaqt) o'zgartirish | | | | | ✅ | ✅ |
-| `teaching:access` | `/teacher` paneli: guruhlar, jadval | | ✅ | | | ✅ | ✅ |
-| `attendance:mark` | Davomat belgilash va yakunlash | | ✅ | | | ✅ | ✅ |
-| `attendance:edit` | Yakunlangan davomatni o'zgartirish | | | | | ✅ | ✅ |
-| `media:manage` | Video/fayl yuklash | | | | | ✅ | ✅ |
-| `reports:read` | Hisobotlar, reyting, Telegram statistika | | | | ✅ | ✅ | ✅ |
-| `audit:read` | Audit jurnali | | | | | ✅ | ✅ |
-| `settings:manage` | Sayt sozlamalari, bildirishnoma shablonlari, tizim holati | | | | | ✅ | ✅ |
+| Ruxsat | Nima beradi | USER | TEACHER | MODERATOR | FINANCE | MANAGER | ADMIN | SUPERADMIN |
+|---|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `admin:access` | `/admin` paneli, Telegram `/admin` menyusi | | | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `users:read` | Foydalanuvchilar ro'yxati (faqat o'qish: guruhga o'qituvchi/o'quvchi tanlash), Telegram: o'quvchilar ro'yxati, qidirish | | | | | ✅ | ✅ | ✅ |
+| `users:manage` | Foydalanuvchilar, bloklash, 2FA tiklash, umumiy statistika | | | | | | ✅ | ✅ |
+| `roles:manage` | ADMIN/SUPERADMIN rolini berish/olish | | | | | | | ✅ |
+| `content:manage` | CMS: sahifa, yangilik, FAQ, e'lon, rasm, aloqa xabarlari | | | ✅ | | | ✅ | ✅ |
+| `catalog:manage` | Kurs, dars, toifa, paket, narx, chegirma, kupon | | | | | | ✅ | ✅ |
+| `tests:manage` | Savollar, imtihon sozlamasi, import/eksport | | | ✅ | | | ✅ | ✅ |
+| `orders:read` | Buyurtmalar, tushum | | | | ✅ | ✅ | ✅ | ✅ |
+| `payments:manage` | Qaytarishlar (refund) | | | | ✅ | | | ✅ |
+| `groups:manage` | Guruh yaratish, a'zo qo'shish, dars (slot) qo'yish | | | | | ✅ | ✅ | ✅ |
+| `schedule:manage` | Jadvalni (vaqt) o'zgartirish | | | | | ✅ | ✅ | ✅ |
+| `teaching:access` | `/teacher` paneli: guruhlar, jadval | | ✅ | | | | ✅ | ✅ |
+| `attendance:mark` | Davomat belgilash va yakunlash | | ✅ | | | | ✅ | ✅ |
+| `attendance:edit` | Yakunlangan davomatni o'zgartirish | | | | | | ✅ | ✅ |
+| `media:manage` | Video/fayl yuklash | | | | | | ✅ | ✅ |
+| `reports:read` | Hisobotlar, reyting, Telegram statistika | | | | ✅ | | ✅ | ✅ |
+| `audit:read` | Audit jurnali | | | | | | ✅ | ✅ |
+| `settings:manage` | Sayt sozlamalari, bildirishnoma shablonlari, tizim holati | | | | | | ✅ | ✅ |
 
 ## 3. Har bir rolning vazifalari va API'si
 
@@ -105,7 +106,22 @@ Vazifalar: tushgan to'lovlarni kuzatish, buyurtma holatini tekshirish, qaytarish
 
 > Onlayn to'lov (Payme/Click) hali ulanmagan (`PAYMENT_PROVIDER` bo'sh) — FINANCE ishining asosiy qismi shundan keyin boshlanadi.
 
-### 3.5. ADMIN — markaz boshqaruvchisi
+### 3.5. MANAGER — qabulxona / operator
+
+Vazifalar: yangi o'quvchini guruhga yozish, guruh ochish (kurs + o'qituvchi), dars jadvalini tuzish va o'zgartirish (vaqt, xona, bekor qilish), to'lov holatini tekshirish.
+Narxlar, kurs mazmuni, sozlamalar, audit, rollar, refund va davomat belgilash — yo'q.
+
+| Vazifa | API |
+|---|---|
+| O'qituvchi/o'quvchi ro'yxati (tanlash uchun) | `GET /api/admin/users?role` (🛡 `users:read`, faqat o'qish) |
+| Kurs ro'yxati (guruh ochish uchun) | `GET /api/admin/courses`, `GET /api/admin/lessons` (faqat o'qish) |
+| Guruhlar | `POST·PUT·DELETE /api/admin/groups`, `.../members` (🛡 `groups:manage`); `GET /api/groups`, `/api/groups/:id`, `/api/groups/:id/slots` |
+| Jadval | `POST /api/admin/groups/:id/slots`, `PATCH /api/slots/:id` (🛡 `schedule:manage`) |
+| Buyurtmalar | `GET /api/admin/finance/orders`, `/summary` (🛡 `orders:read`) |
+
+Rolni `ADMIN` ham beradi (MANAGER'ning hamma ruxsati ADMIN'da bor).
+
+### 3.6. ADMIN — markaz boshqaruvchisi
 
 Vazifalar: o'quvchi va xodimlarni boshqarish, kurs/dars/narxlarni yuritish, guruh ochish va jadval tuzish, video yuklash, sayt sozlamalari, audit.
 
@@ -120,18 +136,18 @@ Vazifalar: o'quvchi va xodimlarni boshqarish, kurs/dars/narxlarni yuritish, guru
 | Audit, tizim holati | `GET /api/admin/audit`, `GET /api/admin/system` |
 | + MODERATOR va o'qituvchi vazifalari | yuqoridagi hammasi (refunddan tashqari) |
 
-### 3.6. SUPERADMIN — egasi
+### 3.7. SUPERADMIN — egasi
 
 ADMIN qila oladigan hamma narsa + `roles:manage` (ADMIN/SUPERADMIN tayinlash) + `payments:manage` (refund).
 Birinchi SUPERADMIN `BOOTSTRAP_ADMIN_PHONE` yoki `npm run create-superadmin` bilan yaratiladi. Kundalik ishda ADMIN akkauntidan foydalanish tavsiya etiladi.
 
 ## 4. Loyiha optimal ishlashi uchun tavsiyalar
 
-Hozirgi 6 rol avtomaktab uchun yetarli, lekin bir nechta bo'shliq bor:
+Hozirgi 7 rol avtomaktab uchun yetarli, lekin bir nechta bo'shliq bor:
 
 | # | Muammo | Taklif |
 |---|---|---|
-| 1 | O'quvchini guruhga yozish (`groups:manage`) faqat ADMIN'da. Qabulxona xodimiga ADMIN berilsa, u narxlar, sozlamalar va auditgacha kiradi | Yangi **`MANAGER`** (operator) roli: `admin:access`, `users:read`, `groups:manage`, `schedule:manage`, `orders:read`. Faqat `permissions.ts` + Prisma `Role` enum migratsiyasi + frontend menyu |
+| 1 | ✅ Bajarildi: qabulxona uchun **`MANAGER`** roli (3.5) — ADMIN bermasdan guruh va jadval bilan ishlash | — |
 | 2 | O'qituvchi o'z guruhidagi o'quvchilarning test natijalarini ko'rmaydi | `GET /api/groups/:id/results` (🛡 `teaching:access`, faqat o'z guruhi) — o'quvchining tayyorgarligini kuzatish uchun |
 | 3 | MODERATOR `POST /announcements` orqali **barcha** foydalanuvchilarga xabar yubora oladi | `audience: all` uchun alohida ruxsat (`announcements:broadcast`) yoki faqat ADMIN |
 | 4 | Xodimlar uchun 2FA ixtiyoriy | `admin:access` bor rollar uchun 2FA'ni majburiy qilish (BACKEND_TODO #10) |
