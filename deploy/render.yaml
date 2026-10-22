@@ -2,9 +2,9 @@
 # Render → New → Blueprint → this repository, Blueprint Path: deploy/render.yaml. Every push to main deploys again, but only after the
 # GitHub CI checks pass (autoDeployTrigger: checksPass). Step-by-step: docs/DEPLOY_FREE.md
 #
-#   https://eavto-test-uz.onrender.com        static site (React build, free, never sleeps)
+#   https://eavto-test-uz-ocux.onrender.com   static site (React build, free, never sleeps)
 #     /api/*  → rewritten to the API below, so the browser sees one site (first-party cookies, no CORS)
-#   https://eavto-test-uz-api.onrender.com    API (free web service: sleeps after 15 min idle, ~1 min to wake)
+#   https://eavto-test-uz-api-rgw9.onrender.com API (free web service: sleeps after 15 min idle, ~1 min to wake)
 #
 # If Render says a name is taken, change both names here (and the URLs below) to the same new prefix.
 
@@ -32,9 +32,9 @@ services:
         sync: false
       # The site's public address: same origin for the browser (the static site rewrites /api/*).
       - key: CLIENT_URL
-        value: https://eavto-test-uz.onrender.com
+        value: https://eavto-test-uz-ocux.onrender.com
       - key: PUBLIC_API_ORIGIN
-        value: https://eavto-test-uz.onrender.com
+        value: https://eavto-test-uz-api-rgw9.onrender.com
       - key: REFRESH_COOKIE_SAMESITE
         value: strict
       # Static-site rewrite + Render's load balancer stand in front of the API.
@@ -99,17 +99,17 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: VITE_API_URL
-        value: https://eavto-test-uz.onrender.com/api
+        value: https://eavto-test-uz-ocux.onrender.com/api
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://eavto-test-uz-api.onrender.com/api/*
+        destination: https://eavto-test-uz-api-rgw9.onrender.com/api/*
       - type: rewrite
         source: /sitemap.xml
-        destination: https://eavto-test-uz-api.onrender.com/sitemap.xml
+        destination: https://eavto-test-uz-api-rgw9.onrender.com/sitemap.xml
       - type: rewrite
         source: /robots.txt
-        destination: https://eavto-test-uz-api.onrender.com/robots.txt
+        destination: https://eavto-test-uz-api-rgw9.onrender.com/robots.txt
       # Client-side routing (React Router): every other path is the app.
       - type: rewrite
         source: /*
