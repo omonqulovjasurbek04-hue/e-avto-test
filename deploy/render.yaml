@@ -24,7 +24,7 @@ services:
     healthCheckPath: /api/health/live
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
       - key: NODE_ENV
         value: production
       # Neon connection string (postgresql://...?sslmode=require). Entered by you when the Blueprint is created.
@@ -78,7 +78,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
       - key: VITE_API_URL
         value: https://eavto-test-uz.onrender.com/api
     routes:
@@ -98,7 +98,7 @@ services:
     headers:
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self'; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; worker-src 'self' blob:; connect-src 'self'; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
       - path: /*
         name: X-Content-Type-Options
         value: nosniff

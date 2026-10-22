@@ -15,7 +15,7 @@ orqali ishlaydi — uxlab yotgan API'ni bot xabari uyg'otadi, birinchi javob kec
 ## 1. Neon — baza (5 daqiqa)
 
 1. <https://neon.com> → **Sign up** → "Continue with GitHub" (o'zingiz kirasiz).
-2. **Create project**: nomi `eavto`, Postgres 16, region **AWS Europe Central (Frankfurt)**.
+2. **Create project**: nomi `eavto`, Postgres 17 yoki 18, region **AWS Europe Central (Frankfurt)**.
 3. **Connect** → "Connection string" → **pooled emas** (Pooled connection o'chiq) → nusxa oling.
    Ko'rinishi: `postgresql://...@ep-....eu-central-1.aws.neon.tech/neondb?sslmode=require`
    Bu — parol bor sir. Hech kimga yubormang, faqat 2-qadamda Render'ga qo'yasiz.
