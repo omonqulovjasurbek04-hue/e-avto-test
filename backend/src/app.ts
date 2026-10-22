@@ -44,6 +44,18 @@ const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim()).filter(Boo
 
 // One-service hosting: the API also serves the built site, so the browser talks to a single origin
 // (first-party cookies, no CORS). The same CSP as deploy/nginx.conf.template then applies to the HTML.
+// With direct delivery the player fetches video segments from the bucket itself (path-style or
+// virtual-hosted addresses of S3_ENDPOINT), so the page's CSP must allow connecting there.
+const bucketOrigins = (() => {
+  if (!env.MEDIA_DIRECT_DELIVERY || !env.S3_ENDPOINT) return [];
+  try {
+    const u = new URL(env.S3_ENDPOINT);
+    return [u.origin, `https://*.${u.host}`];
+  } catch {
+    return [];
+  }
+})();
+
 const webDist = env.WEB_DIST_DIR ? path.resolve(env.WEB_DIST_DIR) : "";
 const serveWeb = Boolean(webDist) && fs.existsSync(path.join(webDist, "index.html"));
 if (env.WEB_DIST_DIR && !serveWeb) console.warn(`WEB_DIST_DIR set but ${webDist}/index.html is missing: serving the API only`);
@@ -63,7 +75,7 @@ app.use(
               // hls.js (adaptive lesson video) runs its segment demuxer in a blob: worker.
               workerSrc: ["'self'", "blob:"],
               fontSrc: ["'self'", "data:"],
-              connectSrc: ["'self'"],
+              connectSrc: ["'self'", ...bucketOrigins],
               frameSrc: ["https://www.google.com"],
               frameAncestors: ["'none'"],
               objectSrc: ["'none'"],

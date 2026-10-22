@@ -134,6 +134,9 @@ export const env = {
   S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "",
   S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "",
   S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE === "true",
+  // With an S3/R2 bucket, video segments, posters and files are fetched by the browser straight from the
+  // bucket through short-lived signed links (the API only checks access). "false" streams them through the API.
+  MEDIA_DIRECT_DELIVERY: storageDriver === "s3" && process.env.MEDIA_DIRECT_DELIVERY !== "false",
   // Antivirus: clamd TCP address. Empty host = no scanning.
   CLAMAV_HOST: process.env.CLAMAV_HOST || "",
   CLAMAV_PORT: parseInt(process.env.CLAMAV_PORT || "3310", 10),

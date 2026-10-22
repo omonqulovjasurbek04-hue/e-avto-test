@@ -189,6 +189,8 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | GET | `/api/media/stream/:token` | imzo | Video oqimi (bitta MP4 fayl, `Range` bilan) |
 | GET | `/api/media/hls/:token/master.m3u8`, `…/<720p>/index.m3u8`, `…/<720p>/seg_<n>.ts`, `…/poster.jpg` | imzo yo'lda | **Moslashuvchan video (HLS, YouTube kabi)**: 1080p/720p/480p/360p, 4 soniyalik bo'laklar. `access` javobi: `{ type: "hls", url, poster }`. Pleylistlarda hisob va kursga kirish qayta tekshiriladi; havola 4 soat (`MEDIA_HLS_TTL_SECONDS`) |
 
+> **R2/S3 bilan (`STORAGE_DRIVER=s3`, `MEDIA_DIRECT_DELIVERY=true`):** sifat pleylisti API'dan keladi, lekin undagi har bir bo'lak R2'ning muddatli imzolangan havolasi; bo'laklar, poster va MP4/fayl so'rovlari R2'ga **302** bilan yo'naltiriladi — video trafigi API serveridan o'tmaydi.
+>
 > Darsga video qo'shish (HEVC/H.265 ham bo'ladi — H.264 ga o'giriladi): `cd backend && npm run media:import -- --lesson <lessonId> --file video.mp4 [--title "1-dars"]` (ffmpeg kerak).
 | GET | `/api/images/:name` | 🌐 | Admin yuklagan rasm |
 
