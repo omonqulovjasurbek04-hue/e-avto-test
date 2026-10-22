@@ -156,15 +156,8 @@ export default function AdminUsers() {
                 {items.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-800/40">
                     <td className="px-4 py-3 font-mono text-xs">
-                      {/* student#### = bought a course; the sign-up number stays visible under it. */}
-                      {u.studentNumber ? (
-                        <>
-                          <Badge variant="success">{formatStudentId(u.studentNumber)}</Badge>
-                          <div className="mt-1 text-slate-500">{formatUserId(u.userNumber)}</div>
-                        </>
-                      ) : (
-                        <Badge variant="neutral">{formatUserId(u.userNumber)}</Badge>
-                      )}
+                      {/* Same number, the prefix tells: student#### bought a course, user#### only signed up. */}
+                      <Badge variant={u.studentNumber ? "success" : "neutral"}>{u.studentNumber ? formatStudentId(u.studentNumber) : formatUserId(u.userNumber)}</Badge>
                     </td>
                     <td className="px-4 py-3 font-medium text-white">
                       {u.name}

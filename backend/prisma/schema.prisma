@@ -29,8 +29,8 @@ model User {
   role               Role      @default(USER)
   // Permanent sequential account number given at sign-up, shown as "user0001". Never reused.
   userNumber         Int       @unique @default(autoincrement())
-  // Given once, at the first paid course ("student0001", own sequence "users_student_number_seq").
-  // Empty = never bought a course. Kept when access later expires; never reused.
+  // Set at the first paid course, equal to userNumber (user0002 -> "student0002").
+  // Empty = never bought a course. Kept when access later expires.
   studentNumber      Int?      @unique
   isActive           Boolean   @default(true)
   // Incremented on password change / "log out everywhere"; older JWTs stop working.

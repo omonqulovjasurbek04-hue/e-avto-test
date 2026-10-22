@@ -135,14 +135,13 @@ describe.skipIf(!enabled)("Telegram bot staff menu", () => {
     expect(last(chat)).toContain(userId);
     expect(last(chat)).toContain("✅ ulangan");
 
-    // A buyer is found by the student number and shown as student####.
-    const top = await prisma.user.aggregate({ _max: { studentNumber: true } });
-    const studentNumber = (top._max.studentNumber ?? 0) + 1_000;
-    await prisma.user.update({ where: { id: uid.student }, data: { studentNumber } });
+    // After buying a course the same number is shown as student####, and found by it.
+    await prisma.user.update({ where: { id: uid.student }, data: { studentNumber: userNumber } });
+    const studentId = `student${String(userNumber).padStart(4, "0")}`;
     await say(chat, "🔎 Qidirish");
-    await say(chat, `student${studentNumber}`);
+    await say(chat, studentId);
     expect(last(chat)).toContain(`${run} student`);
-    expect(last(chat)).toContain(`student${studentNumber} (${userId})`);
+    expect(last(chat)).toContain(studentId);
 
     await say(chat, "🔎 Qidirish");
     await say(chat, `nobody-${run}`);

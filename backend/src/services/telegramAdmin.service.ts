@@ -1,7 +1,7 @@
 import type { Prisma, TelegramAdminSession, User } from "@prisma/client";
 import { prisma } from "../config/database";
 import { hasPermission, type Permission } from "../lib/permissions";
-import { accountIdFilter, formatAccountId, formatUserId } from "../lib/accountNumbers";
+import { accountIdFilter, formatAccountId } from "../lib/accountNumbers";
 import { normalizeUzPhone } from "../lib/phone";
 import { answerCallback, deleteMessage, editMessage, esc, sendMessage, type TgCallbackQuery, type TgMessage } from "../lib/telegramApi";
 import { HttpError } from "../utils/errors";
@@ -324,7 +324,7 @@ async function searchStudents(query: string): Promise<string> {
       ]);
       const courses = enrollments.map((e) => `${esc(e.course.title)}${e.expiresAt ? ` (${fmtDate(e.expiresAt)} gacha)` : ""}`).join(", ");
       return [
-        `<b>${esc(u.name)}</b> — ${formatAccountId(u)}${u.studentNumber ? ` (${formatUserId(u.userNumber)})` : ""}${u.isActive ? "" : " ⛔ bloklangan"}`,
+        `<b>${esc(u.name)}</b> — ${formatAccountId(u)}${u.isActive ? "" : " ⛔ bloklangan"}`,
         `📞 ${esc(u.phone ?? "—")} · Telegram: ${u.telegramId ? "✅ ulangan" : "❌ ulanmagan"}`,
         `📅 Ro'yxatdan o'tgan: ${fmtDate(u.createdAt)}`,
         `📚 Kurslar: ${courses || "yo'q"}`,

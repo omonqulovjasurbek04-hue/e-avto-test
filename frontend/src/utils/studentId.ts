@@ -8,8 +8,7 @@ export const formatStudentId = (n?: number | null): string => (valid(n) ? `stude
 export const formatUserId = (n?: number | null): string => (valid(n) ? `user${pad(n)}` : "");
 
 /**
- * The id shown for an account: "student0001" once a course was bought, otherwise "user0001".
- * The server gives the student number only on payment, so this also tells buyers apart.
+ * The id shown for an account: "user0002" until a course is bought, then "student0002" (same number).
  */
 export const formatAccountId = (u?: { userNumber?: number | null; studentNumber?: number | null } | null): string =>
   formatStudentId(u?.studentNumber) || formatUserId(u?.userNumber);

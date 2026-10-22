@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, ShoppingCart, Tag } from "lucide-react";
+import { CheckCircle2, ShoppingCart } from "lucide-react";
 import { shopService, studentService, type PublicPackage, type Quote } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { Alert } from "@/components/ui/Alert";
@@ -18,7 +17,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { formatMoney } from "@/utils/money";
 
 /**
- * Packages (tariffs) with their prices and the buy flow: coupon check, server-side quote, order.
+ * Packages (tariffs) with their prices and the buy flow: server-side quote (with any automatic discount), order.
  * With `courseId` only that course's packages are listed (the course page); without it, all of them.
  */
 export default function CoursePackages({
@@ -57,37 +56,18 @@ export default function CoursePackages({
   }, [isAuthenticated]);
 
   const [selected, setSelected] = useState<PublicPackage | null>(null);
-  const [coupon, setCoupon] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const open = async (pkg: PublicPackage) => {
     setSelected(pkg);
-    setCoupon("");
     setMessage(null);
     setQuote(null);
     try {
       setQuote(await shopService.quote(pkg.id));
     } catch (e) {
       setMessage(e instanceof Error ? e.message : t("pricing.quoteError"));
-    }
-  };
-
-  const applyCoupon = async () => {
-    if (!selected) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const q = await shopService.quote(selected.id, coupon.trim());
-      setQuote(q);
-      if (coupon.trim() && !q.couponApplied) {
-        setMessage(t(`pricing.reasons.${q.couponRejection ?? "inactive"}`, { defaultValue: t("pricing.reasons.generic") }));
-      }
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : t("common.error"));
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -100,8 +80,8 @@ export default function CoursePackages({
     setBusy(true);
     setMessage(null);
     try {
-      // Only the package id and coupon code are sent; the server recomputes every amount.
-      const order = await shopService.createOrder(selected.id, quote?.couponApplied ? coupon.trim() : undefined);
+      // Only the package id is sent; the server recomputes every amount.
+      const order = await shopService.createOrder(selected.id);
       toast.success(t("pricing.created"));
       // A real provider returns its checkout page; only https links are followed.
       if (order.redirectUrl && /^https:\/\//i.test(order.redirectUrl)) {
@@ -188,14 +168,10 @@ export default function CoursePackages({
 
       <Modal isOpen={selected !== null} onClose={() => setSelected(null)} title={selected ? `${selected.course.title} — ${selected.name}` : ""} maxWidth="md">
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input label={t("pricing.coupon")} value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("pricing.couponPlaceholder")} />
-            <Button variant="outline" className="self-end" loading={busy} onClick={applyCoupon} leftIcon={<Tag className="h-4 w-4" />}>{t("pricing.apply")}</Button>
-          </div>
           {quote && (
             <dl className="space-y-1 rounded-xl bg-slate-50 p-4 text-sm dark:bg-slate-800/60">
               <div className="flex justify-between"><dt>{t("pricing.price")}</dt><dd>{formatMoney(quote.subtotal, quote.currency)}</dd></div>
-              <div className="flex justify-between"><dt>{t("pricing.discount")}</dt><dd>-{formatMoney(quote.discountTotal, quote.currency)}</dd></div>
+              {quote.discountTotal > 0 && <div className="flex justify-between"><dt>{t("pricing.discount")}</dt><dd>-{formatMoney(quote.discountTotal, quote.currency)}</dd></div>}
               <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold dark:border-slate-700"><dt>{t("pricing.total")}</dt><dd>{formatMoney(quote.total, quote.currency)}</dd></div>
             </dl>
           )}

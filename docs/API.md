@@ -60,9 +60,12 @@ Xato kodlari: `400` noto'g'ri so'rov · `401` kirilmagan / token eskirgan · `40
 | Maydon | Qachon beriladi | Ko'rinishi |
 |---|---|---|
 | `userNumber` | Ro'yxatdan o'tishda, har bir hisobga | `user0001`, `user0002`, … |
-| `studentNumber` | **Birinchi kurs to'langanda** (to'lov provayderi tasdiqlaganda), alohida ketma-ketlik | `student0001`, `student0002`, … |
+| `studentNumber` | **Birinchi kurs to'langanda** (to'lov provayderi tasdiqlaganda) — `userNumber` bilan **bir xil raqam** | `user0002` → `student0002` |
 
-Ikkalasi ham doimiy, hech qachon qayta ishlatilmaydi. Kurs muddati tugasa ham `studentNumber` saqlanadi, qayta sotib olishda yangisi berilmaydi.
+Raqam odamniki bo'lib qoladi, faqat old qo'shimchasi o'zgaradi; shuning uchun studentlar raqami ketma-ket emas (masalan, `student0002`, `student0034`).
+Kurs muddati tugasa ham `studentNumber` saqlanadi, qayta sotib olishda o'zgarmaydi.
+Raqamda chegara yo'q: kamida 4 xona, `user9999` dan keyin `user10000` … `user99999`, keyin `user100000` va hokazo (hisoblagich — bazadagi sequence).
+Baza qoidasi `users_studentNumber_is_userNumber` boshqa raqam yozishga yo'l qo'ymaydi.
 `studentNumber` yo'q = kurs sotib olmagan. Saytda ko'rinadigan ID: `studentNumber` bo'lsa `student####`, aks holda `user####`.
 
 ### Rate limit (cheklovlar)
