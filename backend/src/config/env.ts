@@ -98,6 +98,12 @@ export const env = {
   // Falls back to a value derived from JWT_SECRET; set explicitly in production.
   MEDIA_SIGNING_SECRET: process.env.MEDIA_SIGNING_SECRET || "",
   MEDIA_URL_TTL_SECONDS: parseInt(process.env.MEDIA_URL_TTL_SECONDS || "300", 10),
+  // An adaptive (HLS) video asks for a new segment every few seconds for the whole lesson, so its link lives longer.
+  MEDIA_HLS_TTL_SECONDS: parseInt(process.env.MEDIA_HLS_TTL_SECONDS || "14400", 10),
+  // Video conversion to HLS (npm run media:import); ffmpeg must be installed where it runs.
+  FFMPEG_PATH: process.env.FFMPEG_PATH || "ffmpeg",
+  FFPROBE_PATH: process.env.FFPROBE_PATH || "ffprobe",
+  FFMPEG_PRESET: process.env.FFMPEG_PRESET || "veryfast",
   MAX_VIDEO_MB: parseInt(process.env.MAX_VIDEO_MB || "500", 10),
   MAX_FILE_MB: parseInt(process.env.MAX_FILE_MB || "20", 10),
   // How long the public leaderboard / landing statistics may be served from memory (0 = no caching).

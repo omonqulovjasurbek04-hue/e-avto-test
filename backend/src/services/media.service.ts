@@ -6,6 +6,8 @@ import { env } from "../config/env";
 import { signMediaToken, verifyMediaToken, MediaKind } from "../lib/media/signing";
 import { detectType } from "../lib/media/sniff";
 import * as storage from "../lib/media/storage";
+import { hlsContentType, hlsFile } from "../lib/media/keys";
+import { listFiles, transcodeToHls } from "../lib/media/hls";
 import { scanFile, ScannerUnavailableError } from "../lib/media/antivirus";
 import { hasPermission } from "../lib/permissions";
 import { badRequest, forbidden, HttpError, notFound, unauthorized } from "../utils/errors";
@@ -204,6 +206,7 @@ export const listAssets = async () => {
 
 interface AssetView {
   storageKey: string;
+  format: "MP4" | "HLS";
   mimeType: string;
   sizeBytes: number;
   filename: string | null;
@@ -216,7 +219,7 @@ const loadAsset = async (kind: MediaKind, id: string): Promise<AssetView | null>
     if (!v) return null;
     const lesson = v.lessonId ? await prisma.lesson.findUnique({ where: { id: v.lessonId }, select: { id: true, courseId: true } }) : null;
     return {
-      storageKey: v.storageKey, mimeType: v.mimeType, sizeBytes: v.sizeBytes, filename: null,
+      storageKey: v.storageKey, format: v.format, mimeType: v.mimeType, sizeBytes: v.sizeBytes, filename: null,
       // A video that is not attached to a lesson is visible to staff only.
       // A lesson video opens together with its lesson (bought course, then step by step).
       authorized: async (viewer) => (lesson ? canAccessLesson(viewer, lesson) : hasPermission(viewer.role, "media:manage")),
@@ -225,7 +228,7 @@ const loadAsset = async (kind: MediaKind, id: string): Promise<AssetView | null>
   const f = await prisma.fileAsset.findUnique({ where: { id } });
   if (!f) return null;
   return {
-    storageKey: f.storageKey, mimeType: f.mimeType, sizeBytes: f.sizeBytes, filename: f.filename,
+    storageKey: f.storageKey, format: "MP4", mimeType: f.mimeType, sizeBytes: f.sizeBytes, filename: f.filename,
     authorized: async (viewer) => (f.isPublic ? true : f.courseId ? canAccessCourse(viewer, f.courseId) : hasPermission(viewer.role, "media:manage")),
   };
 };
@@ -236,9 +239,13 @@ export const issueAccess = async (viewer: Viewer, kind: MediaKind, id: string) =
   // Not found and not allowed look the same, so ids cannot be probed.
   if (!asset || !(await asset.authorized(viewer))) throw notFound("Media not found");
   await prisma.mediaAccessLog.create({ data: { userId: viewer.userId, assetType: kind, assetId: id } });
-  const exp = Math.floor(Date.now() / 1000) + env.MEDIA_URL_TTL_SECONDS;
+  const hls = asset.format === "HLS";
+  const exp = Math.floor(Date.now() / 1000) + (hls ? env.MEDIA_HLS_TTL_SECONDS : env.MEDIA_URL_TTL_SECONDS);
   const token = signMediaToken(secret(), { kind, assetId: id, userId: viewer.userId, exp });
-  return { url: `/api/media/stream/${token}`, expiresAt: new Date(exp * 1000).toISOString() };
+  const expiresAt = new Date(exp * 1000).toISOString();
+  // HLS: the token sits in the path, so the playlists' relative segment links carry it automatically.
+  if (hls) return { type: "hls" as const, url: `/api/media/hls/${token}/master.m3u8`, poster: `/api/media/hls/${token}/poster.jpg`, expiresAt };
+  return { type: "file" as const, url: `/api/media/stream/${token}`, expiresAt };
 };
 
 export interface StreamPlan {
@@ -292,4 +299,77 @@ export const openStream = async (token: string, rangeHeader: string | undefined)
   };
   if (status === 206) headers["Content-Range"] = `bytes ${start}-${end}/${stat.size}`;
   return { status, headers, stream: await storage.openRange(asset.storageKey, start, end) };
+};
+
+// ───────────── adaptive video (HLS) ─────────────
+
+/**
+ * One file of an HLS video for the player. Playlists re-check the account and the course access
+ * (like the MP4 stream); segments and the poster only need the signed token, which keeps the
+ * many small segment requests cheap. Segments never change, so the browser may keep them while seeking.
+ */
+export const openHls = async (token: string, name: string): Promise<StreamPlan> => {
+  const claims = verifyMediaToken(secret(), token);
+  if (!claims || claims.kind !== "VIDEO") throw unauthorized("Link expired or invalid");
+  const file = hlsFile(name);
+  if (!file) throw notFound("Media not found");
+
+  const video = await prisma.videoAsset.findFirst({ where: { id: claims.assetId, isArchived: false, format: "HLS" }, select: { storageKey: true } });
+  if (!video) throw notFound("Media not found");
+  if (file.endsWith(".m3u8")) {
+    const user = await prisma.user.findUnique({ where: { id: claims.userId }, select: { id: true, role: true, isActive: true } });
+    const asset = user?.isActive ? await loadAsset("VIDEO", claims.assetId) : null;
+    if (!user || !asset || !(await asset.authorized({ userId: user.id, role: user.role }))) throw notFound("Media not found");
+  }
+
+  const key = `${video.storageKey}/${file}`;
+  const stat = await storage.statObject(key);
+  if (!stat) throw notFound("Media not found");
+  return {
+    status: 200,
+    headers: {
+      "Content-Type": hlsContentType(file),
+      "Content-Length": String(stat.size),
+      "Cache-Control": file.endsWith(".ts") || file.endsWith(".jpg") ? "private, max-age=86400, immutable" : "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+    },
+    stream: await storage.openRange(key, 0, Math.max(stat.size - 1, 0)),
+  };
+};
+
+/**
+ * Turns a video file into an adaptive HLS video of a lesson (ffmpeg: H.264, 1080p-360p, 4 s segments,
+ * poster) and makes it the lesson's video. Used by `npm run media:import`; needs ffmpeg/ffprobe.
+ */
+export const importHlsVideo = async (actorId: string, inputPath: string, meta: { lessonId: string; title?: string }) => {
+  if (!(await prisma.lesson.findUnique({ where: { id: meta.lessonId }, select: { id: true } }))) throw notFound("Lesson not found");
+  const detected = detectType(await storage.readHead(inputPath));
+  if (detected?.kind !== "video") throw new HttpError(415, "Only MP4 or WebM video is accepted");
+
+  const work = await storage.makeTempDir();
+  let info;
+  try {
+    info = await transcodeToHls(inputPath, work);
+  } catch (err) {
+    await storage.discard(work).catch(() => undefined);
+    throw err;
+  }
+  const files = (await listFiles(work)).map((rel) => ({ rel, contentType: hlsContentType(rel) }));
+  const { folder, bytes } = await storage.commitFolder(work, files);
+
+  const asset = await prisma.videoAsset.create({
+    data: {
+      storageKey: folder,
+      format: "HLS",
+      lessonId: meta.lessonId,
+      title: meta.title ?? null,
+      durationSec: info.durationSec,
+      mimeType: "application/vnd.apple.mpegurl",
+      sizeBytes: bytes,
+      createdById: actorId,
+    },
+  });
+  await writeAudit({ actorId, action: "media.import_hls", entity: "VideoAsset", entityId: asset.id, after: { lessonId: meta.lessonId, renditions: info.renditions, durationSec: info.durationSec, bytes } });
+  return { id: asset.id, lessonId: meta.lessonId, durationSec: info.durationSec, renditions: info.renditions, files: files.length, bytes };
 };

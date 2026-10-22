@@ -379,6 +379,7 @@ export const adminPlatformService = {
 /* ───────── private media ───────── */
 
 export interface MediaConfig { uploadEnabled: boolean; maxVideoMb: number; maxFileMb: number }
+export interface VideoSource { type: "hls" | "file"; url: string; poster?: string }
 export interface MediaVideo { id: string; lessonId: string | null; title: string | null; mimeType: string; sizeBytes: number; isArchived: boolean; createdAt: string }
 export interface MediaFile { id: string; courseId: string | null; filename: string; mimeType: string; sizeBytes: number; isPublic: boolean; createdAt: string }
 
@@ -400,6 +401,12 @@ export const mediaService = {
   streamUrl: async (kind: "video" | "file", id: string): Promise<string> => {
     const r = await apiPost<{ url: string }>(`/media/${kind}/${id}/access`);
     return new URL(r.url, apiClient.defaults.baseURL).toString();
+  },
+  /** A lesson video: adaptive HLS (master playlist + poster) or a single MP4 file; URLs are absolute. */
+  videoSource: async (id: string): Promise<VideoSource> => {
+    const r = await apiPost<{ type?: "hls" | "file"; url: string; poster?: string }>(`/media/video/${id}/access`);
+    const abs = (u: string) => new URL(u, apiClient.defaults.baseURL).toString();
+    return { type: r.type === "hls" ? "hls" : "file", url: abs(r.url), poster: r.poster ? abs(r.poster) : undefined };
   },
 };
 

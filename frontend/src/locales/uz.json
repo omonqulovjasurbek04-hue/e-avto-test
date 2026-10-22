@@ -430,7 +430,13 @@
     "startLesson": "Darsni boshlash",
     "continueLesson": "Davom ettirish",
     "relatedTests": "Tegishli testlar",
-    "takeTest": "Test topshirish"
+    "takeTest": "Test topshirish",
+    "nextLesson": "Keyingi darsga o'tish",
+    "watchHint": "Keyingi dars videoni oxirigacha ko'rgandan so'ng ochiladi",
+    "nextOpensOn": "Keyingi dars {{date}} kuni ochiladi",
+    "nextLocked": "Keyingi dars hali yopiq",
+    "allDone": "Kursning barcha darslari tugadi",
+    "watched": "Ko'rildi"
   },
   "videoLesson": {
     "title": "Video dars",
@@ -1406,7 +1412,9 @@
     "logoutAllDone": "Barcha sessiyalar yopildi"
   },
   "video": {
-    "loadError": "Videoni yuklashda xatolik yuz berdi."
+    "loadError": "Videoni yuklashda xatolik yuz berdi.",
+    "quality": "Sifat",
+    "auto": "Avto"
   },
   "rating": {
     "eyebrow": "E-AVTO · O'quvchilar reytingi",

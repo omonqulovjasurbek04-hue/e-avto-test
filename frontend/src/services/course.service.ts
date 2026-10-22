@@ -1,7 +1,7 @@
 import { apiGet } from "./api";
 import { env } from "../config/env";
 import type { Course, CourseSection, Difficulty } from "../types/course";
-import type { Lesson } from "../types/lesson";
+import type { Lesson, WatchState } from "../types/lesson";
 import { contentLanguage } from "./site.service";
 
 export interface CourseFilters {
@@ -53,6 +53,8 @@ export interface ApiLesson {
   lockReason?: "purchase" | "attendance" | "schedule" | null;
   unlocksAt?: string | null;
   privateVideoId?: string | null;
+  watch?: WatchState | null;
+  nextLesson?: Lesson["nextLesson"];
   duration?: number;
   order: number;
   category?: string;
@@ -79,6 +81,8 @@ export function toLesson(l: ApiLesson): Lesson {
     lockReason: l.lockReason ?? null,
     unlocksAt: l.unlocksAt ?? null,
     privateVideoId: l.privateVideoId ?? null,
+    watch: l.watch ?? null,
+    nextLesson: l.nextLesson ?? null,
     duration: undefined,
     durationMinutes: Math.max(1, Math.round((l.duration ?? 0) / 60)),
     order: l.order,

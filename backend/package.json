@@ -17,6 +17,7 @@
     "lint": "eslint src tests prisma",
     "smoke": "node scripts/prod-smoke.mjs",
     "create-superadmin": "tsx src/scripts/createSuperadmin.ts",
+    "media:import": "tsx src/scripts/importLessonVideo.ts",
     "test": "vitest run",
     "prisma:deploy": "prisma migrate deploy"
   },

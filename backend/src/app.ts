@@ -60,6 +60,8 @@ app.use(
               styleSrc: ["'self'", "'unsafe-inline'"],
               imgSrc: ["'self'", "data:", "https:"],
               mediaSrc: ["'self'", "https:", "blob:"],
+              // hls.js (adaptive lesson video) runs its segment demuxer in a blob: worker.
+              workerSrc: ["'self'", "blob:"],
               fontSrc: ["'self'", "data:"],
               connectSrc: ["'self'"],
               frameSrc: ["https://www.google.com"],

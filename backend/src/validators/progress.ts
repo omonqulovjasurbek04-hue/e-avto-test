@@ -5,3 +5,9 @@ export const lessonProgressSchema = z.object({
 });
 
 export type LessonProgressInput = z.infer<typeof lessonProgressSchema>;
+
+/** A player heartbeat: video seconds played since the previous beat (seeking excluded) and the current position. */
+export const videoWatchSchema = z.object({
+  seconds: z.number().min(0).max(120),
+  position: z.number().min(0).max(24 * 3600),
+});

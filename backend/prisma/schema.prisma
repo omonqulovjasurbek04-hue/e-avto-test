@@ -274,12 +274,16 @@ model Progress {
 }
 
 model LessonProgress {
-  id        String   @id @default(uuid())
-  userId    String
-  lessonId  String
-  percent   Int      @default(0)
-  completed Boolean  @default(false)
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  userId         String
+  lessonId       String
+  percent        Int       @default(0)
+  completed      Boolean   @default(false)
+  // Lesson video actually played, counted on the server from heartbeats (never more than the real time
+  // elapsed allows); a video lesson is completed only once enough of it was watched to the end.
+  watchedSeconds Int       @default(0)
+  lastWatchAt    DateTime?
+  updatedAt      DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -757,17 +761,25 @@ model AttendanceRecord {
 
 // ───────────────────────── Media (private storage keys, never public URLs) ─────────────────────────
 
+/// MP4 = one progressive file; HLS = adaptive stream (master.m3u8, 360p-1080p renditions, poster) under storageKey/.
+enum VideoFormat {
+  MP4
+  HLS
+}
+
 model VideoAsset {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   lessonId    String?
-  storageKey  String   @unique
+  // MP4: "<uuid>.mp4"; HLS: the folder "<uuid>" holding master.m3u8, <height>p/ and poster.jpg.
+  storageKey  String      @unique
+  format      VideoFormat @default(MP4)
   title       String?
-  durationSec Int      @default(0)
+  durationSec Int         @default(0)
   mimeType    String
   sizeBytes   Int
-  isArchived  Boolean  @default(false)
+  isArchived  Boolean     @default(false)
   createdById String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime    @default(now())
 
   @@index([lessonId])
   @@map("video_assets")

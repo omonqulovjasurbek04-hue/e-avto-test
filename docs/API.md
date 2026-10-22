@@ -186,7 +186,10 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | Metod | Yo'l | Kim | Tavsif |
 |---|---|---|---|
 | POST | `/api/media/:kind/:id/access` | 🔑 | Yopiq video/fayl uchun vaqtinchalik imzolangan havola |
-| GET | `/api/media/stream/:token` | imzo | Video oqimi |
+| GET | `/api/media/stream/:token` | imzo | Video oqimi (bitta MP4 fayl, `Range` bilan) |
+| GET | `/api/media/hls/:token/master.m3u8`, `…/<720p>/index.m3u8`, `…/<720p>/seg_<n>.ts`, `…/poster.jpg` | imzo yo'lda | **Moslashuvchan video (HLS, YouTube kabi)**: 1080p/720p/480p/360p, 4 soniyalik bo'laklar. `access` javobi: `{ type: "hls", url, poster }`. Pleylistlarda hisob va kursga kirish qayta tekshiriladi; havola 4 soat (`MEDIA_HLS_TTL_SECONDS`) |
+
+> Darsga video qo'shish (HEVC/H.265 ham bo'ladi — H.264 ga o'giriladi): `cd backend && npm run media:import -- --lesson <lessonId> --file video.mp4 [--title "1-dars"]` (ffmpeg kerak).
 | GET | `/api/images/:name` | 🌐 | Admin yuklagan rasm |
 
 ## 10. CMS (ochiq)

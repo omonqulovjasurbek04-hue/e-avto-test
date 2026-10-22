@@ -32,7 +32,10 @@ const tempRoot = () => path.resolve(process.cwd(), env.MEDIA_DIR);
 const localDriver: StorageDriver = {
   name: "local",
   async put(key, filePath) {
-    await fsp.rename(filePath, path.join(tempRoot(), assertKey(key)));
+    const target = path.join(tempRoot(), assertKey(key));
+    // HLS keys live in a per-video folder ("<uuid>/720p/seg_0.ts").
+    await fsp.mkdir(path.dirname(target), { recursive: true });
+    await fsp.rename(filePath, target);
   },
   async remove(key) {
     await fsp.rm(path.join(tempRoot(), assertKey(key)), { force: true });
@@ -85,7 +88,7 @@ export const readHead = async (filePath: string, bytes = 16): Promise<Buffer> =>
   }
 };
 
-export const discard = (filePath: string) => fsp.rm(filePath, { force: true });
+export const discard = (filePath: string) => fsp.rm(filePath, { force: true, recursive: true });
 
 /** Moves a verified temp file to its final, random, server-chosen key. The temp file is gone afterwards. */
 export const commit = async (tmpPath: string, ext: string, contentType: string): Promise<string> => {
@@ -103,3 +106,35 @@ export const removeObject = (key: string) => driver().remove(key);
 export const statObject = (key: string) => driver().stat(key);
 
 export const openRange = (key: string, start: number, end: number) => driver().openRange(key, start, end);
+
+/** A scratch folder on the same disk as MEDIA_DIR (so finished files can be moved, not copied). */
+export const makeTempDir = async (): Promise<string> => {
+  const dir = path.join(tempRoot(), `.work-${crypto.randomUUID()}`);
+  await fsp.mkdir(dir, { recursive: true });
+  return dir;
+};
+
+/**
+ * Stores a finished HLS folder under a new random folder key and returns it ("<uuid>"); the files
+ * become "<uuid>/master.m3u8", "<uuid>/720p/seg_0.ts", … The scratch folder is removed afterwards.
+ */
+export const commitFolder = async (dir: string, files: { rel: string; contentType: string }[]): Promise<{ folder: string; bytes: number }> => {
+  const folder = crypto.randomUUID();
+  let bytes = 0;
+  const stored: string[] = [];
+  try {
+    for (const f of files) {
+      const src = path.join(dir, ...f.rel.split("/"));
+      bytes += (await fsp.stat(src)).size;
+      const key = assertKey(`${folder}/${f.rel}`);
+      await driver().put(key, src, f.contentType);
+      stored.push(key);
+    }
+  } catch (err) {
+    await Promise.all(stored.map((k) => driver().remove(k).catch(() => undefined)));
+    throw err;
+  } finally {
+    await fsp.rm(dir, { recursive: true, force: true });
+  }
+  return { folder, bytes };
+};
