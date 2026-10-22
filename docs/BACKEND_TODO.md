@@ -39,13 +39,14 @@
 
 | # | Vazifa | Tafsilot |
 |---|---|---|
-| 19 | GitHub Actions versiyalari | CI ogohlantiradi: `actions/checkout@v4`, `setup-node@v4` Node 20'da — yangi versiyaga o'tkazish; commit SHA bilan pin qilish |
 | 20 | Audit jurnali | `GET /api/admin/audit` xom kodlar qaytaradi (`settings.update`) — frontendda tarjima yoki backendda `label` |
 | 21 | Javob keshi | `GET /api/courses`, `/packages`, `/site-settings` — qisqa `Cache-Control` / ETag (trafik va kredit tejaydi) |
 | 22 | API hujjati avtomatik | Zod sxemalaridan OpenAPI (`zod-to-openapi`) generatsiya qilib, `/api/docs` da Swagger |
 | 23 | Rasm hajmi | Unsplash rasmlari `w=800` — kartalar uchun `w=600&q=70` va `srcset` |
 
 ## ✅ Bajarilgan (bu bosqichda)
+
+- 2026-10-22: GitHub Actions: `checkout`/`setup-node` v7 (Node 24), Docker va appleboy action'lari yangilandi, hammasi commit SHA bilan pin qilingan; runner `ubuntu-24.04` ga qotirilgan (`ubuntu-latest` 26 ga o'tmoqda)
 
 - 2026-10-21: Railway image'da yuklash papkasi (`storage/private`) `node` foydalanuvchisiga tegishli qilindi — oldin `/app/backend` root'niki bo'lgani uchun rasm/video yuklash `EACCES` bilan yiqilishi kerak edi; CI endi papkaga yozishni tekshiradi
 - 2026-10-21: Node 20 (2026-04 da qo'llab-quvvatlash tugagan) → Node 22 LTS: barcha Dockerfile'lar, CI, `engines`

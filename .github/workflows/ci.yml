@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
       run:
@@ -39,8 +39,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e_avto_test_ci?schema=public
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e_avto_test_ci?schema=public
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -59,7 +59,7 @@ jobs:
   # The production bootstrap (prisma/bootstrap.ts) on an empty database, twice: the catalogue and the
   # first administrator appear once, the second run changes nothing.
   bootstrap:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -80,8 +80,8 @@ jobs:
       BOOTSTRAP_ADMIN_PHONE: "+998 90 111 22 33"
       BOOTSTRAP_ADMIN_PASSWORD: ci-only-Passw0rd
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -115,10 +115,10 @@ jobs:
   # The Railway image (deploy/Dockerfile.railway): builds, starts in production mode and serves both
   # the site and the API from one origin.
   railway-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build
         run: docker build -f deploy/Dockerfile.railway --build-arg VITE_API_URL=https://ci.example.invalid/api -t eavto-railway .
       - name: Start and probe
@@ -137,14 +137,14 @@ jobs:
         run: docker logs app || true
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
