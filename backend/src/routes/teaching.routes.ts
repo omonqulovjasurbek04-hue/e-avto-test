@@ -6,7 +6,8 @@ import { authMiddleware, requireUserId, AuthRequest } from "../middleware/auth.m
 import { requireAnyPermission, requirePermission } from "../middleware/admin.middleware";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { success } from "../utils/apiResponse";
-import { attendanceSchema, groupSchema, groupUpdateSchema, memberSchema, slotSchema, slotUpdateSchema } from "../validators/groups";
+import { hasPermission } from "../lib/permissions";
+import { attendanceSchema, groupSchema, groupUpdateSchema, memberSchema, ownGroupSchema, ownGroupUpdateSchema, slotSchema, slotUpdateSchema } from "../validators/groups";
 
 const uuid = z.string().uuid();
 const actorOf = (req: AuthRequest) => ({ userId: requireUserId(req), role: req.user!.role });
@@ -35,6 +36,26 @@ staffRoutes.get(
   })
 );
 
+// A teacher opens and runs their own groups (groups:own); admins can use the same calls for any group.
+const groupWriters = requireAnyPermission("groups:manage", "groups:own");
+const isPlanner = (req: AuthRequest) => hasPermission(req.user!.role, "groups:manage");
+staffRoutes.post("/groups", groupWriters, h(async (req, res) => {
+  const body = isPlanner(req) ? groupSchema.parse(req.body) : ownGroupSchema.parse(req.body);
+  success(res, await groups.createGroup(actorOf(req), body), 201);
+}));
+staffRoutes.put("/groups/:id", groupWriters, h(async (req, res) => {
+  const body = isPlanner(req) ? groupUpdateSchema.parse(req.body) : ownGroupUpdateSchema.parse(req.body);
+  success(res, await groups.updateGroup(actorOf(req), uuid.parse(req.params.id), body));
+}));
+staffRoutes.delete("/groups/:id", groupWriters, h(async (req, res) => success(res, await groups.archiveGroup(actorOf(req), uuid.parse(req.params.id)))));
+staffRoutes.post("/groups/:id/members", groupWriters, h(async (req, res) => success(res, await groups.addMember(actorOf(req), uuid.parse(req.params.id), memberSchema.parse(req.body).studentId), 201)));
+staffRoutes.delete("/groups/:id/members/:studentId", groupWriters, h(async (req, res) => success(res, await groups.removeMember(actorOf(req), uuid.parse(req.params.id), uuid.parse(req.params.studentId)))));
+staffRoutes.post("/groups/:id/slots", groupWriters, h(async (req, res) => success(res, await groups.createSlots(actorOf(req), uuid.parse(req.params.id), slotSchema.parse(req.body)), 201)));
+staffRoutes.get("/teacher/students", groupWriters, h(async (req, res) => {
+  const { search } = z.object({ search: z.string().max(80).default("") }).parse(req.query);
+  success(res, await groups.searchStudents(search));
+}));
+
 staffRoutes.get("/teacher/schedule", h(async (req, res) => {
   const { from, to } = rangeSchema.parse(req.query);
   success(res, await groups.mySchedule(actorOf(req), from, to));
@@ -53,11 +74,11 @@ export const adminGroupRoutes = Router();
 adminGroupRoutes.use(asyncHandler(authMiddleware));
 adminGroupRoutes.use(requirePermission("groups:manage"));
 
-adminGroupRoutes.post("/", h(async (req, res) => success(res, await groups.createGroup(requireUserId(req), groupSchema.parse(req.body)), 201)));
-adminGroupRoutes.put("/:id", h(async (req, res) => success(res, await groups.updateGroup(requireUserId(req), uuid.parse(req.params.id), groupUpdateSchema.parse(req.body)))));
-adminGroupRoutes.delete("/:id", h(async (req, res) => success(res, await groups.archiveGroup(requireUserId(req), uuid.parse(req.params.id)))));
-adminGroupRoutes.post("/:id/members", h(async (req, res) => success(res, await groups.addMember(requireUserId(req), uuid.parse(req.params.id), memberSchema.parse(req.body).studentId), 201)));
-adminGroupRoutes.delete("/:id/members/:studentId", h(async (req, res) => success(res, await groups.removeMember(requireUserId(req), uuid.parse(req.params.id), uuid.parse(req.params.studentId)))));
+adminGroupRoutes.post("/", h(async (req, res) => success(res, await groups.createGroup(actorOf(req), groupSchema.parse(req.body)), 201)));
+adminGroupRoutes.put("/:id", h(async (req, res) => success(res, await groups.updateGroup(actorOf(req), uuid.parse(req.params.id), groupUpdateSchema.parse(req.body)))));
+adminGroupRoutes.delete("/:id", h(async (req, res) => success(res, await groups.archiveGroup(actorOf(req), uuid.parse(req.params.id)))));
+adminGroupRoutes.post("/:id/members", h(async (req, res) => success(res, await groups.addMember(actorOf(req), uuid.parse(req.params.id), memberSchema.parse(req.body).studentId), 201)));
+adminGroupRoutes.delete("/:id/members/:studentId", h(async (req, res) => success(res, await groups.removeMember(actorOf(req), uuid.parse(req.params.id), uuid.parse(req.params.studentId)))));
 adminGroupRoutes.post("/:id/slots", h(async (req, res) => {
   success(res, await groups.createSlots(actorOf(req), uuid.parse(req.params.id), slotSchema.parse(req.body)), 201);
 }));

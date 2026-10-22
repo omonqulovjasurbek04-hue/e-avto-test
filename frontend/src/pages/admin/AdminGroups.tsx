@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { CalendarPlus, Plus, UserMinus, UserPlus, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
-import { adminPlatformService as api, teacherService, type Group } from "@/services/platform.service";
+import { adminPlatformService as api, teacherService, type Group, type GroupInput } from "@/services/platform.service";
+import { GroupForm, rhythmLabel } from "@/components/groups/GroupForm";
 import { useLoad } from "@/hooks/useLoad";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -23,24 +24,20 @@ export default function AdminGroups() {
   const teachers = useLoad(() => adminService.listUsers({ role: "TEACHER", limit: 100 }).then((p) => p.items), []);
 
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: "", courseId: "", teacherId: "", startDate: "", capacity: "20" });
   const [membersOf, setMembersOf] = useState<Group | null>(null);
   const [slotsOf, setSlotsOf] = useState<Group | null>(null);
   const [archiving, setArchiving] = useState<Group | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const create = async () => {
-    if (form.name.trim().length < 2 || !form.courseId || !form.teacherId || !form.startDate) return setErr(t("admin.groups.fillAll"));
+  const create = async (input: GroupInput) => {
     setBusy(true);
-    setErr(null);
     try {
-      await api.createGroup({ name: form.name.trim(), courseId: form.courseId, teacherId: form.teacherId, startDate: form.startDate, capacity: Number(form.capacity) || 20 });
-      toast.success(t("admin.groups.created"));
+      const g = await api.createGroup(input);
+      toast.success(t("groupForm.created", { count: g.lessonsCreated }));
       setCreating(false);
       void groups.reload();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("admin.common.error"));
+      toast.error(e instanceof Error ? e.message : t("admin.common.error"));
     } finally {
       setBusy(false);
     }
@@ -62,7 +59,7 @@ export default function AdminGroups() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">{t("admin.groups.title")}</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setErr(null); setCreating(true); }}>{t("admin.groups.new")}</Button>
+        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setCreating(true)}>{t("admin.groups.new")}</Button>
       </div>
 
       {groups.loading && !groups.data ? <Skeleton className="h-48 rounded-2xl" /> : groups.error ? <ErrorState message={groups.error} onRetry={groups.reload} /> : !groups.data || groups.data.length === 0 ? (
@@ -70,13 +67,14 @@ export default function AdminGroups() {
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-800">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">{t("admin.groups.group")}</th><th className="px-4 py-3">{t("admin.common.course")}</th><th className="px-4 py-3">{t("admin.groups.teacher")}</th><th className="px-4 py-3">{t("admin.groups.students")}</th><th className="px-4 py-3">{t("admin.common.status")}</th><th className="px-4 py-3 text-right">{t("admin.common.actions")}</th></tr></thead>
+            <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">{t("admin.groups.group")}</th><th className="px-4 py-3">{t("admin.common.course")}</th><th className="px-4 py-3">{t("admin.groups.teacher")}</th><th className="px-4 py-3">{t("groupForm.rhythm")}</th><th className="px-4 py-3">{t("admin.groups.students")}</th><th className="px-4 py-3">{t("admin.common.status")}</th><th className="px-4 py-3 text-right">{t("admin.common.actions")}</th></tr></thead>
             <tbody className="divide-y divide-slate-800">
               {groups.data.map((g) => (
                 <tr key={g.id} className="hover:bg-slate-800/40">
                   <td className="px-4 py-3 font-medium text-white">{g.name}</td>
                   <td className="px-4 py-3">{g.course.title}</td>
                   <td className="px-4 py-3">{g.teacher.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{rhythmLabel(g, t) || "—"}</td>
                   <td className="px-4 py-3">{g._count.members} / {g.capacity}</td>
                   <td className="px-4 py-3"><Badge variant={g.status === "ACTIVE" ? "success" : "neutral"}>{g.status === "ACTIVE" ? t("admin.common.active") : t("admin.common.archived")}</Badge></td>
                   <td className="px-4 py-3">
@@ -96,17 +94,9 @@ export default function AdminGroups() {
       )}
 
       <Modal isOpen={creating} onClose={() => setCreating(false)} title={t("admin.groups.new")} maxWidth="lg">
-        <div className="space-y-4">
-          <Input label={t("admin.groups.name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Select label={t("admin.common.course")} options={[{ value: "", label: t("admin.common.choose") }, ...(courses.data ?? []).map((c) => ({ value: c.id, label: c.title }))]} value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })} />
-          <Select label={t("admin.groups.teacher")} options={[{ value: "", label: teachers.data && teachers.data.length === 0 ? t("admin.groups.noTeachers") : t("admin.common.choose") }, ...(teachers.data ?? []).map((tch) => ({ value: tch.id, label: tch.name }))]} value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label={t("admin.groups.startDate")} type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-            <Input label={t("admin.groups.capacity")} type="number" min={1} max={200} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
-          </div>
-          {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
-          <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setCreating(false)}>{t("admin.common.cancel")}</Button><Button loading={busy} onClick={create}>{t("admin.common.save")}</Button></div>
-        </div>
+        {creating && (
+          <GroupForm courses={courses.data ?? []} teachers={teachers.data ?? []} busy={busy} onSubmit={create} onCancel={() => setCreating(false)} />
+        )}
       </Modal>
 
       {membersOf && <MembersModal group={membersOf} onClose={() => { setMembersOf(null); void groups.reload(); }} />}

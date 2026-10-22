@@ -53,3 +53,47 @@ export const findConflicts = (candidate: Interval & { teacherId: string; room: s
   }
   return out;
 };
+
+// ───────────── weekly rhythm (toq / juft kunlar) ─────────────
+
+export type GroupDays = "ODD" | "EVEN";
+
+/** ODD = toq kunlar (Mon/Wed/Fri), EVEN = juft kunlar (Tue/Thu/Sat). JS weekday numbers (0 = Sunday). */
+export const RHYTHM_WEEKDAYS: Record<GroupDays, readonly number[]> = { ODD: [1, 3, 5], EVEN: [2, 4, 6] };
+
+const TASHKENT_OFFSET_MS = 5 * 3_600_000;
+const DAY_MS = 86_400_000;
+/** Without an end date the lessons are planned this far ahead; they can be extended later. */
+export const DEFAULT_RHYTHM_WEEKS = 12;
+
+export interface Rhythm {
+  /** Calendar dates (only the Y-M-D part is used, as a Tashkent date). */
+  startDate: Date;
+  endDate?: Date | null;
+  days: GroupDays;
+  /** "HH:MM", Tashkent time. */
+  startTime: string;
+  lessonMinutes: number;
+}
+
+/**
+ * Every lesson of the rhythm between the start and end dates (both inclusive), in UTC.
+ * `from` skips lessons that start earlier (used when the rhythm of a running group changes).
+ */
+export const rhythmIntervals = (r: Rhythm, from?: Date): Interval[] => {
+  const [hh, mm] = r.startTime.split(":").map(Number);
+  const firstDay = Date.UTC(r.startDate.getUTCFullYear(), r.startDate.getUTCMonth(), r.startDate.getUTCDate());
+  const lastDay = r.endDate
+    ? Date.UTC(r.endDate.getUTCFullYear(), r.endDate.getUTCMonth(), r.endDate.getUTCDate())
+    : firstDay + DEFAULT_RHYTHM_WEEKS * WEEK_MS - DAY_MS;
+  const weekdays = RHYTHM_WEEKDAYS[r.days];
+  const out: Interval[] = [];
+  for (let day = firstDay; day <= lastDay; day += DAY_MS) {
+    if (!weekdays.includes(new Date(day).getUTCDay())) continue;
+    const startsAt = new Date(day + (hh * 60 + mm) * 60_000 - TASHKENT_OFFSET_MS);
+    if (from && startsAt < from) continue;
+    out.push({ startsAt, endsAt: new Date(startsAt.getTime() + r.lessonMinutes * 60_000) });
+    if (out.length > MAX_OCCURRENCES) throw new Error(`Too many lessons (over ${MAX_OCCURRENCES}); choose an earlier end date`);
+  }
+  return out;
+};

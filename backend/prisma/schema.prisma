@@ -637,6 +637,12 @@ model Enrollment {
 
 // ───────────────────────── Groups, schedule, attendance ─────────────────────────
 
+/// ODD = toq kunlar (Mon/Wed/Fri), EVEN = juft kunlar (Tue/Thu/Sat).
+enum GroupDays {
+  ODD
+  EVEN
+}
+
 enum GroupStatus {
   ACTIVE
   ARCHIVED
@@ -657,16 +663,21 @@ enum AttendanceStatus {
 }
 
 model TeacherGroup {
-  id        String      @id @default(uuid())
-  name      String
-  courseId  String
-  teacherId String
-  startDate DateTime
-  endDate   DateTime?
-  capacity  Int         @default(20)
-  status    GroupStatus @default(ACTIVE)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  name          String
+  courseId      String
+  teacherId     String
+  startDate     DateTime
+  endDate       DateTime?
+  capacity      Int         @default(20)
+  // Weekly rhythm in Tashkent time; when set, the lessons are generated from it.
+  days          GroupDays?
+  startTime     String?
+  lessonMinutes Int?
+  room          String?
+  status        GroupStatus @default(ACTIVE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   course  Course            @relation(fields: [courseId], references: [id], onDelete: Restrict)
   teacher User              @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: Restrict)

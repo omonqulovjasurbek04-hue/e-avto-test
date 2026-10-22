@@ -8,12 +8,12 @@
 | Rol | Kim | Asosiy vazifasi | Panel |
 |---|---|---|---|
 | `USER` | O'quvchi | Kurs sotib olish, dars o'qish, test topshirish, jadval va davomatni ko'rish | `/dashboard` |
-| `TEACHER` | O'qituvchi | O'z guruhlari, dars jadvali, davomat belgilash | `/teacher` |
+| `TEACHER` | O'qituvchi | O'z guruhini ochish (nom, toq/juft kunlar, vaqt), o'quvchi qo'shish, jadval, davomat | `/teacher` |
 | `MODERATOR` | Kontent muharriri | Test savollari, imtihon sozlamalari, sayt sahifalari, yangiliklar, FAQ, e'lonlar, aloqa xabarlari | `/admin` (Savollar, Imtihon, CMS) |
 | `FINANCE` | Buxgalter / kassir | Buyurtmalar, tushum, qaytarishlar (refund), hisobotlar | `/admin` (Buyurtmalar, Hisobotlar) |
-| `MANAGER` | Qabulxona / operator | O'quvchini guruhga yozish, guruh ochish, dars jadvalini tuzish, buyurtmalarni ko'rish | `/admin` (Guruhlar, Buyurtmalar) |
-| `ADMIN` | Markaz boshqaruvchisi | Foydalanuvchilar, kurslar, narxlar, guruhlar, jadval, media, audit, sayt sozlamalari | `/admin` (deyarli hammasi) |
-| `SUPERADMIN` | Egasi | Hammasi + rollarni berish (ADMIN/SUPERADMIN ham) + to'lovlarni boshqarish | `/admin` |
+| `MANAGER` | **Administrator** (qabulxona) | O'quvchini guruhga yozish, guruh ochish, dars jadvalini tuzish, buyurtmalarni ko'rish | `/admin` (Guruhlar, Buyurtmalar) |
+| `ADMIN` | **Admin** — markaz boshqaruvchisi | Foydalanuvchilar, kurslar, narxlar, guruhlar, jadval, media, audit, sayt sozlamalari | `/admin` (deyarli hammasi) |
+| `SUPERADMIN` | **Superadmin** — egasi | Hammasi + rollarni berish (ADMIN/SUPERADMIN ham) + to'lovlarni boshqarish | `/admin` |
 
 Qoidalar:
 - Rolni faqat `ADMIN` (oddiy rollar uchun) va `SUPERADMIN` (hammasi uchun) o'zgartiradi. Hech kim o'z rolini o'zgartira olmaydi.
@@ -34,7 +34,8 @@ Qoidalar:
 | `tests:manage` | Savollar, imtihon sozlamasi, import/eksport | | | ✅ | | | ✅ | ✅ |
 | `orders:read` | Buyurtmalar, tushum | | | | ✅ | ✅ | ✅ | ✅ |
 | `payments:manage` | Qaytarishlar (refund) | | | | ✅ | | | ✅ |
-| `groups:manage` | Guruh yaratish, a'zo qo'shish, dars (slot) qo'yish | | | | | ✅ | ✅ | ✅ |
+| `groups:manage` | Istalgan guruhni ochish, a'zo qo'shish, dars (slot) qo'yish | | | | | ✅ | ✅ | ✅ |
+| `groups:own` | O'zi o'qitadigan guruhni ochish va boshqarish (a'zolar, toq/juft ritm, darslar) | | ✅ | | | | ✅ | ✅ |
 | `schedule:manage` | Jadvalni (vaqt) o'zgartirish | | | | | ✅ | ✅ | ✅ |
 | `teaching:access` | `/teacher` paneli: guruhlar, jadval | | ✅ | | | | ✅ | ✅ |
 | `attendance:mark` | Davomat belgilash va yakunlash | | ✅ | | | | ✅ | ✅ |
@@ -66,12 +67,18 @@ Vazifalar: ro'yxatdan o'tish → kurs/paket tanlash → to'lash → darslarni o'
 
 ### 3.2. TEACHER — o'qituvchi
 
-Vazifalar: o'z guruhlari va jadvalini ko'rish, har bir darsda davomat belgilash va yakunlash, dars mavzusi/xonasini yozish.
+Rolni Admin (yoki Superadmin) beradi: `PATCH /api/admin/users/:id/role { role: "TEACHER" }` — shu zahoti o'qituvchi profili ham yaratiladi.
+
+Vazifalar: o'z guruhini ochish (nom, toq yoki juft kunlar, dars vaqti va davomiyligi, xona) — darslar jadvalga avtomatik qo'shiladi;
+o'z guruhiga o'quvchi qidirib qo'shish/chiqarish; har bir darsda davomat belgilash va yakunlash, dars mavzusini yozish.
+Boshqa o'qituvchining guruhini ko'rmaydi va o'zgartira olmaydi.
 Darsga kelmagan o'quvchiga yakunlashda avtomatik bildirishnoma va Telegram eslatma (3 marta) ketadi.
 
 | Vazifa | API (🛡 `teaching:access`) |
 |---|---|
 | Guruhlarim | `GET /api/groups`, `GET /api/groups/:id` |
+| Guruh ochish / tahrirlash / arxivlash | `POST /api/groups`, `PUT /api/groups/:id`, `DELETE /api/groups/:id` (🛡 `groups:own`, faqat o'z guruhi) |
+| O'quvchi qidirish va qo'shish | `GET /api/teacher/students?search=`, `POST /api/groups/:id/members`, `DELETE /api/groups/:id/members/:studentId` |
 | Jadvalim | `GET /api/teacher/schedule?from&to`, `GET /api/groups/:id/slots` |
 | Dars ma'lumoti (mavzu, xona, onlayn havola, holat) | `PATCH /api/slots/:id` (vaqtni o'zgartirish — faqat `schedule:manage`) |
 | Davomat | `GET·PUT /api/slots/:id/attendance`, `POST /api/slots/:id/attendance/finalize` (🛡 `attendance:mark`) |
@@ -106,7 +113,7 @@ Vazifalar: tushgan to'lovlarni kuzatish, buyurtma holatini tekshirish, qaytarish
 
 > Onlayn to'lov (Payme/Click) hali ulanmagan (`PAYMENT_PROVIDER` bo'sh) — FINANCE ishining asosiy qismi shundan keyin boshlanadi.
 
-### 3.5. MANAGER — qabulxona / operator
+### 3.5. MANAGER — Administrator (qabulxona)
 
 Vazifalar: yangi o'quvchini guruhga yozish, guruh ochish (kurs + o'qituvchi), dars jadvalini tuzish va o'zgartirish (vaqt, xona, bekor qilish), to'lov holatini tekshirish.
 Narxlar, kurs mazmuni, sozlamalar, audit, rollar, refund va davomat belgilash — yo'q.

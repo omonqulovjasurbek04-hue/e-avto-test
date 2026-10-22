@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ClipboardCheck, Download } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardCheck, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { teacherService, type AttendanceStatus, type Roster, type Slot } from "@/services/platform.service";
+import { teacherService, type AttendanceStatus, type GroupInput, type Roster, type Slot } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
@@ -18,11 +18,17 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDateTime, formatTime } from "@/utils/money";
 import { ATTENDANCE_STATUSES } from "@/constants/attendance";
 import { useTranslation } from "react-i18next";
+import { can } from "@/lib/permissions";
+import { GroupForm, rhythmLabel } from "@/components/groups/GroupForm";
+import { GroupMembers } from "@/components/groups/GroupMembers";
 
 export default function TeacherGroupDetail() {
   const { t } = useTranslation();
   const { groupId = "" } = useParams();
   const role = useAuthStore((s) => s.user?.role);
+  const myId = useAuthStore((s) => s.user?.id);
+  const [editing, setEditing] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
   const canExport = role === "ADMIN" || role === "SUPERADMIN";
   const [tab, setTab] = useState("slots");
 
@@ -78,15 +84,41 @@ export default function TeacherGroupDetail() {
   if (group.loading && !group.data) return <Skeleton className="h-64 rounded-2xl" />;
   if (group.error || !group.data) return <ErrorState message={group.error ?? t("teacher.group.notFound")} onRetry={group.reload} />;
   const g = group.data;
+  // Admins change any group; a teacher (groups:own) the groups they teach. The server checks again.
+  const editable = g.status === "ACTIVE" && (can(role, "groups:manage") || (can(role, "groups:own") && g.teacherId === myId));
+
+  const saveGroup = async (input: GroupInput) => {
+    setEditBusy(true);
+    try {
+      const res = await teacherService.updateGroup(g.id, input);
+      toast.success(res.lessonsCreated > 0 ? t("groupForm.created", { count: res.lessonsCreated }) : t("groupForm.saved"));
+      setEditing(false);
+      await Promise.all([group.reload(), slots.reload()]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEditBusy(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <Link to="/teacher" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
         <ArrowLeft className="h-4 w-4" /> {t("teacher.group.back")}
       </Link>
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{g.name}</h1>
-        <p className="text-sm text-slate-500">{g.course.title} · {t("teacher.groups.students", { count: g.members.length, capacity: g.capacity })}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{g.name}</h1>
+          <p className="text-sm text-slate-500">{g.course.title} · {t("teacher.groups.students", { count: g.members.length, capacity: g.capacity })}</p>
+          {rhythmLabel(g, t) && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-600 dark:text-brand-400">
+              <CalendarDays className="h-4 w-4" /> {rhythmLabel(g, t)}{g.lessonMinutes ? ` · ${g.lessonMinutes} min` : ""}{g.room ? ` · ${g.room}` : ""}
+            </p>
+          )}
+        </div>
+        {editable && (
+          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(true)}>{t("groupForm.edit")}</Button>
+        )}
       </div>
 
       <Tabs
@@ -127,15 +159,8 @@ export default function TeacherGroupDetail() {
         ))}
 
       {tab === "students" &&
-        (g.members.length === 0 ? <EmptyState title={t("teacher.group.noStudents")} /> : (
-          <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-            {g.members.map((m) => (
-              <li key={m.studentId} className="flex justify-between px-4 py-3 text-sm">
-                <span className="font-medium text-slate-900 dark:text-white">{m.student.name}</span>
-                <span className="text-slate-500">{m.student.phone ?? ""}</span>
-              </li>
-            ))}
-          </ul>
+        (g.members.length === 0 && !editable ? <EmptyState title={t("teacher.group.noStudents")} /> : (
+          <GroupMembers group={g} editable={editable} onChanged={() => group.reload()} />
         ))}
 
       {tab === "report" && (
@@ -168,6 +193,10 @@ export default function TeacherGroupDetail() {
           )}
         </div>
       )}
+
+      <Modal isOpen={editing} onClose={() => setEditing(false)} title={t("groupForm.edit")} maxWidth="lg">
+        {editing && <GroupForm group={g} courses={[g.course]} busy={editBusy} onSubmit={saveGroup} onCancel={() => setEditing(false)} />}
+      </Modal>
 
       <Modal isOpen={roster !== null} onClose={() => setRoster(null)} title={roster ? t("teacher.group.rosterTitle", { date: formatDateTime(roster.slot.startsAt) }) : ""} maxWidth="lg">
         {roster && (

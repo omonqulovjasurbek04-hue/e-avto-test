@@ -118,6 +118,30 @@ export interface MyAttendance {
   records: { status: AttendanceStatus; note: string | null; session: { slot: { startsAt: string; topic: string | null; status: string; group: { name: string } } } }[];
 }
 
+export type GroupDays = "ODD" | "EVEN";
+
+/** What opening (or editing) a group sends. A teacher's own group has no teacherId: it is always theirs. */
+export interface GroupInput {
+  name: string;
+  courseId: string;
+  teacherId?: string;
+  startDate: string;
+  endDate?: string | null;
+  capacity: number;
+  days?: GroupDays | null;
+  startTime?: string | null;
+  lessonMinutes?: number | null;
+  room?: string | null;
+}
+
+export interface StudentHit {
+  id: string;
+  name: string;
+  phone: string | null;
+  userNumber: number;
+  studentNumber: number | null;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -126,6 +150,12 @@ export interface Group {
   startDate: string;
   endDate: string | null;
   capacity: number;
+  /** Weekly rhythm: ODD = toq kunlar (Du/Chor/Ju), EVEN = juft kunlar (Se/Pay/Sha); null = lessons planned one by one. */
+  days: GroupDays | null;
+  /** "HH:MM", Tashkent time. */
+  startTime: string | null;
+  lessonMinutes: number | null;
+  room: string | null;
   status: "ACTIVE" | "ARCHIVED";
   course: { id: string; title: string };
   teacher: { id: string; name: string };
@@ -260,6 +290,12 @@ export const studentService = {
 
 export const teacherService = {
   groups: () => apiGet<Group[]>("/groups"),
+  /** A teacher opens a group for themselves; the lessons follow from days + startTime. */
+  createGroup: (d: GroupInput) => apiPost<Group & { lessonsCreated: number }>("/groups", d),
+  updateGroup: (id: string, d: Partial<GroupInput>) => apiPut<Group & { lessonsCreated: number }>(`/groups/${id}`, d),
+  addMember: (id: string, studentId: string) => apiPost<unknown>(`/groups/${id}/members`, { studentId }),
+  removeMember: (id: string, studentId: string) => apiDelete<unknown>(`/groups/${id}/members/${studentId}`),
+  searchStudents: (search: string) => apiGet<StudentHit[]>("/teacher/students", { search }),
   group: (id: string) => apiGet<GroupDetail>(`/groups/${id}`),
   slots: (id: string) => apiGet<Slot[]>(`/groups/${id}/slots`),
   roster: (slotId: string) => apiGet<Roster>(`/slots/${slotId}/attendance`),
@@ -306,7 +342,8 @@ export const adminPlatformService = {
 
   // groups
   groups: () => apiGet<Group[]>("/groups"),
-  createGroup: (d: { name: string; courseId: string; teacherId: string; startDate: string; capacity: number }) => apiPost<Group>("/admin/groups", d),
+  createGroup: (d: GroupInput) => apiPost<Group & { lessonsCreated: number }>("/admin/groups", d),
+  updateGroup: (id: string, d: Partial<GroupInput>) => apiPut<Group & { lessonsCreated: number }>(`/admin/groups/${id}`, d),
   archiveGroup: (id: string) => apiDelete<unknown>(`/admin/groups/${id}`),
   addMember: (id: string, studentId: string) => apiPost<unknown>(`/admin/groups/${id}/members`, { studentId }),
   removeMember: (id: string, studentId: string) => apiDelete<unknown>(`/admin/groups/${id}/members/${studentId}`),

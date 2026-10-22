@@ -210,6 +210,10 @@ Davomatni belgilash/yakunlash uchun alohida `attendance:mark` kerak (MANAGER'da 
 | GET | `/api/groups/:id/attendance-report` | — davomat hisoboti |
 | GET | `/api/groups/:id/attendance-report.csv` | davomat hisoboti CSV fayl sifatida |
 | GET | `/api/teacher/schedule` | `?from&to` |
+| POST | `/api/groups` | 🛡 `groups:own` (o'qituvchi — o'zi uchun) yoki `groups:manage`: `name`, `courseId`, `startDate`, `endDate?`, `capacity?`, `days?` (`ODD` toq: Du/Chor/Ju \| `EVEN` juft: Se/Pay/Sha), `startTime?` (`HH:MM`, Toshkent), `lessonMinutes?` (30–240, standart 90), `room?` → guruh + `lessonsCreated` (darslar avtomatik) |
+| PUT · DELETE | `/api/groups/:id` | o'z guruhi: nom, sanalar, ritm (o'zgarsa kelajakdagi davomatsiz darslar yangi ritm bilan almashtiriladi, o'quvchilarga xabar) · arxivlash |
+| POST · DELETE | `/api/groups/:id/members`, `/members/:studentId` | o'z guruhiga o'quvchi qo'shish / chiqarish |
+| GET | `/api/teacher/students` | `?search=` ism, telefon yoki `user0001`/`student0001` → 10 tagacha faol o'quvchi |
 | PATCH | `/api/slots/:id` | `topic?`, `room?`, `onlineUrl?` (https), `status?` (`PLANNED`\|`DONE`\|`CANCELLED`) |
 | GET | `/api/slots/:id/attendance` | — ro'yxat |
 | PUT | `/api/slots/:id/attendance` | `records[{ studentId, status: PRESENT\|ABSENT\|LATE\|EXCUSED\|ONLINE, note? }]`, `reason?` (saqlanganni o'zgartirishda majburiy) |
@@ -264,7 +268,7 @@ Davomatni belgilash/yakunlash uchun alohida `attendance:mark` kerak (MANAGER'da 
 
 | Metod | Yo'l | Yuboriladi |
 |---|---|---|
-| POST | `/` | `name`, `courseId`, `teacherId`, `startDate`, `endDate?`, `capacity` (1–200) |
+| POST | `/` | `name`, `courseId`, `teacherId`, `startDate`, `endDate?`, `capacity` (1–200), `days?`, `startTime?`, `lessonMinutes?`, `room?` (yuqoridagi kabi, darslar avtomatik) |
 | PUT · DELETE | `/:id` | (DELETE — arxivlash) |
 | POST | `/:id/members` | `{ studentId }` |
 | DELETE | `/:id/members/:studentId` | |

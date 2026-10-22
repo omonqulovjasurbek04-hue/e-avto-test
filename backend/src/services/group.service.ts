@@ -2,7 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { hasPermission } from "../lib/permissions";
-import { expandRecurrence, findConflicts, Recurrence } from "../lib/schedule";
+import { accountIdFilter } from "../lib/accountNumbers";
+import { expandRecurrence, findConflicts, GroupDays, Interval, Recurrence, RHYTHM_WEEKDAYS, rhythmIntervals } from "../lib/schedule";
 import { writeAudit } from "./audit.service";
 import { dispatchEmails, notify } from "./notification.service";
 
@@ -25,39 +26,142 @@ export const loadAccessibleGroup = async (actor: Actor, groupId: string) => {
   throw notFound("Group not found");
 };
 
-// ───────────── admin: groups ─────────────
+/**
+ * Groups the actor may change: every group with groups:manage (admins, Administrator), and with
+ * groups:own (teachers) only the groups they teach. Someone else's group stays "not found".
+ */
+export const loadManageableGroup = async (actor: Actor, groupId: string) => {
+  const group = await loadAccessibleGroup(actor, groupId);
+  if (isAdmin(actor) || (hasPermission(actor.role, "groups:own") && group.teacherId === actor.userId)) return group;
+  throw forbidden("You cannot change this group");
+};
+
+// ───────────── groups ─────────────
 
 const assertTeacher = async (teacherId: string) => {
   const teacher = await prisma.user.findUnique({ where: { id: teacherId }, select: { role: true, isActive: true } });
   if (!teacher || teacher.role !== "TEACHER" || !teacher.isActive) throw badRequest("teacherId must be an active user with the TEACHER role");
 };
 
-export const createGroup = async (actorId: string, data: Prisma.TeacherGroupUncheckedCreateInput) => {
+/** Lesson length when a rhythm is chosen without one. */
+export const DEFAULT_LESSON_MINUTES = 90;
+
+export interface GroupInput {
+  name: string;
+  courseId: string;
+  teacherId: string;
+  startDate: Date;
+  endDate?: Date | null;
+  capacity: number;
+  days?: GroupDays | null;
+  startTime?: string | null;
+  lessonMinutes?: number | null;
+  room?: string | null;
+}
+
+/** The lessons a rhythm produces (from `from` on), or none when the group has no rhythm. */
+const lessonsOf = (g: Pick<GroupInput, "startDate" | "endDate" | "days" | "startTime" | "lessonMinutes">, from?: Date) => {
+  if (!g.days || !g.startTime) return [];
+  try {
+    return rhythmIntervals({ startDate: g.startDate, endDate: g.endDate, days: g.days, startTime: g.startTime, lessonMinutes: g.lessonMinutes ?? DEFAULT_LESSON_MINUTES }, from);
+  } catch (e) {
+    throw badRequest((e as Error).message);
+  }
+};
+
+/** Teacher and room cannot be double-booked; the group's own lessons that are being replaced do not count. */
+const assertNoConflicts = async (intervals: Interval[], teacherId: string, room: string | null, replacing?: { groupId: string; from: Date }) => {
+  if (intervals.length === 0) return;
+  const from = intervals[0].startsAt;
+  const to = intervals[intervals.length - 1].endsAt;
+  const nearby = await prisma.scheduleSlot.findMany({
+    where: {
+      status: { not: "CANCELLED" },
+      startsAt: { lt: to },
+      endsAt: { gt: from },
+      ...(replacing ? { NOT: { groupId: replacing.groupId, startsAt: { gte: replacing.from } } } : {}),
+    },
+    include: { group: { select: { teacherId: true } } },
+  });
+  const existing = nearby.map((s) => ({ id: s.id, startsAt: s.startsAt, endsAt: s.endsAt, room: s.room, groupId: s.groupId, teacherId: s.group.teacherId }));
+  const conflicts = intervals.flatMap((iv) => findConflicts({ ...iv, teacherId, room }, existing).map((c) => ({ ...c, startsAt: iv.startsAt })));
+  if (conflicts.length > 0) throw Object.assign(conflict("Schedule conflict"), { details: conflicts });
+};
+
+/**
+ * Opens a group. Admins (groups:manage) choose any teacher; a teacher (groups:own) opens it for
+ * themselves. With days (toq/juft) and a start time, the lessons are created right away.
+ */
+export const createGroup = async (actor: Actor, input: Omit<GroupInput, "teacherId"> & { teacherId?: string }) => {
+  if (!isAdmin(actor) && !hasPermission(actor.role, "groups:own")) throw forbidden("You cannot open groups");
+  const teacherId = isAdmin(actor) ? input.teacherId : actor.userId;
+  if (!teacherId) throw badRequest("teacherId is required");
+  const data: GroupInput = {
+    ...input,
+    teacherId,
+    lessonMinutes: input.days ? (input.lessonMinutes ?? DEFAULT_LESSON_MINUTES) : input.lessonMinutes,
+  };
   await assertTeacher(data.teacherId);
   if (!(await prisma.course.findUnique({ where: { id: data.courseId }, select: { id: true } }))) throw notFound("Course not found");
-  if (data.endDate && new Date(data.endDate) <= new Date(data.startDate as Date)) throw badRequest("endDate must be after startDate");
+  if (data.endDate && data.endDate <= data.startDate) throw badRequest("endDate must be after startDate");
+
+  const lessons = lessonsOf(data);
+  await assertNoConflicts(lessons, data.teacherId, data.room ?? null);
   return prisma.$transaction(async (tx) => {
     const g = await tx.teacherGroup.create({ data });
-    await writeAudit({ actorId, action: "group.create", entity: "TeacherGroup", entityId: g.id, after: g }, tx);
-    return g;
+    if (lessons.length > 0) await tx.scheduleSlot.createMany({ data: lessons.map((iv) => ({ groupId: g.id, ...iv, room: data.room ?? null })) });
+    await writeAudit({ actorId: actor.userId, action: "group.create", entity: "TeacherGroup", entityId: g.id, after: { ...g, lessons: lessons.length } }, tx);
+    return { ...g, lessonsCreated: lessons.length };
   });
 };
 
-export const updateGroup = async (actorId: string, id: string, data: Prisma.TeacherGroupUncheckedUpdateInput) => {
-  const before = await prisma.teacherGroup.findUnique({ where: { id }, include: { _count: { select: { members: { where: { leftAt: null } } } } } });
-  if (!before) throw notFound("Group not found");
-  if (typeof data.teacherId === "string") await assertTeacher(data.teacherId);
+/**
+ * Changes a group. When the rhythm (days, time, length, room or dates) changes, the future lessons
+ * that have no attendance yet are replaced by the new rhythm and the students are told.
+ */
+export const updateGroup = async (actor: Actor, id: string, data: Partial<GroupInput>) => {
+  await loadManageableGroup(actor, id);
+  const before = await prisma.teacherGroup.findUniqueOrThrow({ where: { id }, include: { _count: { select: { members: { where: { leftAt: null } } } } } });
+  if (data.teacherId !== undefined && data.teacherId !== before.teacherId) {
+    if (!isAdmin(actor)) throw forbidden("Only an administrator can change the teacher");
+    await assertTeacher(data.teacherId);
+  }
   if (typeof data.capacity === "number" && data.capacity < before._count.members) throw conflict("Capacity is below the current number of members");
-  return prisma.$transaction(async (tx) => {
-    const g = await tx.teacherGroup.update({ where: { id }, data });
-    await writeAudit({ actorId, action: "group.update", entity: "TeacherGroup", entityId: id, before: { ...before, _count: undefined }, after: g }, tx);
-    return g;
+  const next = { ...before, ...data };
+  if (data.days && !data.lessonMinutes && !before.lessonMinutes) next.lessonMinutes = DEFAULT_LESSON_MINUTES;
+  if (next.endDate && next.endDate <= next.startDate) throw badRequest("endDate must be after startDate");
+
+  const rhythmKeys = ["days", "startTime", "lessonMinutes", "room", "startDate", "endDate"] as const;
+  const rhythmChanged = rhythmKeys.some((k) => data[k] !== undefined && String(data[k]) !== String(before[k]));
+  const from = new Date(Math.max(Date.now(), next.startDate.getTime()));
+  const lessons = rhythmChanged ? lessonsOf(next, from) : [];
+  if (rhythmChanged) await assertNoConflicts(lessons, next.teacherId, next.room ?? null, { groupId: id, from });
+
+  const emailIds: (string | null)[] = [];
+  const updated = await prisma.$transaction(async (tx) => {
+    const g = await tx.teacherGroup.update({
+      where: { id },
+      data: { ...data, ...(next.lessonMinutes !== before.lessonMinutes ? { lessonMinutes: next.lessonMinutes } : {}) },
+    });
+    let replaced = 0;
+    if (rhythmChanged && next.days && next.startTime) {
+      // Lessons that already have attendance are history and stay; only untouched future lessons move.
+      replaced = (await tx.scheduleSlot.deleteMany({ where: { groupId: id, startsAt: { gte: from }, status: "PLANNED", session: null } })).count;
+      if (lessons.length > 0) await tx.scheduleSlot.createMany({ data: lessons.map((iv) => ({ groupId: id, ...iv, room: next.room ?? null })) });
+      for (const studentId of await memberIds(tx, id)) {
+        emailIds.push(await notify({ userId: studentId, type: "SCHEDULE_NEW", dedupeKey: `rhythm:${id}:${g.updatedAt.getTime()}`, template: "SCHEDULE_NEW", vars: { group: g.name, count: lessons.length }, email: true }, tx));
+      }
+    }
+    await writeAudit({ actorId: actor.userId, action: "group.update", entity: "TeacherGroup", entityId: id, before: { ...before, _count: undefined }, after: { ...g, lessonsReplaced: replaced, lessonsCreated: lessons.length } }, tx);
+    return { ...g, lessonsCreated: lessons.length };
   });
+  dispatchEmails(emailIds);
+  return updated;
 };
 
-export const archiveGroup = async (actorId: string, id: string) => {
-  const before = await prisma.teacherGroup.findUnique({ where: { id } });
-  if (!before) throw notFound("Group not found");
+export const archiveGroup = async (actor: Actor, id: string) => {
+  const before = await loadManageableGroup(actor, id);
+  const actorId = actor.userId;
   return prisma.$transaction(async (tx) => {
     const g = await tx.teacherGroup.update({ where: { id }, data: { status: "ARCHIVED" } });
     await writeAudit({ actorId, action: "group.archive", entity: "TeacherGroup", entityId: id, before, after: g }, tx);
@@ -88,9 +192,28 @@ export const getGroup = async (actor: Actor, id: string) => {
   });
 };
 
-// ───────────── admin: membership ─────────────
+// ───────────── membership ─────────────
 
-export const addMember = async (actorId: string, groupId: string, studentId: string) => {
+/** Students a group owner can add: active student accounts by name, phone or user####/student####. */
+export const searchStudents = async (query: string) => {
+  const q = query.trim().slice(0, 80);
+  if (q.length < 2) return [];
+  const digits = q.replace(/\D/g, "");
+  // Only a query that looks like a phone number ("90 123 45 67", "+998…") is matched against phones.
+  const isPhone = /^[\d\s+()-]+$/.test(q) && digits.length >= 4;
+  const where: Prisma.UserWhereInput =
+    accountIdFilter(q) ?? (isPhone ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" } });
+  return prisma.user.findMany({
+    where: { role: "USER", isActive: true, ...where },
+    orderBy: { name: "asc" },
+    take: 10,
+    select: { id: true, name: true, phone: true, userNumber: true, studentNumber: true },
+  });
+};
+
+export const addMember = async (actor: Actor, groupId: string, studentId: string) => {
+  await loadManageableGroup(actor, groupId);
+  const actorId = actor.userId;
   const student = await prisma.user.findUnique({ where: { id: studentId }, select: { role: true, isActive: true } });
   if (!student || student.role !== "USER" || !student.isActive) throw badRequest("studentId must be an active student");
 
@@ -114,7 +237,9 @@ export const addMember = async (actorId: string, groupId: string, studentId: str
   });
 };
 
-export const removeMember = async (actorId: string, groupId: string, studentId: string) => {
+export const removeMember = async (actor: Actor, groupId: string, studentId: string) => {
+  await loadManageableGroup(actor, groupId);
+  const actorId = actor.userId;
   const res = await prisma.groupMembership.updateMany({ where: { groupId, studentId, leftAt: null }, data: { leftAt: new Date() } });
   if (res.count === 0) throw notFound("Membership not found");
   await writeAudit({ actorId, action: "group.member.remove", entity: "TeacherGroup", entityId: groupId, before: { studentId } });
@@ -128,9 +253,8 @@ export const createSlots = async (
   groupId: string,
   input: { startsAt: Date; endsAt: Date; room?: string | null; onlineUrl?: string | null; topic?: string | null; repeat?: Recurrence }
 ) => {
-  // Only admins plan the schedule (schedule:manage); teachers see and annotate it.
-  if (!hasPermission(actor.role, "schedule:manage")) throw forbidden("You cannot change the schedule");
-  const group = await loadAccessibleGroup(actor, groupId);
+  // Schedule planners (schedule:manage) plan any group; a teacher plans the groups they opened or teach (groups:own).
+  const group = hasPermission(actor.role, "schedule:manage") ? await loadAccessibleGroup(actor, groupId) : await loadManageableGroup(actor, groupId);
   if (group.status !== "ACTIVE") throw conflict("Group is archived");
 
   let intervals;
@@ -141,15 +265,7 @@ export const createSlots = async (
   }
 
   const from = intervals[0].startsAt;
-  const to = intervals[intervals.length - 1].endsAt;
-  const nearby = await prisma.scheduleSlot.findMany({
-    where: { status: { not: "CANCELLED" }, startsAt: { lt: to }, endsAt: { gt: from } },
-    include: { group: { select: { teacherId: true } } },
-  });
-  const existing = nearby.map((s) => ({ id: s.id, startsAt: s.startsAt, endsAt: s.endsAt, room: s.room, groupId: s.groupId, teacherId: s.group.teacherId }));
-
-  const conflicts = intervals.flatMap((iv) => findConflicts({ ...iv, teacherId: group.teacherId, room: input.room ?? null }, existing).map((c) => ({ ...c, startsAt: iv.startsAt })));
-  if (conflicts.length > 0) throw Object.assign(conflict("Schedule conflict"), { details: conflicts });
+  await assertNoConflicts(intervals, group.teacherId, input.room ?? null);
 
   const emailIds: (string | null)[] = [];
   const created = await prisma.$transaction(async (tx) => {
@@ -224,6 +340,9 @@ export const studentGroups = async (studentId: string, now = new Date()) => {
     select: {
       id: true,
       name: true,
+      days: true,
+      startTime: true,
+      lessonMinutes: true,
       course: { select: { title: true } },
       slots: {
         where: { status: { not: "CANCELLED" }, startsAt: { gte: new Date(now.getTime() - 28 * 86_400_000), lt: new Date(now.getTime() + 56 * 86_400_000) } },
@@ -233,6 +352,13 @@ export const studentGroups = async (studentId: string, now = new Date()) => {
     orderBy: { name: "asc" },
   });
   return groups.map((g) => {
+    // A rhythm chosen when the group was opened is the answer; older groups are read from their lessons.
+    if (g.days && g.startTime) {
+      const [hh, mm] = g.startTime.split(":").map(Number);
+      const end = hh * 60 + mm + (g.lessonMinutes ?? DEFAULT_LESSON_MINUTES);
+      const endTime = `${String(Math.floor(end / 60) % 24).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
+      return { id: g.id, name: g.name, course: g.course.title, days: g.days, weekdays: [...RHYTHM_WEEKDAYS[g.days]], time: `${g.startTime}–${endTime}` };
+    }
     // Monday = 1 … Sunday = 7, in Tashkent.
     const weekdays = [...new Set(g.slots.map((s) => new Date(s.startsAt.getTime() + TZ_OFFSET_MS).getUTCDay() || 7))].sort();
     const within = (set: number[]) => weekdays.length > 0 && weekdays.every((d) => set.includes(d));

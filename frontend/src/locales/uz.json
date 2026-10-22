@@ -748,8 +748,8 @@
     "TEACHER": "O'qituvchi",
     "MODERATOR": "Moderator",
     "FINANCE": "Moliya xodimi",
-    "MANAGER": "Menejer",
-    "ADMIN": "Administrator",
+    "MANAGER": "Administrator",
+    "ADMIN": "Admin",
     "SUPERADMIN": "Superadmin"
   },
   "admin": {
@@ -1318,7 +1318,7 @@
     "groups": {
       "title": "Mening guruhlarim",
       "empty": "Sizga guruh biriktirilmagan",
-      "emptyHint": "Administrator guruhni biriktirgach shu yerda ko'rinadi.",
+      "emptyHint": "«Guruh ochish» tugmasi bilan o'z guruhingizni oching yoki administrator biriktirishini kuting.",
       "active": "Faol",
       "archived": "Arxiv",
       "students": "{{count}} / {{capacity}} o'quvchi"
@@ -1466,5 +1466,43 @@
     "sectionHint": "Sayt bo'yicha qisqa qo'llanmalar — doim ochiq, kurs sotib olish shart emas.",
     "minutes": "{{count}} daqiqa",
     "back": "Dashboard"
+  },
+  "groupForm": {
+    "open": "Guruh ochish",
+    "edit": "Guruhni tahrirlash",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "name": "Guruh nomi",
+    "namePlaceholder": "Masalan: B-toifa, toq 18:00",
+    "course": "Kurs",
+    "teacher": "O'qituvchi",
+    "choose": "Tanlang",
+    "noTeachers": "Avval foydalanuvchiga O'qituvchi rolini bering",
+    "startDate": "Boshlanish sanasi",
+    "endDate": "Tugash sanasi (ixtiyoriy)",
+    "capacity": "O'rinlar soni",
+    "rhythm": "Dars kunlari",
+    "rhythmNone": "Keyin belgilayman",
+    "odd": "Toq kunlar — Du, Chor, Ju",
+    "even": "Juft kunlar — Se, Pay, Sha",
+    "startTime": "Dars vaqti",
+    "lessonMinutes": "Davomiyligi (daqiqa)",
+    "room": "Xona (ixtiyoriy)",
+    "rhythmHint": "Kunlar va vaqt tanlansa, darslar jadvalga avtomatik qo'shiladi (tugash sanasigacha, bo'lmasa 12 hafta).",
+    "fillAll": "Nom, kurs va boshlanish sanasini to'ldiring",
+    "needTime": "Dars kunlari tanlangan bo'lsa, vaqtini ham kiriting",
+    "created": "Guruh ochildi: {{count}} ta dars jadvalga qo'shildi",
+    "saved": "Guruh saqlandi",
+    "oddShort": "Toq",
+    "evenShort": "Juft",
+    "students": "O'quvchilar",
+    "addStudent": "O'quvchi qo'shish",
+    "searchStudent": "Ism, telefon yoki ID (user0001)",
+    "noResults": "Topilmadi",
+    "added": "O'quvchi qo'shildi",
+    "removed": "O'quvchi chiqarildi",
+    "remove": "Chiqarish",
+    "add": "Qo'shish",
+    "empty": "Guruhda hali o'quvchi yo'q"
   }
 }

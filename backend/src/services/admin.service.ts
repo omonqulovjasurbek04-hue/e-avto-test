@@ -67,6 +67,10 @@ export const updateUserRole = async (actorId: string, actorRole: string, userId:
       data: { role, tokenVersion: { increment: 1 } },
     });
     await revokeAllSessions(userId, tx);
+    // A new teacher gets the teacher profile at once (bio, photo on the site); an older one is reactivated.
+    if (role === "TEACHER") {
+      await tx.teacherProfile.upsert({ where: { userId }, create: { userId }, update: { isActive: true } });
+    }
     await writeAudit(
       { actorId, action: "user.role.change", entity: "User", entityId: userId, before: { role: existing.role }, after: { role } },
       tx
