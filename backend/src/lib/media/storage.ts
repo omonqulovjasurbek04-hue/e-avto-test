@@ -24,6 +24,11 @@ export interface StorageDriver {
   stat(key: string): Promise<{ size: number } | null>;
   /** Inclusive byte range, like fs.createReadStream. */
   openRange(key: string, start: number, end: number): Promise<Readable>;
+  /**
+   * A time-limited link the browser can fetch the object from directly (S3/R2 only). Lets big media
+   * bypass the API server: the API checks access, the bytes come from the bucket.
+   */
+  signedUrl?(key: string, ttlSeconds: number, contentType?: string): Promise<string>;
 }
 
 const tempRoot = () => path.resolve(process.cwd(), env.MEDIA_DIR);
@@ -137,4 +142,20 @@ export const commitFolder = async (dir: string, files: { rel: string; contentTyp
     await fsp.rm(dir, { recursive: true, force: true });
   }
   return { folder, bytes };
+};
+
+/** A signed direct link to the object (S3/R2 with MEDIA_DIRECT_DELIVERY), or null to stream through the API. */
+export const signedUrl = async (key: string, ttlSeconds: number, contentType?: string): Promise<string | null> => {
+  const d = driver();
+  if (!env.MEDIA_DIRECT_DELIVERY || !d.signedUrl) return null;
+  return d.signedUrl(key, ttlSeconds, contentType);
+};
+
+/** A whole (small) object as text, e.g. an HLS playlist. */
+export const readText = async (key: string): Promise<string | null> => {
+  const stat = await driver().stat(key);
+  if (!stat) return null;
+  const chunks: Buffer[] = [];
+  for await (const chunk of await driver().openRange(key, 0, Math.max(stat.size - 1, 0))) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
 };

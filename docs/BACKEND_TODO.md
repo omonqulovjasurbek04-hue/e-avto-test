@@ -17,7 +17,7 @@
 |---|---|---|
 | 5 | Onlayn to'lov (Payme / Click) | `PAYMENT_PROVIDER` bo'sh → `POST /api/orders` 503. `src/lib/payments/` ga provayder, webhook imzosi (`POST /api/payments/webhook/:provider`), sinov rejimi. *Deploy oxirida qilinadi deb kelishilgan* |
 | 6 | Parolni tiklash | `POST /api/auth/forgot-password` email bilan ishlaydi, SMTP yo'q va email olib tashlangan → amalda ishlamaydi. Telegram bot orqali tiklash (`/reset` → kod → yangi parol) |
-| 7 | Baza zaxirasi | Railway Postgres backup Hobby'da; undan oldin `deploy/backup.sh` ni cron yoki GitHub Actions bilan kunlik ishlatish, **restore sinovi** |
+| 7 | Baza zaxirasi | 2026-10-22 tekshiruvi: Railway'da **backup yo'q** — yaratish va jadval faqat **Pro** tarifda (Hobby'da emas). Hozircha qo'lda: `railway ssh … pg_dump` (2026-10-21 da olingan va lokal PG18 ga restore qilib sinalgan). Kerak: kunlik avtomatik dump (GitHub Actions + `railway ssh` yoki tashqi cron) tashqi saqlashga + oylik restore sinovi |
 | 8 | Telegram bot deploy paytida "Conflict" | Har deployda eski va yangi konteyner bir necha soniya birga polling qiladi. Yechim: Railway'da webhook rejimi (`TELEGRAM_WEBHOOK_SECRET` + `TELEGRAM_WEBHOOK_BASE`) — kod tayyor |
 | 9 | Dars kontenti | Matn faqat B, A, C kurslarida; qolgan 12 kursda faqat reja (outline). Video yo'q. Kontent `prisma/content/courses.ts` yoki admin panel orqali |
 | 10 | Xodimlar uchun 2FA majburiy | `ADMIN`/`SUPERADMIN` 2FA'siz kira oladi. Kirishda 2FA yoqilmagan bo'lsa sozlashga majburlash |

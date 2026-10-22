@@ -2,6 +2,7 @@ import fs from "fs";
 import fsp from "fs/promises";
 import { Readable } from "stream";
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../../config/env";
 import type { StorageDriver } from "./storage";
 import { assertKey } from "./keys";
@@ -28,7 +29,13 @@ const isNotFound = (err: unknown) => {
   return e?.name === "NotFound" || e?.name === "NoSuchKey" || e?.$metadata?.httpStatusCode === 404;
 };
 
-/** S3-compatible bucket (AWS S3, Cloudflare R2, MinIO). Objects are private; the API streams them after its own access check. */
+/** Longest validity of a presigned link that S3 (and R2) accept. */
+const MAX_PRESIGN_SECONDS = 7 * 24 * 3600;
+
+/**
+ * S3-compatible bucket (AWS S3, Cloudflare R2, MinIO). Objects are private: the API checks access and
+ * then either streams them or hands out a short-lived presigned link (see signedUrl).
+ */
 export const s3Driver = (): StorageDriver => ({
   name: "s3",
   async put(key, filePath, contentType) {
@@ -60,5 +67,16 @@ export const s3Driver = (): StorageDriver => ({
     const res = await s3().send(new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: assertKey(key), Range: `bytes=${start}-${end}` }));
     if (!res.Body) throw new Error("Empty object body");
     return res.Body as Readable;
+  },
+  async signedUrl(key, ttlSeconds, contentType) {
+    const expiresIn = Math.max(60, Math.min(MAX_PRESIGN_SECONDS, Math.floor(ttlSeconds)));
+    const command = new GetObjectCommand({
+      Bucket: env.S3_BUCKET,
+      Key: assertKey(key),
+      ...(contentType ? { ResponseContentType: contentType } : {}),
+      // The browser may keep a segment for the life of the link; it never changes.
+      ResponseCacheControl: "private, max-age=86400, immutable",
+    });
+    return getSignedUrl(s3(), command, { expiresIn });
   },
 });

@@ -15,6 +15,16 @@ const h = (fn: (req: AuthRequest, res: Response) => Promise<unknown>) => asyncHa
 const viewer = (req: AuthRequest) => ({ userId: requireUserId(req), role: req.user!.role });
 const kindOf = (v: string): MediaKind => z.enum(["video", "file"]).transform((x) => (x === "video" ? "VIDEO" : "FILE") as MediaKind).parse(v);
 
+/** Streams a media plan, or sends the browser to the bucket's signed link (never cached: the link expires). */
+const send = async (res: Response, plan: media.MediaPlan) => {
+  if ("redirect" in plan) {
+    res.set("Cache-Control", "private, no-store").redirect(302, plan.redirect);
+    return;
+  }
+  res.status(plan.status).set(plan.headers);
+  await pipeline(plan.stream, res).catch(() => undefined); // client aborted (seeking) is normal
+};
+
 // ───────────── student side ─────────────
 export const mediaRoutes = Router();
 
@@ -25,9 +35,7 @@ mediaRoutes.post("/media/:kind/:id/access", asyncHandler(authMiddleware), testRa
 
 /** Step 2: the media element fetches the URL; the signed token is the credential. */
 mediaRoutes.get("/media/stream/:token", asyncHandler(async (req: Request, res: Response) => {
-  const plan = await media.openStream(req.params.token, req.headers.range);
-  res.status(plan.status).set(plan.headers);
-  await pipeline(plan.stream, res).catch(() => undefined); // client aborted (seeking) is normal
+  await send(res, await media.openStream(req.params.token, req.headers.range));
 }));
 
 /**
@@ -35,9 +43,7 @@ mediaRoutes.get("/media/stream/:token", asyncHandler(async (req: Request, res: R
  * The signed token is part of the path, so the relative links inside the playlists keep working.
  */
 mediaRoutes.get("/media/hls/:token/:file(*)", asyncHandler(async (req: Request, res: Response) => {
-  const plan = await media.openHls(req.params.token, req.params.file);
-  res.status(plan.status).set(plan.headers);
-  await pipeline(plan.stream, res).catch(() => undefined);
+  await send(res, await media.openHls(req.params.token, req.params.file));
 }));
 
 /** Public CMS images: GET /api/images/<id>.<ext> */

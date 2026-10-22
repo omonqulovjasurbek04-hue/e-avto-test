@@ -8,6 +8,7 @@ import { detectType } from "../lib/media/sniff";
 import * as storage from "../lib/media/storage";
 import { hlsContentType, hlsFile } from "../lib/media/keys";
 import { listFiles, transcodeToHls } from "../lib/media/hls";
+import { rewritePlaylist } from "../lib/media/playlist";
 import { scanFile, ScannerUnavailableError } from "../lib/media/antivirus";
 import { hasPermission } from "../lib/permissions";
 import { badRequest, forbidden, HttpError, notFound, unauthorized } from "../utils/errors";
@@ -254,11 +255,21 @@ export interface StreamPlan {
   stream: Readable;
 }
 
+/** The bytes come from the bucket: the browser is sent there with a short-lived signed link. */
+export interface RedirectPlan {
+  redirect: string;
+}
+
+export type MediaPlan = StreamPlan | RedirectPlan;
+
+/** Seconds left on a media token (used as the lifetime of the bucket links handed out under it). */
+const secondsLeft = (exp: number) => Math.max(60, exp - Math.floor(Date.now() / 1000));
+
 /**
  * Step 2 (browser media element, no custom headers): the token proves step 1 happened. Access is
  * re-checked here, so a blocked account or a revoked enrollment loses the stream before the token expires.
  */
-export const openStream = async (token: string, rangeHeader: string | undefined): Promise<StreamPlan> => {
+export const openStream = async (token: string, rangeHeader: string | undefined): Promise<MediaPlan> => {
   const claims = verifyMediaToken(secret(), token);
   if (!claims) throw unauthorized("Link expired or invalid");
 
@@ -266,6 +277,10 @@ export const openStream = async (token: string, rangeHeader: string | undefined)
   if (!user || !user.isActive) throw unauthorized("Link expired or invalid");
   const asset = await loadAsset(claims.kind, claims.assetId);
   if (!asset || !(await asset.authorized({ userId: user.id, role: user.role }))) throw notFound("Media not found");
+
+  // R2/S3: the bucket serves the bytes (with Range support) through a short-lived link; the API has checked access.
+  const direct = await storage.signedUrl(asset.storageKey, secondsLeft(claims.exp), asset.mimeType);
+  if (direct) return { redirect: direct };
 
   const stat = await storage.statObject(asset.storageKey);
   if (!stat) throw notFound("Media not found");
@@ -308,7 +323,7 @@ export const openStream = async (token: string, rangeHeader: string | undefined)
  * (like the MP4 stream); segments and the poster only need the signed token, which keeps the
  * many small segment requests cheap. Segments never change, so the browser may keep them while seeking.
  */
-export const openHls = async (token: string, name: string): Promise<StreamPlan> => {
+export const openHls = async (token: string, name: string): Promise<MediaPlan> => {
   const claims = verifyMediaToken(secret(), token);
   if (!claims || claims.kind !== "VIDEO") throw unauthorized("Link expired or invalid");
   const file = hlsFile(name);
@@ -323,6 +338,30 @@ export const openHls = async (token: string, name: string): Promise<StreamPlan> 
   }
 
   const key = `${video.storageKey}/${file}`;
+  const ttl = secondsLeft(claims.exp);
+  const playlistHeaders = {
+    "Content-Type": hlsContentType(file),
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Cross-Origin-Resource-Policy": "cross-origin",
+  };
+  if (!file.endsWith(".m3u8")) {
+    // Segments and the poster: straight from the bucket when it can sign links.
+    const direct = await storage.signedUrl(key, ttl, hlsContentType(file));
+    if (direct) return { redirect: direct };
+  } else if (file !== "master.m3u8" && env.MEDIA_DIRECT_DELIVERY) {
+    // A quality's playlist: its segment lines become signed bucket links, so the video bytes never pass the API.
+    const text = await storage.readText(key);
+    if (text === null) throw notFound("Media not found");
+    const dir = file.slice(0, file.lastIndexOf("/"));
+    const body = await rewritePlaylist(text, async (uri) => {
+      const segment = hlsFile(`${dir}/${uri}`);
+      return segment ? storage.signedUrl(`${video.storageKey}/${segment}`, ttl, hlsContentType(segment)) : null;
+    });
+    const buf = Buffer.from(body, "utf8");
+    return { status: 200, headers: { ...playlistHeaders, "Content-Length": String(buf.length) }, stream: Readable.from(buf) };
+  }
+
   const stat = await storage.statObject(key);
   if (!stat) throw notFound("Media not found");
   return {
