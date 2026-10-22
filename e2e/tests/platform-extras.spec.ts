@@ -52,7 +52,7 @@ async function recordWebm(page: Page): Promise<Buffer> {
   return Buffer.from(b64, "base64");
 }
 
-test.describe.serial("categories, CMS images, watermarked video", () => {
+test.describe.serial("categories, CMS images, private video", () => {
   test("an admin creates a category, files the course under it, and visitors filter by it", async ({ page }) => {
     const s = state();
     const name = `E2E Belgilar ${s.run}`;
@@ -119,7 +119,7 @@ test.describe.serial("categories, CMS images, watermarked video", () => {
     await expect.poll(() => cover.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(2);
   });
 
-  test("an enrolled student plays a real private video with their watermark over it", async ({ page }) => {
+  test("an enrolled student plays a real private video", async ({ page }) => {
     const s = state();
     const admin = await apiLogin(s.emails.admin);
     const course = await call<{ id: string }>("POST", "/admin/courses", admin, { title: `E2E Video kurs ${s.run}`, description: "d", isPublished: true });
@@ -148,13 +148,7 @@ test.describe.serial("categories, CMS images, watermarked video", () => {
     // The picture really advances: decoded frames, not just a successful HTTP response.
     await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 15_000 }).toBeGreaterThan(0.5);
 
-    const mark = page.getByTestId("video-watermark");
-    await expect(mark).toContainText(email);
-    // It sits over the picture and does not block clicks on the video.
-    expect(await mark.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
-    const vb = (await video.boundingBox())!;
-    const mb = (await mark.boundingBox())!;
-    expect(mb.y).toBeGreaterThanOrEqual(vb.y);
-    expect(mb.y + mb.height).toBeLessThanOrEqual(vb.y + vb.height + 1);
+    // Lesson videos are shown without a viewer watermark over the picture.
+    await expect(page.getByTestId("video-watermark")).toHaveCount(0);
   });
 });

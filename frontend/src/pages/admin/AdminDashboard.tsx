@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, BookOpen, HelpCircle, ClipboardCheck, Percent, Target } from "lucide-react";
+import { Users, BookOpen, HelpCircle, ClipboardCheck, Percent, Target, GraduationCap } from "lucide-react";
 import { adminService } from "@/services/admin.service";
 import type { AdminStats } from "@/types/admin";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -41,6 +41,9 @@ export default function AdminDashboard() {
       <h1 className="mb-6 text-2xl font-bold text-white">{t("admin.dashboard.title")}</h1>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard icon={<Users className="h-5 w-5" />} label={t("admin.dashboard.users")} value={stats.totalUsers} />
+        {stats.totalStudents !== undefined && (
+          <StatCard icon={<GraduationCap className="h-5 w-5" />} label={t("admin.dashboard.students")} value={stats.totalStudents} />
+        )}
         <StatCard icon={<BookOpen className="h-5 w-5" />} label={t("admin.dashboard.coursesLessons")} value={`${stats.totalCourses} / ${stats.totalLessons}`} />
         <StatCard icon={<HelpCircle className="h-5 w-5" />} label={t("admin.dashboard.questions")} value={stats.totalQuestions} />
         <StatCard icon={<ClipboardCheck className="h-5 w-5" />} label={t("admin.dashboard.tests")} value={stats.totalTests} />

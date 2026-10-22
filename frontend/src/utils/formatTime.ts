@@ -1,14 +1,14 @@
 /**
- * Converts seconds into mm:ss format.
- * Example: 125 -> "02:05", 3600 -> "60:00"
+ * Converts seconds into mm:ss, or h:mm:ss from one hour on. Fractions are dropped (a video reports 23.4357 s).
+ * Example: 125 -> "02:05", 23.43 -> "00:23", 3909 -> "1:05:09"
  */
 export function formatSecondsToTimer(totalSeconds: number): string {
-  if (isNaN(totalSeconds) || totalSeconds < 0) return "00:00";
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const mm = String(minutes).padStart(2, "0");
-  const ss = String(seconds).padStart(2, "0");
-  return `${mm}:${ss}`;
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "00:00";
+  const total = Math.floor(totalSeconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const ss = String(total % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${ss}` : `${String(minutes).padStart(2, "0")}:${ss}`;
 }
 
 export const formatTime = formatSecondsToTimer;

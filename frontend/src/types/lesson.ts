@@ -1,3 +1,10 @@
+export interface WatchState {
+  watchedSeconds: number;
+  requiredSeconds: number;
+  durationSec: number;
+  completed: boolean;
+}
+
 export interface Lesson {
   id: string;
   courseId: string;
@@ -14,6 +21,10 @@ export interface Lesson {
   unlocksAt?: string | null;
   /** Id of a video stored in private storage; played through short-lived signed URLs. */
   privateVideoId?: string | null;
+  /** Server-counted watching of the private video; the lesson completes only once it is really watched. */
+  watch?: WatchState | null;
+  /** The course's next lesson (for the "next lesson" button). */
+  nextLesson?: { id: string; title: string; locked: boolean; unlocksAt: string | null } | null;
   thumbnail?: string;
   duration?: number;
   durationMinutes?: number;

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
+import { assignStudentNumber } from "../lib/accountNumbers";
 import { getProvider } from "../lib/payments";
 import { InvalidSignatureError, VerifiedPaymentEvent } from "../lib/payments/provider";
 import { decide } from "../lib/payments/transition";
@@ -23,6 +24,8 @@ export const fulfilOrder = async (paymentId: string, source: string): Promise<vo
     await tx.payment.update({ where: { id: paymentId }, data: { status: "PAID", paidAt } });
     await tx.order.update({ where: { id: payment.orderId }, data: { status: "PAID", paidAt } });
 
+    // A course is bought: the account becomes a student (student0001, …) — only the first time.
+    if (payment.order.items.some((item) => item.courseId)) await assignStudentNumber(tx, payment.order.userId);
     for (const item of payment.order.items) {
       if (!item.courseId) continue;
       const days = item.package?.durationDays ?? null;

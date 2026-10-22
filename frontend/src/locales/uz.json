@@ -430,7 +430,13 @@
     "startLesson": "Darsni boshlash",
     "continueLesson": "Davom ettirish",
     "relatedTests": "Tegishli testlar",
-    "takeTest": "Test topshirish"
+    "takeTest": "Test topshirish",
+    "nextLesson": "Keyingi darsga o'tish",
+    "watchHint": "Keyingi dars videoni oxirigacha ko'rgandan so'ng ochiladi",
+    "nextOpensOn": "Keyingi dars {{date}} kuni ochiladi",
+    "nextLocked": "Keyingi dars hali yopiq",
+    "allDone": "Kursning barcha darslari tugadi",
+    "watched": "Ko'rildi"
   },
   "videoLesson": {
     "title": "Video dars",
@@ -748,7 +754,8 @@
     "TEACHER": "O'qituvchi",
     "MODERATOR": "Moderator",
     "FINANCE": "Moliya xodimi",
-    "ADMIN": "Administrator",
+    "MANAGER": "Administrator",
+    "ADMIN": "Admin",
     "SUPERADMIN": "Superadmin"
   },
   "admin": {
@@ -829,7 +836,8 @@
       "questions": "Savollar",
       "tests": "Yakunlangan testlar",
       "avgScore": "O'rtacha ball",
-      "passRate": "O'tish foizi"
+      "passRate": "O'tish foizi",
+      "students": "O'quvchilar (kurs olgan)"
     },
     "audit": {
       "title": "Audit jurnali",
@@ -879,7 +887,7 @@
     },
     "users": {
       "title": "Foydalanuvchilar",
-      "searchPlaceholder": "Ism yoki email bo'yicha qidirish",
+      "searchPlaceholder": "Ism, telefon, email yoki ID (student0001 / user0001)",
       "byRole": "Rol bo'yicha",
       "allRoles": "Barcha rollar",
       "empty": "Foydalanuvchilar topilmadi",
@@ -905,7 +913,12 @@
       "reset2faTitle": "2FA ni bekor qilish: {{name}}",
       "reset2faConfirm": "Foydalanuvchi autentifikator va zaxira kodlarni yo'qotgan bo'lsa ishlating. Uning sessiyalari yopiladi; keyin u faqat parol bilan kiradi va 2FA ni qaytadan yoqishi kerak. Amal audit jurnaliga yoziladi.",
       "reset2faDone": "2FA bekor qilindi",
-      "reset2faError": "2FA ni bekor qilib bo'lmadi"
+      "reset2faError": "2FA ni bekor qilib bo'lmadi",
+      "id": "ID",
+      "byKind": "Turi bo'yicha",
+      "allKinds": "Hammasi",
+      "kindStudent": "O'quvchi (kurs olgan)",
+      "kindUser": "Foydalanuvchi (kurs olmagan)"
     },
     "exam": {
       "title": "Imtihon sozlamalari va savollar importi",
@@ -1311,7 +1324,7 @@
     "groups": {
       "title": "Mening guruhlarim",
       "empty": "Sizga guruh biriktirilmagan",
-      "emptyHint": "Administrator guruhni biriktirgach shu yerda ko'rinadi.",
+      "emptyHint": "«Guruh ochish» tugmasi bilan o'z guruhingizni oching yoki administrator biriktirishini kuting.",
       "active": "Faol",
       "archived": "Arxiv",
       "students": "{{count}} / {{capacity}} o'quvchi"
@@ -1399,7 +1412,9 @@
     "logoutAllDone": "Barcha sessiyalar yopildi"
   },
   "video": {
-    "loadError": "Videoni yuklashda xatolik yuz berdi."
+    "loadError": "Videoni yuklashda xatolik yuz berdi.",
+    "quality": "Sifat",
+    "auto": "Avto"
   },
   "rating": {
     "eyebrow": "E-AVTO · O'quvchilar reytingi",
@@ -1459,5 +1474,43 @@
     "sectionHint": "Sayt bo'yicha qisqa qo'llanmalar — doim ochiq, kurs sotib olish shart emas.",
     "minutes": "{{count}} daqiqa",
     "back": "Dashboard"
+  },
+  "groupForm": {
+    "open": "Guruh ochish",
+    "edit": "Guruhni tahrirlash",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "name": "Guruh nomi",
+    "namePlaceholder": "Masalan: B-toifa, toq 18:00",
+    "course": "Kurs",
+    "teacher": "O'qituvchi",
+    "choose": "Tanlang",
+    "noTeachers": "Avval foydalanuvchiga O'qituvchi rolini bering",
+    "startDate": "Boshlanish sanasi",
+    "endDate": "Tugash sanasi (ixtiyoriy)",
+    "capacity": "O'rinlar soni",
+    "rhythm": "Dars kunlari",
+    "rhythmNone": "Keyin belgilayman",
+    "odd": "Toq kunlar — Du, Chor, Ju",
+    "even": "Juft kunlar — Se, Pay, Sha",
+    "startTime": "Dars vaqti",
+    "lessonMinutes": "Davomiyligi (daqiqa)",
+    "room": "Xona (ixtiyoriy)",
+    "rhythmHint": "Kunlar va vaqt tanlansa, darslar jadvalga avtomatik qo'shiladi (tugash sanasigacha, bo'lmasa 12 hafta).",
+    "fillAll": "Nom, kurs va boshlanish sanasini to'ldiring",
+    "needTime": "Dars kunlari tanlangan bo'lsa, vaqtini ham kiriting",
+    "created": "Guruh ochildi: {{count}} ta dars jadvalga qo'shildi",
+    "saved": "Guruh saqlandi",
+    "oddShort": "Toq",
+    "evenShort": "Juft",
+    "students": "O'quvchilar",
+    "addStudent": "O'quvchi qo'shish",
+    "searchStudent": "Ism, telefon yoki ID (user0001)",
+    "noResults": "Topilmadi",
+    "added": "O'quvchi qo'shildi",
+    "removed": "O'quvchi chiqarildi",
+    "remove": "Chiqarish",
+    "add": "Qo'shish",
+    "empty": "Guruhda hali o'quvchi yo'q"
   }
 }

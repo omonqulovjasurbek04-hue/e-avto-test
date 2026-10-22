@@ -1,4 +1,4 @@
-export type UserRole = "USER" | "TEACHER" | "MODERATOR" | "FINANCE" | "ADMIN" | "SUPERADMIN";
+export type UserRole = "USER" | "TEACHER" | "MODERATOR" | "FINANCE" | "MANAGER" | "ADMIN" | "SUPERADMIN";
 
 export interface User {
   id: string;
@@ -7,7 +7,9 @@ export interface User {
   name: string;
   phone?: string;
   role: UserRole;
-  /** Permanent sequential account number from the server; shown as "student0001". */
+  /** Sign-up number, every account: shown as "user0001". */
+  userNumber?: number;
+  /** Only after the first bought course: shown as "student0001". */
   studentNumber?: number;
   avatarUrl?: string;
   /** undefined for accounts without an e-mail (Telegram). */

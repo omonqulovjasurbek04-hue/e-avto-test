@@ -30,6 +30,16 @@ mediaRoutes.get("/media/stream/:token", asyncHandler(async (req: Request, res: R
   await pipeline(plan.stream, res).catch(() => undefined); // client aborted (seeking) is normal
 }));
 
+/**
+ * Adaptive video (HLS): master.m3u8 -> <height>p/index.m3u8 -> <height>p/seg_<n>.ts, plus poster.jpg.
+ * The signed token is part of the path, so the relative links inside the playlists keep working.
+ */
+mediaRoutes.get("/media/hls/:token/:file(*)", asyncHandler(async (req: Request, res: Response) => {
+  const plan = await media.openHls(req.params.token, req.params.file);
+  res.status(plan.status).set(plan.headers);
+  await pipeline(plan.stream, res).catch(() => undefined);
+}));
+
 /** Public CMS images: GET /api/images/<id>.<ext> */
 mediaRoutes.get("/images/:name", asyncHandler(async (req: Request, res: Response) => {
   const plan = await media.openPublicImage(req.params.name);

@@ -13,6 +13,7 @@ enum Role {
   TEACHER
   MODERATOR
   FINANCE
+  MANAGER
   ADMIN
   SUPERADMIN
 }
@@ -26,8 +27,11 @@ model User {
   passwordHash       String?
   telegramId         String?   @unique
   role               Role      @default(USER)
-  // Permanent sequential account number, shown on the site as "student0001". Never reused.
-  studentNumber      Int       @unique @default(autoincrement())
+  // Permanent sequential account number given at sign-up, shown as "user0001". Never reused.
+  userNumber         Int       @unique @default(autoincrement())
+  // Set at the first paid course, equal to userNumber (user0002 -> "student0002").
+  // Empty = never bought a course. Kept when access later expires.
+  studentNumber      Int?      @unique
   isActive           Boolean   @default(true)
   // Incremented on password change / "log out everywhere"; older JWTs stop working.
   tokenVersion       Int       @default(0)
@@ -270,12 +274,16 @@ model Progress {
 }
 
 model LessonProgress {
-  id        String   @id @default(uuid())
-  userId    String
-  lessonId  String
-  percent   Int      @default(0)
-  completed Boolean  @default(false)
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  userId         String
+  lessonId       String
+  percent        Int       @default(0)
+  completed      Boolean   @default(false)
+  // Lesson video actually played, counted on the server from heartbeats (never more than the real time
+  // elapsed allows); a video lesson is completed only once enough of it was watched to the end.
+  watchedSeconds Int       @default(0)
+  lastWatchAt    DateTime?
+  updatedAt      DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -633,6 +641,12 @@ model Enrollment {
 
 // ───────────────────────── Groups, schedule, attendance ─────────────────────────
 
+/// ODD = toq kunlar (Mon/Wed/Fri), EVEN = juft kunlar (Tue/Thu/Sat).
+enum GroupDays {
+  ODD
+  EVEN
+}
+
 enum GroupStatus {
   ACTIVE
   ARCHIVED
@@ -653,16 +667,21 @@ enum AttendanceStatus {
 }
 
 model TeacherGroup {
-  id        String      @id @default(uuid())
-  name      String
-  courseId  String
-  teacherId String
-  startDate DateTime
-  endDate   DateTime?
-  capacity  Int         @default(20)
-  status    GroupStatus @default(ACTIVE)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  name          String
+  courseId      String
+  teacherId     String
+  startDate     DateTime
+  endDate       DateTime?
+  capacity      Int         @default(20)
+  // Weekly rhythm in Tashkent time; when set, the lessons are generated from it.
+  days          GroupDays?
+  startTime     String?
+  lessonMinutes Int?
+  room          String?
+  status        GroupStatus @default(ACTIVE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   course  Course            @relation(fields: [courseId], references: [id], onDelete: Restrict)
   teacher User              @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
@@ -742,17 +761,25 @@ model AttendanceRecord {
 
 // ───────────────────────── Media (private storage keys, never public URLs) ─────────────────────────
 
+/// MP4 = one progressive file; HLS = adaptive stream (master.m3u8, 360p-1080p renditions, poster) under storageKey/.
+enum VideoFormat {
+  MP4
+  HLS
+}
+
 model VideoAsset {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   lessonId    String?
-  storageKey  String   @unique
+  // MP4: "<uuid>.mp4"; HLS: the folder "<uuid>" holding master.m3u8, <height>p/ and poster.jpg.
+  storageKey  String      @unique
+  format      VideoFormat @default(MP4)
   title       String?
-  durationSec Int      @default(0)
+  durationSec Int         @default(0)
   mimeType    String
   sizeBytes   Int
-  isArchived  Boolean  @default(false)
+  isArchived  Boolean     @default(false)
   createdById String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime    @default(now())
 
   @@index([lessonId])
   @@map("video_assets")

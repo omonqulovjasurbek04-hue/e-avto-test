@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
 import { success } from "../utils/apiResponse";
-import { lessonProgressSchema } from "../validators/progress";
+import { lessonProgressSchema, videoWatchSchema } from "../validators/progress";
 import * as progressService from "../services/progress.service";
 
 export const listProgress = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -20,4 +20,9 @@ export const getLessonProgress = async (req: AuthRequest, res: Response): Promis
 export const updateLessonProgress = async (req: AuthRequest, res: Response): Promise<void> => {
   const input = lessonProgressSchema.parse(req.body);
   success(res, await progressService.updateLessonProgress(requireUserId(req), req.params.lessonId, input, req.user!.role));
+};
+
+export const recordVideoWatch = async (req: AuthRequest, res: Response): Promise<void> => {
+  const input = videoWatchSchema.parse(req.body);
+  success(res, await progressService.recordVideoWatch(requireUserId(req), req.user!.role, req.params.lessonId, input));
 };

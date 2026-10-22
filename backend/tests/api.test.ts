@@ -380,7 +380,9 @@ describe.skipIf(!enabled)("E-Avto API", () => {
       expect(ok.status).toBe(200);
       // The full Telegram name (first + last) becomes the starting name of the account.
       expect(ok.body.data.user).toMatchObject({ name: "Ali Valiyev", role: "USER", hasPassword: false });
-      expect(typeof ok.body.data.user.studentNumber).toBe("number");
+      // A new account gets its sign-up number (user0001); the student number comes only with a bought course.
+      expect(typeof ok.body.data.user.userNumber).toBe("number");
+      expect(ok.body.data.user.studentNumber).toBeUndefined();
       expect(ok.body.data.user.email).toBeUndefined();
       ids.users.push(ok.body.data.user.id);
       expect((await api().get("/api/auth/me").set(auth(ok.body.data.token))).status).toBe(200);

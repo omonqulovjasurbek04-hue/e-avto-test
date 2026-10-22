@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { PlayCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { lessonService } from "@/services/lesson.service";
-import { mediaService } from "@/services/platform.service";
 import { useStartTest } from "@/hooks/useStartTest";
 import { ROUTES } from "@/constants/routes";
 import type { Lesson } from "@/types/lesson";
@@ -13,34 +12,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import VideoPlayer from "@/components/video/VideoPlayer";
+import LessonVideo from "@/components/video/LessonVideo";
 import { Alert } from "@/components/ui/Alert";
 import LessonLockNotice from "@/components/lesson/LessonLockNotice";
-import { useAuth } from "@/hooks/useAuth";
 import { useStudyTimer } from "@/hooks/useStudyTimer";
-
-/** Plays a video from private storage through short-lived signed URLs (renewed while watching). */
-function PrivateVideo({ videoId, onProgress }: { videoId: string; onProgress: (pct: number) => void }) {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  // Who is watching: contact + short account id, burned over the picture.
-  const watermark = user ? `${user.email || user.phone || user.name} · ${user.id.slice(0, 8)}` : undefined;
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    setSrc(null);
-    setFailed(false);
-    mediaService.streamUrl("video", videoId).then((u) => alive && setSrc(u)).catch(() => alive && setFailed(true));
-    return () => {
-      alive = false;
-    };
-  }, [videoId]);
-
-  if (failed) return <Alert variant="danger">{t("lock.privateFail")}</Alert>;
-  if (!src) return <Skeleton className="aspect-video w-full" />;
-  return <VideoPlayer src={src} onProgress={onProgress} watermark={watermark} refreshSrc={() => mediaService.streamUrl("video", videoId)} />;
-}
 
 export default function VideoLesson() {
   const { t } = useTranslation();
@@ -116,7 +91,7 @@ export default function VideoLesson() {
         {lesson.locked ? (
           <LessonLockNotice lesson={lesson} />
         ) : lesson.privateVideoId ? (
-          <PrivateVideo videoId={lesson.privateVideoId} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
+          <LessonVideo videoId={lesson.privateVideoId} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
         ) : lesson.videoUrl ? (
           <VideoPlayer src={lesson.videoUrl} onProgress={(pct) => void lessonService.updateProgress(lesson.id, pct).catch(() => undefined)} />
         ) : (

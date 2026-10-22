@@ -3,6 +3,8 @@ import type { Question } from "./question";
 
 export interface AdminStats {
   totalUsers: number;
+  /** Accounts that bought a course. */
+  totalStudents?: number;
   totalCourses: number;
   totalLessons: number;
   totalQuestions: number;
@@ -15,6 +17,10 @@ export interface AdminUser {
   id: string;
   name: string;
   email: string | null;
+  phone?: string | null;
+  userNumber: number;
+  /** null = never bought a course. */
+  studentNumber: number | null;
   role: UserRole;
   isActive: boolean;
   createdAt: string;

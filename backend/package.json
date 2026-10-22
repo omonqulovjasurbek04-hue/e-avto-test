@@ -11,16 +11,18 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
+    "seed:roles": "tsx prisma/seed-roles.ts",
     "prisma:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests prisma",
     "smoke": "node scripts/prod-smoke.mjs",
     "create-superadmin": "tsx src/scripts/createSuperadmin.ts",
+    "media:import": "tsx src/scripts/importLessonVideo.ts",
     "test": "vitest run",
     "prisma:deploy": "prisma migrate deploy"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "keywords": [
     "e-avto",

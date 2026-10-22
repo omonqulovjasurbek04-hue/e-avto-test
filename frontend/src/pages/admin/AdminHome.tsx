@@ -5,6 +5,7 @@ import AdminDashboard from "./AdminDashboard";
 
 // First page each staff role is allowed to open, in priority order.
 const LANDING: [Permission, string][] = [
+  ["groups:manage", "/admin/groups"],
   ["orders:read", "/admin/orders"],
   ["content:manage", "/admin/cms"],
   ["tests:manage", "/admin/exam"],

@@ -96,7 +96,7 @@ e-avto-test/
 
 ## 4. Rollar va ruxsatlar
 
-Rollar (`Role` enum): `USER` (o‘quvchi), `TEACHER`, `MODERATOR`, `FINANCE`, `ADMIN`, `SUPERADMIN`.
+Rollar (`Role` enum): `USER` (o‘quvchi), `TEACHER`, `MODERATOR`, `FINANCE`, `MANAGER`, `ADMIN`, `SUPERADMIN`.
 Ruxsatlar kodda statik matritsa (`backend/src/lib/permissions.ts`) va **har so‘rovda serverda** tekshiriladi
 (`requirePermission` / `requireAnyPermission`). Menyuni yashirish himoya hisoblanmaydi.
 
@@ -106,6 +106,7 @@ Ruxsatlar kodda statik matritsa (`backend/src/lib/permissions.ts`) va **har so�
 | TEACHER | `teaching:access`, `attendance:mark` |
 | MODERATOR | `admin:access`, `content:manage`, `tests:manage` |
 | FINANCE | `admin:access`, `orders:read`, `payments:manage`, `reports:read` |
+| MANAGER | `admin:access`, `users:read`, `groups:manage`, `schedule:manage`, `orders:read` (qabulxona) |
 | ADMIN | kontent, foydalanuvchi, katalog, guruh/jadval, davomat, media, hisobot, audit, sozlamalar |
 | SUPERADMIN | ADMIN + `roles:manage`, `payments:manage` |
 

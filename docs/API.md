@@ -35,22 +35,38 @@ Xato kodlari: `400` noto'g'ri so'rov · `401` kirilmagan / token eskirgan · `40
 
 ### Rollar va ruxsatlar
 
-| Ruxsat | USER | TEACHER | MODERATOR | FINANCE | ADMIN | SUPERADMIN |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `admin:access` | | | ✅ | ✅ | ✅ | ✅ |
-| `users:read`, `users:manage` | | | | | ✅ | ✅ |
-| `roles:manage` | | | | | | ✅ |
-| `content:manage` | | | ✅ | | ✅ | ✅ |
-| `catalog:manage` | | | | | ✅ | ✅ |
-| `tests:manage` | | | ✅ | | ✅ | ✅ |
-| `orders:read` | | | | ✅ | ✅ | ✅ |
-| `payments:manage` | | | | ✅ | | ✅ |
-| `groups:manage`, `schedule:manage` | | | | | ✅ | ✅ |
-| `teaching:access`, `attendance:mark` | | ✅ | | | ✅ | ✅ |
-| `attendance:edit` | | | | | ✅ | ✅ |
-| `media:manage` | | | | | ✅ | ✅ |
-| `reports:read` | | | | ✅ | ✅ | ✅ |
-| `audit:read`, `settings:manage` | | | | | ✅ | ✅ |
+| Ruxsat | USER | TEACHER | MODERATOR | FINANCE | MANAGER | ADMIN | SUPERADMIN |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `admin:access` | | | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `users:read` | | | | | ✅ | ✅ | ✅ |
+| `users:manage` | | | | | | ✅ | ✅ |
+| `roles:manage` | | | | | | | ✅ |
+| `content:manage` | | | ✅ | | | ✅ | ✅ |
+| `catalog:manage` | | | | | | ✅ | ✅ |
+| `tests:manage` | | | ✅ | | | ✅ | ✅ |
+| `orders:read` | | | | ✅ | ✅ | ✅ | ✅ |
+| `payments:manage` | | | | ✅ | | | ✅ |
+| `groups:manage`, `schedule:manage` | | | | | ✅ | ✅ | ✅ |
+| `teaching:access`, `attendance:mark` | | ✅ | | | | ✅ | ✅ |
+| `attendance:edit` | | | | | | ✅ | ✅ |
+| `media:manage` | | | | | | ✅ | ✅ |
+| `reports:read` | | | | ✅ | | ✅ | ✅ |
+| `audit:read`, `settings:manage` | | | | | | ✅ | ✅ |
+
+`MANAGER` — qabulxona/operator: o'quvchini guruhga yozadi, dars jadvalini tuzadi, buyurtmalarni ko'radi.
+
+### Hisob raqamlari
+
+| Maydon | Qachon beriladi | Ko'rinishi |
+|---|---|---|
+| `userNumber` | Ro'yxatdan o'tishda, har bir hisobga | `user0001`, `user0002`, … |
+| `studentNumber` | **Birinchi kurs to'langanda** (to'lov provayderi tasdiqlaganda) — `userNumber` bilan **bir xil raqam** | `user0002` → `student0002` |
+
+Raqam odamniki bo'lib qoladi, faqat old qo'shimchasi o'zgaradi; shuning uchun studentlar raqami ketma-ket emas (masalan, `student0002`, `student0034`).
+Kurs muddati tugasa ham `studentNumber` saqlanadi, qayta sotib olishda o'zgarmaydi.
+Raqamda chegara yo'q: kamida 4 xona, `user9999` dan keyin `user10000` … `user99999`, keyin `user100000` va hokazo (hisoblagich — bazadagi sequence).
+Baza qoidasi `users_studentNumber_is_userNumber` boshqa raqam yozishga yo'l qo'ymaydi.
+`studentNumber` yo'q = kurs sotib olmagan. Saytda ko'rinadigan ID: `studentNumber` bo'lsa `student####`, aks holda `user####`.
 
 ### Rate limit (cheklovlar)
 
@@ -81,7 +97,7 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | POST | `/refresh` | cookie + XHR | — | yangi `token` (refresh aylantiriladi) |
 | POST | `/logout` | cookie + XHR | — | sessiya tugatiladi |
 | POST | `/logout-all` | 🔑 | — | barcha qurilmalardan chiqish |
-| GET | `/me` | 🔑 | — | joriy `user` (rol, `studentNumber`, `hasPassword`, `twoFactorEnabled`) |
+| GET | `/me` | 🔑 | — | joriy `user` (rol, `userNumber`, `studentNumber?`, `hasPassword`, `twoFactorEnabled`) — qarang: «Hisob raqamlari» |
 | POST | `/complete-registration` | 🔑 | `name` (ism va familiya), `phone`, `password` | Telegram orqali kirganning 2-bosqichi |
 | PUT | `/password` | 🔑 | `currentPassword`, `newPassword` | parol almashadi, boshqa sessiyalar tugaydi |
 | POST | `/forgot-password` | 🌐 | `email` | ⚠️ email asosida (SMTP sozlanmagan) |
@@ -170,7 +186,10 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | Metod | Yo'l | Kim | Tavsif |
 |---|---|---|---|
 | POST | `/api/media/:kind/:id/access` | 🔑 | Yopiq video/fayl uchun vaqtinchalik imzolangan havola |
-| GET | `/api/media/stream/:token` | imzo | Video oqimi |
+| GET | `/api/media/stream/:token` | imzo | Video oqimi (bitta MP4 fayl, `Range` bilan) |
+| GET | `/api/media/hls/:token/master.m3u8`, `…/<720p>/index.m3u8`, `…/<720p>/seg_<n>.ts`, `…/poster.jpg` | imzo yo'lda | **Moslashuvchan video (HLS, YouTube kabi)**: 1080p/720p/480p/360p, 4 soniyalik bo'laklar. `access` javobi: `{ type: "hls", url, poster }`. Pleylistlarda hisob va kursga kirish qayta tekshiriladi; havola 4 soat (`MEDIA_HLS_TTL_SECONDS`) |
+
+> Darsga video qo'shish (HEVC/H.265 ham bo'ladi — H.264 ga o'giriladi): `cd backend && npm run media:import -- --lesson <lessonId> --file video.mp4 [--title "1-dars"]` (ffmpeg kerak).
 | GET | `/api/images/:name` | 🌐 | Admin yuklagan rasm |
 
 ## 10. CMS (ochiq)
@@ -185,16 +204,22 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | GET | `/api/site-settings` | 🌐 | → sayt nomi, telefon, manzil, `branches[]`, `telegramBot` … |
 | POST | `/api/contact` | 🌐 | `name`, `contact` (telefon), `message` (10+), `website` (honeypot — bo'sh). Botga kirgan adminlarga darhol yuboriladi |
 
-## 11. O'qituvchi (guruh, jadval, davomat) — 🛡 `teaching:access`
+## 11. O'qituvchi (guruh, jadval, davomat) — 🛡 `teaching:access` yoki `groups:manage`
+
+Davomatni belgilash/yakunlash uchun alohida `attendance:mark` kerak (MANAGER'da yo'q).
 
 | Metod | Yo'l | Yuboriladi / so'rov |
 |---|---|---|
-| GET | `/api/groups` | — o'z guruhlari (admin — hammasi) |
+| GET | `/api/groups` | — o'z guruhlari (`groups:manage` — hammasi) |
 | GET | `/api/groups/:id` | — guruh va a'zolar |
 | GET | `/api/groups/:id/slots` | — darslar |
 | GET | `/api/groups/:id/attendance-report` | — davomat hisoboti |
 | GET | `/api/groups/:id/attendance-report.csv` | davomat hisoboti CSV fayl sifatida |
 | GET | `/api/teacher/schedule` | `?from&to` |
+| POST | `/api/groups` | 🛡 `groups:own` (o'qituvchi — o'zi uchun) yoki `groups:manage`: `name`, `courseId`, `startDate`, `endDate?`, `capacity?`, `days?` (`ODD` toq: Du/Chor/Ju \| `EVEN` juft: Se/Pay/Sha), `startTime?` (`HH:MM`, Toshkent), `lessonMinutes?` (30–240, standart 90), `room?` → guruh + `lessonsCreated` (darslar avtomatik) |
+| PUT · DELETE | `/api/groups/:id` | o'z guruhi: nom, sanalar, ritm (o'zgarsa kelajakdagi davomatsiz darslar yangi ritm bilan almashtiriladi, o'quvchilarga xabar) · arxivlash |
+| POST · DELETE | `/api/groups/:id/members`, `/members/:studentId` | o'z guruhiga o'quvchi qo'shish / chiqarish |
+| GET | `/api/teacher/students` | `?search=` ism, telefon yoki `user0001`/`student0001` → 10 tagacha faol o'quvchi |
 | PATCH | `/api/slots/:id` | `topic?`, `room?`, `onlineUrl?` (https), `status?` (`PLANNED`\|`DONE`\|`CANCELLED`) |
 | GET | `/api/slots/:id/attendance` | — ro'yxat |
 | PUT | `/api/slots/:id/attendance` | `records[{ studentId, status: PRESENT\|ABSENT\|LATE\|EXCUSED\|ONLINE, note? }]`, `reason?` (saqlanganni o'zgartirishda majburiy) |
@@ -206,14 +231,14 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 
 | Metod | Yo'l | 🛡 | Yuboriladi / so'rov |
 |---|---|---|---|
-| GET | `/users` | `users:manage` | `?page&limit&search&role` |
+| GET | `/users` | `users:manage` yoki `users:read` | `?page&limit&search&role&kind=student\|user` — `search`: ism, email, telefon yoki `student0001`/`user0001`; javobda `userNumber`, `studentNumber`, `phone` |
 | PATCH | `/users/:id/role` | `users:manage` (+ ADMIN/SUPERADMIN uchun `roles:manage`) | `{ role }` |
 | PATCH | `/users/:id/status` | `users:manage` | `{ isActive }` |
 | DELETE | `/users/:id/two-factor` | `users:manage` | 2FA ni tiklash |
-| GET | `/statistics` | `users:manage` | umumiy statistika |
-| GET | `/courses` | katalog/test | |
+| GET | `/statistics` | `users:manage` | umumiy statistika (`totalUsers`, `totalStudents` — kurs sotib olganlar, …) |
+| GET | `/courses` | katalog/test/guruh | |
 | POST · PUT `/:id` · DELETE `/:id` | `/courses` | `catalog:manage` | `title`, `description`, `thumbnail?`, `level?`, `order?`, `isPublished?`, `categoryId?`, `studyPeriod?`, `section?` (`MAIN`\|`COMBINED`\|`EXTRA`), `price?` |
-| GET | `/lessons` | katalog/test | `?courseId` |
+| GET | `/lessons` | katalog/test/guruh | `?courseId` |
 | POST · PUT `/:id` · DELETE `/:id` | `/lessons` | `catalog:manage` | `courseId`, `title`, `description?`, `content?` (HTML ≤50 000), `videoUrl?`, `thumbnail?`, `duration?` (soniya), `order?`, `isPublished?` |
 | GET | `/questions` | `tests:manage` | `?page&limit&search` |
 | POST · PUT `/:id` · DELETE `/:id` | `/questions` | `tests:manage` | `courseId?`, `lessonId?`, `text`, `imageUrl?`, `options[2–8]`, `correctIndex`, `explanation?`, `difficulty?` (`EASY`\|`MEDIUM`\|`HARD`), `order?`, `isPublished?` |
@@ -249,7 +274,7 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 
 | Metod | Yo'l | Yuboriladi |
 |---|---|---|
-| POST | `/` | `name`, `courseId`, `teacherId`, `startDate`, `endDate?`, `capacity` (1–200) |
+| POST | `/` | `name`, `courseId`, `teacherId`, `startDate`, `endDate?`, `capacity` (1–200), `days?`, `startTime?`, `lessonMinutes?`, `room?` (yuqoridagi kabi, darslar avtomatik) |
 | PUT · DELETE | `/:id` | (DELETE — arxivlash) |
 | POST | `/:id/members` | `{ studentId }` |
 | DELETE | `/:id/members/:studentId` | |
