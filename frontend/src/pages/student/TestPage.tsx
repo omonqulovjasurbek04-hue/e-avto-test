@@ -128,7 +128,7 @@ export default function TestPage() {
         </div>
       </div>
 
-      <div className="mt-5 min-w-0">
+      <div className="test-question-area mt-5 min-w-0">
         {test.currentQuestion && (
           <QuestionCard
             index={test.currentIndex}
@@ -142,6 +142,7 @@ export default function TestPage() {
             showPosition={false}
             splitMedia
             textScale={textScale}
+            fillHeight
           />
         )}
       </div>

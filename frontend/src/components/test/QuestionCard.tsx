@@ -14,6 +14,7 @@ interface QuestionCardProps {
   showPosition?: boolean;
   splitMedia?: boolean;
   textScale?: number;
+  fillHeight?: boolean;
 }
 
 export default function QuestionCard({
@@ -29,6 +30,7 @@ export default function QuestionCard({
   showPosition = true,
   splitMedia = false,
   textScale = 0,
+  fillHeight = false,
 }: QuestionCardProps) {
   const isVideo = Boolean(imageUrl && /\.(mp4|webm|ogg|mov)(?:$|[?#])/i.test(imageUrl));
   const scale = Math.min(2, Math.max(-1, textScale));
@@ -36,7 +38,7 @@ export default function QuestionCard({
   const optionFontSize = `${14 + scale * 2}px`;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+    <div className={cn("rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6", fillHeight && "test-question-card h-full")}>
       {showPosition && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
@@ -45,7 +47,7 @@ export default function QuestionCard({
         </div>
       )}
 
-      <div className={cn(splitMedia && "grid min-w-0 gap-5 lg:grid-cols-2 lg:gap-8")}>
+      <div className={cn(splitMedia && "grid min-w-0 gap-5 lg:grid-cols-2 lg:gap-8", fillHeight && "h-full")}>
         <div className="min-w-0">
           <h3 style={{ fontSize: questionFontSize }} className="break-words font-semibold leading-7 text-slate-800 dark:text-slate-100">
             {text}
