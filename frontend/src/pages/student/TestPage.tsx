@@ -66,7 +66,6 @@ export default function TestPage() {
             max={test.questions.length}
             className="min-w-0 w-full"
             showValueLabel
-            label={t("testPage.progress")}
           />
         </div>
         <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-2 lg:col-start-3">
@@ -111,13 +110,8 @@ export default function TestPage() {
         </div>
 
         <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-3">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("testPage.questions")}</h3>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-brand-600" />{t("testPage.current")}</span>
-              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />{t("testPage.answered")}</span>
-              <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full border border-slate-300 dark:border-slate-600" />{t("testPage.unanswered")}</span>
-            </div>
           </div>
           <QuestionNavigator
             total={test.questions.length}
