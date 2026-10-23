@@ -56,7 +56,7 @@ export default function TestPage() {
 
   return (
     <div className="container-page max-w-[1440px] py-6 sm:py-8">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 lg:grid-cols-[minmax(180px,0.8fr)_minmax(320px,1.6fr)_auto]">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 lg:grid-cols-[max-content_minmax(0,1fr)_auto]">
         <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
           {t("testPage.question", { current: test.currentIndex + 1, total: test.questions.length })}
         </span>
