@@ -124,6 +124,7 @@ export default function TestPage() {
             onSelect={(i) => test.setAnswer(test.currentQuestion!.id, i)}
             disabled={test.status !== "active"}
             showPosition={false}
+            splitMedia
           />
         )}
       </div>
