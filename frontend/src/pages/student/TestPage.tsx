@@ -60,7 +60,7 @@ export default function TestPage() {
         <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
           {t("testPage.question", { current: test.currentIndex + 1, total: test.questions.length })}
         </span>
-        <div className="col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">
+        <div className="relative col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">
           <ProgressBar
             value={test.answeredCount}
             max={test.questions.length}
@@ -68,11 +68,11 @@ export default function TestPage() {
             showValueLabel
             label=""
           />
-        </div>
-        <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-2 lg:col-start-3">
-          <div className="shrink-0">
+          <div className="absolute left-1/2 top-[calc(100%-0.3125rem)] z-10 -translate-x-1/2 -translate-y-1/2">
             <TestTimer seconds={test.timeLeft} />
           </div>
+        </div>
+        <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end lg:col-start-3">
           <Button
             className="shrink-0 px-3 sm:px-4"
             variant="success"
