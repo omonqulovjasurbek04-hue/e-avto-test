@@ -475,6 +475,9 @@
   },
   "testPage": {
     "question": "Савол {{current}} / {{total}}",
+    "questions": "Саволлар",
+    "progress": "Тест жараёни",
+    "current": "Жорий савол",
     "timeLeft": "Қолган вақт",
     "finish": "Тугатиш",
     "previous": "Олдинги",

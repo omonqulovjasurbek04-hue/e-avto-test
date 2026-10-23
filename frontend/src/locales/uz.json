@@ -475,6 +475,9 @@
   },
   "testPage": {
     "question": "Savol {{current}} / {{total}}",
+    "questions": "Savollar",
+    "progress": "Test jarayoni",
+    "current": "Hozirgi savol",
     "timeLeft": "Qolgan vaqt",
     "finish": "Tugatish",
     "previous": "Oldingi",

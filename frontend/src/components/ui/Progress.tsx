@@ -7,6 +7,7 @@ export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "brand" | "success" | "warning" | "danger";
   size?: "sm" | "md" | "lg";
   showValueLabel?: boolean;
+  label?: string;
 }
 
 export const Progress: React.FC<ProgressProps> = ({
@@ -15,6 +16,7 @@ export const Progress: React.FC<ProgressProps> = ({
   variant = "brand",
   size = "md",
   showValueLabel = false,
+  label = "Jarayon",
   className,
   ...props
 }) => {
@@ -37,7 +39,7 @@ export const Progress: React.FC<ProgressProps> = ({
     <div className={cn("w-full space-y-1", className)} {...props}>
       {showValueLabel && (
         <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <span>Jarayon</span>
+          <span>{label}</span>
           <span>{percentage}%</span>
         </div>
       )}

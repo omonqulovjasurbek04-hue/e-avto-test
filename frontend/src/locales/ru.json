@@ -475,6 +475,9 @@
   },
   "testPage": {
     "question": "Вопрос {{current}} / {{total}}",
+    "questions": "Вопросы",
+    "progress": "Ход теста",
+    "current": "Текущий вопрос",
     "timeLeft": "Оставшееся время",
     "finish": "Завершить",
     "previous": "Предыдущий",
