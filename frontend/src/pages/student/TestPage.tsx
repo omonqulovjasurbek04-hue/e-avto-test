@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, Maximize, Minimize } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTest } from "@/hooks/useTest";
 import { useStudyTimer } from "@/hooks/useStudyTimer";
@@ -19,6 +19,23 @@ export default function TestPage() {
   const { testId } = useParams<{ testId: string }>();
   const test = useTest();
   const navRef = useRef(false);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === pageRef.current);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await pageRef.current?.requestFullscreen();
+    } catch {
+      toast.error("To‘liq ekran rejimini yoqib bo‘lmadi");
+    }
+  };
 
   // The attempt is created on the tests/lesson screens; opening a stale URL goes back to the hub.
   const hasActiveTest = test.status === "active" && test.id === testId;
@@ -55,7 +72,7 @@ export default function TestPage() {
   }
 
   return (
-    <div className="container-page max-w-[1440px] py-6 sm:py-8">
+    <div ref={pageRef} className="container-page max-w-[1440px] py-6 sm:py-8 fullscreen:!h-screen fullscreen:!max-w-none fullscreen:overflow-y-auto fullscreen:bg-slate-50 fullscreen:dark:bg-slate-950">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 lg:grid-cols-[max-content_minmax(0,1fr)_auto]">
         <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
           {t("testPage.question", { current: test.currentIndex + 1, total: test.questions.length })}
@@ -72,14 +89,25 @@ export default function TestPage() {
             <TestTimer seconds={test.timeLeft} />
           </div>
         </div>
-        <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end lg:col-start-3">
+        <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-2 lg:col-start-3">
           <Button
-            className="shrink-0 px-3 sm:px-4"
+            className="h-10 w-10 shrink-0 !p-0"
             variant="success"
             loading={test.finishing}
             onClick={handleFinish}
+            aria-label={t("testPage.finish")}
+            title={t("testPage.finish")}
           >
-            <Flag className="h-4 w-4" /> {t("testPage.finish")}
+            <Flag className="h-5 w-5" />
+          </Button>
+          <Button
+            className="h-10 w-10 shrink-0 !p-0"
+            variant="outline"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "To‘liq ekrandan chiqish" : "To‘liq ekran"}
+            title={isFullscreen ? "To‘liq ekrandan chiqish" : "To‘liq ekran"}
+          >
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
           </Button>
         </div>
       </div>
