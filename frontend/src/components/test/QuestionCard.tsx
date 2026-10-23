@@ -11,6 +11,7 @@ interface QuestionCardProps {
   onSelect?: (index: number) => void;
   disabled?: boolean;
   review?: { correctIndex: number };
+  showPosition?: boolean;
 }
 
 export default function QuestionCard({
@@ -23,14 +24,17 @@ export default function QuestionCard({
   onSelect,
   disabled,
   review,
+  showPosition = true,
 }: QuestionCardProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
-          Savol {index + 1} / {total}
-        </span>
-      </div>
+      {showPosition && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            Savol {index + 1} / {total}
+          </span>
+        </div>
+      )}
 
       <h3 className="break-words text-base font-semibold leading-7 text-slate-800 dark:text-slate-100 sm:text-lg">
         {text}
