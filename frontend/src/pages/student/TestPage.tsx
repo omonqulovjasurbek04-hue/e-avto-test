@@ -21,6 +21,7 @@ export default function TestPage() {
   const navRef = useRef(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [textScale, setTextScale] = useState(0);
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === pageRef.current);
@@ -72,11 +73,26 @@ export default function TestPage() {
   }
 
   return (
-    <div ref={pageRef} className="container-page max-w-[1440px] py-6 sm:py-8 fullscreen:!h-screen fullscreen:!max-w-none fullscreen:overflow-y-auto fullscreen:bg-slate-50 fullscreen:dark:bg-slate-950">
+    <div ref={pageRef} className="test-page container-page max-w-[1440px] py-6 sm:py-8">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 lg:grid-cols-[max-content_minmax(0,1fr)_auto]">
-        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-          {t("testPage.question", { current: test.currentIndex + 1, total: test.questions.length })}
-        </span>
+        <div className="flex items-center gap-2" aria-label="Matn o‘lchami">
+          <Button
+            className="h-10 min-w-11 !px-2 text-base font-bold"
+            variant="outline"
+            onClick={() => setTextScale((scale) => Math.max(-1, scale - 1))}
+            disabled={textScale <= -1}
+            aria-label="Matnni kichraytirish"
+            title="Matnni kichraytirish"
+          >A−</Button>
+          <Button
+            className="h-10 min-w-11 !px-2 text-base font-bold"
+            variant="outline"
+            onClick={() => setTextScale((scale) => Math.min(2, scale + 1))}
+            disabled={textScale >= 2}
+            aria-label="Matnni kattalashtirish"
+            title="Matnni kattalashtirish"
+          >A+</Button>
+        </div>
         <div className="relative col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">
           <ProgressBar
             value={test.answeredCount}
@@ -125,25 +141,26 @@ export default function TestPage() {
             disabled={test.status !== "active"}
             showPosition={false}
             splitMedia
+            textScale={textScale}
           />
         )}
       </div>
 
       <div className="mt-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-          <Button className="shrink-0 self-start lg:mt-1" variant="outline" onClick={test.prev} disabled={test.currentIndex === 0}>
-            <ChevronLeft className="h-4 w-4" /> {t("testPage.previous")}
+        <div className="flex items-center justify-between gap-3">
+          <Button className="h-11 w-11 shrink-0 !p-0" variant="outline" onClick={test.prev} disabled={test.currentIndex === 0} aria-label={t("testPage.previous")} title={t("testPage.previous")}>
+            <ChevronLeft className="h-6 w-6" />
           </Button>
           <QuestionNavigator
-            className="min-w-0 flex-1"
+            className="min-w-0 w-full max-w-4xl flex-1"
             total={test.questions.length}
             current={test.currentIndex}
             answered={test.questions.map((q) => (test.answers[q.id] ?? -1) >= 0)}
             marked={test.questions.map((q) => test.marked.includes(q.id))}
             onSelect={test.goTo}
           />
-          <Button className="shrink-0 self-end lg:mt-1" variant="outline" onClick={test.next} disabled={test.currentIndex === test.questions.length - 1}>
-            {t("testPage.next")} <ChevronRight className="h-4 w-4" />
+          <Button className="h-11 w-11 shrink-0 !p-0" variant="outline" onClick={test.next} disabled={test.currentIndex === test.questions.length - 1} aria-label={t("testPage.next")} title={t("testPage.next")}>
+            <ChevronRight className="h-6 w-6" />
           </Button>
         </div>
       </div>
