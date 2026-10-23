@@ -1,6 +1,6 @@
 # Bepul serverga joylash — Render + Neon Object Storage ($0)
 
-Hammasi **0 dollar**, karta shart emas. `main`ga har push → GitHub CI testlari → o'tsa, Render o'zi yangilaydi.
+Hammasi **0 dollar**, karta shart emas. `main`ga har push → GitHub CI testlari → o'tsa, Render o'zi yangilaydi. Batafsil ketma-ketlik va qayta ishlatish prompti: [GitHub → Render deploy yo'riqnomasi](GITHUB_RENDER_DEPLOY_UZ.md).
 
 | Qism | Xizmat | Bepul cheklov (2026-10-22 holati) |
 |---|---|---|
