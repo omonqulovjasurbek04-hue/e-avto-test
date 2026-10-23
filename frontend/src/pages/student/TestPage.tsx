@@ -66,6 +66,7 @@ export default function TestPage() {
             max={test.questions.length}
             className="min-w-0 w-full"
             showValueLabel
+            label=""
           />
         </div>
         <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-2 lg:col-start-3">
@@ -100,26 +101,21 @@ export default function TestPage() {
       </div>
 
       <div className="mt-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <Button variant="outline" onClick={test.prev} disabled={test.currentIndex === 0}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          <Button className="shrink-0 self-start lg:mt-1" variant="outline" onClick={test.prev} disabled={test.currentIndex === 0}>
             <ChevronLeft className="h-4 w-4" /> {t("testPage.previous")}
           </Button>
-          <Button variant="outline" onClick={test.next} disabled={test.currentIndex === test.questions.length - 1}>
-            {t("testPage.next")} <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
-          <div className="mb-3">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("testPage.questions")}</h3>
-          </div>
           <QuestionNavigator
+            className="min-w-0 flex-1"
             total={test.questions.length}
             current={test.currentIndex}
             answered={test.questions.map((q) => (test.answers[q.id] ?? -1) >= 0)}
             marked={test.questions.map((q) => test.marked.includes(q.id))}
             onSelect={test.goTo}
           />
+          <Button className="shrink-0 self-end lg:mt-1" variant="outline" onClick={test.next} disabled={test.currentIndex === test.questions.length - 1}>
+            {t("testPage.next")} <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import type { AuthResponse, LoginResult, User } from "../types/user";
 import { authService } from "../services/auth.service";
 import { env } from "../config/env";
 import { setSessionLostHandler } from "../services/api";
-import { endSession, hadSession, refreshSession, setAccessToken } from "../services/session";
+import { endSession, refreshSession, setAccessToken } from "../services/session";
 
 interface AuthState {
   user: User | null;
@@ -43,11 +43,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
     setSessionLostHandler(() => set({ user: null, isAuthenticated: false }));
-    if (!hadSession()) {
-      set({ loading: false });
-      return;
-    }
-    // The access token is not stored anywhere, so a reload starts with a silent refresh.
+    // Always try the httpOnly refresh cookie on startup. The local-storage hint is only a UI hint;
+    // it may be absent or unavailable even while the browser still has a valid refresh cookie.
     const session = await refreshSession();
     set({ user: session?.user ?? null, isAuthenticated: !!session, loading: false });
   },
