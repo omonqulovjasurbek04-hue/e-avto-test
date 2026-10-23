@@ -64,28 +64,27 @@ services:
       # Payments stay off until a real provider (Payme/Click) is connected.
       - key: PAYMENT_PROVIDER
         value: ""
-      # Lesson videos and files live in Cloudflare R2 (free: 10 GB, no egress fees), never on Render's disk
+      # Lesson videos and files live in Neon's private S3-compatible Object Storage (5 GB on Free), never on Render's disk
       # (the free plan has none that survives a deploy). The browser downloads video segments straight from
-      # R2 through short-lived signed links, so video traffic does not count against Render.
-      # Leave STORAGE_DRIVER empty until the R2 bucket exists; then: s3 + the five values below. docs/DEPLOY_FREE.md
+      # Neon through short-lived signed links, so video traffic does not count against Render.
       - key: STORAGE_DRIVER
-        sync: false
+        value: s3
       - key: S3_BUCKET
-        sync: false
-      # https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+        value: eavto-media
+      # Neon project + branch scoped endpoint, eu-central-1
       - key: S3_ENDPOINT
-        sync: false
+        value: https://br-mute-field-b99ij4pe.storage.c-7.eu-central-1.aws.neon.tech
       - key: S3_ACCESS_KEY_ID
         sync: false
       - key: S3_SECRET_ACCESS_KEY
         sync: false
       - key: S3_REGION
-        value: auto
+        value: eu-central-1
       - key: S3_FORCE_PATH_STYLE
         value: "true"
-      # "true" once R2 is set up (admin uploads from the panel). Without R2 keep it "false".
+      # Neon Object Storage is configured; private video and file uploads use the admin panel.
       - key: MEDIA_UPLOAD_ENABLED
-        sync: false
+        value: "true"
 
   - type: web
     name: eavto-test-uz
@@ -99,7 +98,7 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: VITE_API_URL
-        value: https://eavto-test-uz-ocux.onrender.com/api
+        value: https://eavto-test-uz-api-rgw9.onrender.com/api
     routes:
       - type: rewrite
         source: /api/*
@@ -117,7 +116,7 @@ services:
     headers:
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; worker-src 'self' blob:; connect-src 'self' https://*.r2.cloudflarestorage.com; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; worker-src 'self' blob:; connect-src 'self' https://eavto-test-uz-api-rgw9.onrender.com https://br-mute-field-b99ij4pe.storage.c-7.eu-central-1.aws.neon.tech; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
       - path: /*
         name: X-Content-Type-Options
         value: nosniff

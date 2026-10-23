@@ -1,4 +1,4 @@
-# Bepul serverga joylash — Render + Neon + Cloudflare R2 ($0)
+# Bepul serverga joylash — Render + Neon Object Storage ($0)
 
 Hammasi **0 dollar**, karta shart emas. `main`ga har push → GitHub CI testlari → o'tsa, Render o'zi yangilaydi.
 
@@ -7,7 +7,7 @@ Hammasi **0 dollar**, karta shart emas. `main`ga har push → GitHub CI testlari
 | Sayt (React) | Render Static Site — `https://eavto-test-uz.onrender.com` | Uxlamaydi |
 | API (Express) | Render Free Web Service, Frankfurt | 15 daqiqa so'rov bo'lmasa uxlaydi, uyg'onishi ~1 daqiqa; oyiga 750 soat; disk deployda tozalanadi |
 | Baza (PostgreSQL) | **Neon Free**, Frankfurt | 1 GB, oyiga 100 CU-soat, muddatsiz; 5 daqiqa ishlatilmasa uxlaydi |
-| Video va fayllar | **Cloudflare R2 Free** | 10 GB saqlash, oyiga 1 mln yozish / 10 mln o'qish; chiqish trafigi bepul |
+| Video va fayllar | **Neon Object Storage Free** | Har Neon loyihasiga 5 GB S3-compatible object storage |
 
 > **Kafolat yo'q.** Bepul tariflar limitlar ichida $0 turadi, lekin uzluksiz ishlash yoki SLA bermaydi; Render bepul
 > web servisni ishlab turgan biznes uchun tavsiya qilmaydi. O'quvchilar doim kirishi kerak bo'lsa — pulli tarifga
@@ -21,11 +21,11 @@ Hammasi **0 dollar**, karta shart emas. `main`ga har push → GitHub CI testlari
 Brauzer ──► eavto-test-uz.onrender.com (statik sayt)
    │  /api/* ──► eavto-test-uz-api.onrender.com (API: kirish huquqini tekshiradi)
    │                 └─► Neon (baza)
-   └──► R2 (video bo'laklari, poster, fayllar) — API bergan muddatli imzolangan havola bilan, to'g'ridan-to'g'ri
+   └──► Neon Object Storage (video/fayl) — API bergan muddatli imzolangan havola bilan, to'g'ridan-to'g'ri
 ```
 
-API faqat kichik pleylist (bir necha KB) beradi va har bir 4 soniyalik video bo'lagini R2'ning **muddatli imzolangan
-havolasi**ga almashtiradi. Og'ir trafik R2'dan keladi (bepul), Render limitiga tushmaydi. Kurs sotib olmaganga
+API faqat kichik pleylist (bir necha KB) beradi va har bir 4 soniyalik video bo'lagini Neon Object Storage'ning **muddatli imzolangan
+havolasi**ga almashtiradi. Og'ir trafik Neon Object Storage'dan keladi, Render API limitiga tushmaydi. Kurs sotib olmaganga
 havola berilmaydi; havola 4 soatda eskiradi (`MEDIA_HLS_TTL_SECONDS`).
 
 ## 1. Neon — baza
@@ -35,26 +35,13 @@ havola berilmaydi; havola 4 soatda eskiradi (`MEDIA_HLS_TTL_SECONDS`).
 3. Loyiha → **Connect** → **Connection pooling o'chiq** → connection string'ni nusxa oling
    (`postgresql://...@ep-....eu-central-1.aws.neon.tech/neondb?sslmode=require`). Bu — parolli **sir**: faqat Render'ga qo'yasiz.
 
-## 2. Cloudflare R2 — video ombori
+## 2. Neon Object Storage — video ombori
 
-1. <https://dash.cloudflare.com> → **R2 Object Storage** → (birinchi marta) bepul R2'ni yoqing.
-2. **Create bucket**: nomi `eavto-media`, Location: **Automatic** (yoki EU). **Public access o'chiq qoladi** — bucket private.
-3. Bucket → **Settings → CORS policy** → quyidagini qo'ying (pleyer bo'laklarni brauzerdan oladi):
-   ```json
-   [
-     {
-       "AllowedOrigins": ["https://eavto-test-uz.onrender.com"],
-       "AllowedMethods": ["GET", "HEAD"],
-       "AllowedHeaders": ["Range"],
-       "ExposeHeaders": ["Content-Length", "Content-Range"],
-       "MaxAgeSeconds": 86400
-     }
-   ]
-   ```
-   (Lokal sinov uchun `http://localhost:5173`ni ham qo'shish mumkin.)
-4. R2 → **Manage API tokens → Create API token**: ruxsat **Object Read & Write**, faqat `eavto-media` bucket'iga.
-   Sizga **Access Key ID** va **Secret Access Key** beriladi (bir marta ko'rsatiladi) — bular **sir**.
-5. R2 bosh sahifasidagi **Account ID** dan endpoint: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.
+1. Neon loyihasidagi ishlab turgan (`production`) branch → **Object storage** → **Create bucket**.
+2. `eavto-media` nom bering va **Private** tanlang. Ommaviy bucket ishlatmang.
+3. **Connect → Storage → .env** orqali S3 endpoint, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` va regionni oling.
+   Secret'ni Render maxfiy Environment qiymatiga kiriting, repoga yoki chatga yozmang.
+4. Neon Free rejasi har bir loyihaga 5 GB Object Storage beradi. Hozirgi deployda private bucket shu loyihaga bog'langan.
 
 ## 3. Render — sayt va API
 
@@ -69,11 +56,12 @@ havola berilmaydi; havola 4 soatda eskiradi (`MEDIA_HLS_TTL_SECONDS`).
    | `BOOTSTRAP_ADMIN_PASSWORD` | Kuchli parol, 10+ belgi |
    | `TELEGRAM_BOT_TOKEN` | @BotFather'dan **yangi** token (4-bo'lim) yoki bo'sh |
    | `TELEGRAM_BOT_USERNAME` | Bot nomi, `@`siz |
-   | `STORAGE_DRIVER` | `s3` (R2 tayyor bo'lsa) yoki bo'sh |
+   | `STORAGE_DRIVER` | `s3` |
    | `S3_BUCKET` | `eavto-media` |
-   | `S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
-   | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | R2 API token'idan |
-   | `MEDIA_UPLOAD_ENABLED` | `true` (R2 bilan) yoki `false` |
+   | `S3_ENDPOINT` | Neon Connect oynasidagi `AWS_ENDPOINT_URL_S3` |
+   | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Neon Storage credential'idan |
+   | `S3_REGION` | Neon `.env` dagi `AWS_REGION` |
+   | `MEDIA_UPLOAD_ENABLED` | `true` |
 
    `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, `MEDIA_SIGNING_SECRET`, `TELEGRAM_WEBHOOK_SECRET` — Render o'zi tasodifiy yaratadi.
 4. **Apply** → birinchi build 5–8 daqiqa. Logda `Catalogue ...` va `Administrator ready: +99890***67` chiqishi kerak.
@@ -85,25 +73,18 @@ Eski token avval terminal chiqishida ko'rinib qolgan, shuning uchun uni **bekor 
 @BotFather → `/mybots` → bot → **API Token → Revoke current token** → yangi token faqat Render'ning
 `TELEGRAM_BOT_TOKEN` maydoniga. Token faqat **bitta** joyda ishlasin: Render'da bo'lsa, lokal backend'ni to'xtating.
 
-## 5. Darslarga video qo'shish (HLS, YouTube kabi)
+## 5. Darslarga video yuklash
 
-Render bepul serverida ffmpeg yo'q, shuning uchun videoni **o'z kompyuteringizda** o'giring — natija to'g'ridan-to'g'ri
-R2'ga va Neon bazasiga yoziladi. `backend/` papkasida bir martalik o'zgaruvchilar bilan (sirlarni faylga yozmang):
-
-```bash
-DATABASE_URL="<Neon string>" STORAGE_DRIVER=s3 S3_BUCKET=eavto-media S3_ENDPOINT="https://<ACCOUNT_ID>.r2.cloudflarestorage.com" S3_ACCESS_KEY_ID="..." S3_SECRET_ACCESS_KEY="..." S3_FORCE_PATH_STYLE=true npm run media:import -- --lesson <darsId> --file ../darslik/1-dars.mp4 --title "1-dars"
-```
-
-Video H.264 1080p/720p/480p/360p + poster bo'lib saqlanadi. **Hajm:** 1 daqiqa video barcha sifatlari bilan ~70–80 MB;
-10 GB bepul limitga taxminan **2 soat** dars videosi sig'adi. Ko'proq kerak bo'lsa, `backend/src/lib/media/hls.ts` dagi `LADDER`dan 1080p'ni olib tashlash
-yoki R2 pulli hajmiga o'tish (GB uchun ~$0.015/oy) kerak.
+Admin hisobida `/admin/media` sahifasini oching, **Video** turini va tegishli darsni tanlang, MP4/WebM faylni belgilang. Video
+brauzerdan to'g'ridan-to'g'ri private Neon Object Storage'ga yuklanadi; Render diskida saqlanmaydi. Yangi darsliklar ham shu yo'l bilan
+admin tomondan qo'shiladi. Hozirgi Neon Free Object Storage limiti 5 GB; Neon konsolida ishlatilgan joyni kuzating.
 
 ## 6. Tekshirish
 
 - <https://eavto-test-uz.onrender.com> — sayt, kurslar.
 - <https://eavto-test-uz.onrender.com/api/health> — `{"status":"ok","database":"reachable"}` (API uxlagan bo'lsa ~1 daqiqa).
 - Admin bilan kiring → `/admin`. Keyin Render'dan `BOOTSTRAP_ADMIN_PASSWORD`ni o'chiring, 2FA yoqing.
-- Video dars: brauzer Network'ida bo'laklar `r2.cloudflarestorage.com`dan kelishi kerak.
+- Video dars: brauzer Network'ida video so'rovlari Neon Object Storage endpointidan kelishi kerak.
 
 ## 7. Kundalik ish
 
@@ -118,11 +99,11 @@ yoki R2 pulli hajmiga o'tish (GB uchun ~$0.015/oy) kerak.
 
 - **API'ni uyg'oq ushlab turmang** (har 10 daqiqada "ping" qiluvchi xizmatlar qo'ymang): API uyg'oq tursa, uning har
   5 daqiqalik fon ishlari Neon'ni ham uyg'oq ushlaydi va 100 CU-soat oy oxirigacha tugab, baza to'xtaydi.
-- Oyiga bir marta: Neon → Usage (CU-soat, GB), Cloudflare → R2 → Metrics (GB, amallar), Render → Usage (soat, trafik).
+- Oyiga bir marta: Neon → Usage (compute, database va Object Storage), Render → Usage (soat, trafik).
 - Limit yaqinlashsa: eski videolarning 1080p nusxasini o'chiring yoki pulli tarifga o'ting — bepul xizmat limitdan
   oshganda to'xtashi mumkin.
 
 ## 9. Keyinroq — o'z serveringizga ko'chish
 
 Foydalanuvchilar ko'paysa (uxlash va limitlar xalaqit bersa) VPS'ga o'tish uchun hammasi tayyor:
-`docs/DEPLOYMENT.md` (Docker + Nginx + Cloudflare + CI/CD). Neon bazasi va R2 ombori o'sha holicha qoladi.
+`docs/DEPLOYMENT.md` (Docker + Nginx + CI/CD). Neon bazasi va Object Storage o'sha holicha qoladi.
