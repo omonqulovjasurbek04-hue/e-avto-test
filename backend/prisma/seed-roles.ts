@@ -13,6 +13,8 @@ const PASSWORD = process.env.SEED_ROLE_PASSWORD || "Test1234";
 
 const ACCOUNTS: { role: Role; name: string; email: string; phone: string }[] = [
   { role: "USER", name: "Test Student", email: "student@test.local", phone: "+998900000011" },
+  // A plain user: signed up, no course bought yet (user#### number, no student number).
+  { role: "USER", name: "Test User", email: "user@test.local", phone: "+998900000017" },
   { role: "TEACHER", name: "Test Teacher", email: "teacher@test.local", phone: "+998900000012" },
   { role: "MODERATOR", name: "Test Moderator", email: "moderator@test.local", phone: "+998900000013" },
   { role: "FINANCE", name: "Test Finance", email: "finance@test.local", phone: "+998900000014" },

@@ -36,6 +36,7 @@ const Lessons = lazy(() => import("@/pages/student/Lessons"));
 const LessonDetails = lazy(() => import("@/pages/student/LessonDetails"));
 const VideoLesson = lazy(() => import("@/pages/student/VideoLesson"));
 const Tests = lazy(() => import("@/pages/student/Tests"));
+const Mistakes = lazy(() => import("@/pages/student/Mistakes"));
 const TestPage = lazy(() => import("@/pages/student/TestPage"));
 const TestResult = lazy(() => import("@/pages/student/TestResult"));
 const TestReview = lazy(() => import("@/pages/student/TestReview"));
@@ -113,6 +114,7 @@ export default function AppRoutes() {
             <Route path="/lessons/:lessonId" element={<RequireCourse><LessonDetails /></RequireCourse>} />
             <Route path="/lessons/:lessonId/video" element={<RequireCourse><VideoLesson /></RequireCourse>} />
             <Route path={ROUTES.tests} element={<RequireCourse><Tests /></RequireCourse>} />
+            <Route path="/mistakes" element={<RequireCourse><Mistakes /></RequireCourse>} />
             <Route path="/tests/:testId" element={<TestPage />} />
             <Route path="/tests/:testId/result" element={<TestResult />} />
             <Route path="/tests/:testId/review" element={<TestReview />} />

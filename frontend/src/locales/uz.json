@@ -65,7 +65,8 @@
     "teacher": "O'qituvchi",
     "menu": "Menyu",
     "privacy": "Maxfiylik siyosati",
-    "terms": "Foydalanish shartlari"
+    "terms": "Foydalanish shartlari",
+    "mistakes": "Xatolar ustida ishlash"
   },
   "home": {
     "heroTitle": "Haydovchilik testiga tayyorlang",
@@ -1515,5 +1516,15 @@
     "remove": "Chiqarish",
     "add": "Qo'shish",
     "empty": "Guruhda hali o'quvchi yo'q"
+  },
+  "mistakes": {
+    "title": "Xatolar ustida ishlash",
+    "description": "Testda xato qilgan va saqlagan savollaringizni qayta ishlab, to'g'ri javobni esda saqlab qoling.",
+    "count": "Savollar: {{count}}",
+    "howTitle": "Qanday ishlaydi",
+    "step1": "Testda xato javob bergan savolingiz avtomatik shu yerga tushadi.",
+    "step2": "Mashq qilish tugmasini bosing — shu savollar qayta beriladi.",
+    "step3": "To'g'ri javob bersangiz, savol ro'yxatdan chiqadi: demak, uni eslab qoldingiz.",
+    "noResultsDesc": "\"Testlar\" bo'limida test topshiring — natijalaringiz shu yerda chiqadi."
   }
 }
