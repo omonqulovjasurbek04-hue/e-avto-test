@@ -54,6 +54,11 @@ if (storageDriver === "s3" && (!process.env.S3_BUCKET || !process.env.S3_ACCESS_
 if (nodeEnv === "production" && !/^https:\/\/[^/\s]+\/?$/i.test(process.env.PUBLIC_API_ORIGIN ?? "")) {
   throw new Error("PUBLIC_API_ORIGIN must be the public https origin of the API in production, without a path (e.g. https://api.example.uz); used for image links");
 }
+// The username is public (https://t.me/<username> on the site), so a bot token pasted here by mistake would be published.
+const botUsername = (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
+if (botUsername && !/^[A-Za-z0-9_]{5,32}$/.test(botUsername)) {
+  throw new Error("TELEGRAM_BOT_USERNAME must be the bot's @username (letters, digits, _), not the bot token");
+}
 if (nodeEnv === "production" && process.env.METRICS_TOKEN && process.env.METRICS_TOKEN.length < 24) {
   throw new Error("METRICS_TOKEN must be at least 24 characters");
 }
