@@ -26,7 +26,9 @@ const getClient = (): RateRedis | null => {
   if (!enabled()) return null;
   if (!client) {
     const c = new Redis(env.REDIS_URL, {
-      // A request waits at most a few reconnect attempts, then fails (and the limiter lets it through).
+      // While Redis is unreachable a command fails at once instead of queueing until a reconnect
+      // (which held every rate-limited request, e.g. login, for 10+ seconds); the limiter lets it through.
+      enableOfflineQueue: false,
       maxRetriesPerRequest: 2,
       retryStrategy: (times) => Math.min(times * 500, 5000),
     });

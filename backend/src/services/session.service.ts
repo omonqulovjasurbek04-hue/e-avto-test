@@ -45,15 +45,24 @@ export const startSession = async (user: User, userAgent?: string): Promise<Sess
 const invalidSession = () => new HttpError(401, "Session expired, please sign in again");
 
 /**
+ * How long a just-rotated token is still accepted. The browser can lose the response that carried its
+ * successor (a reload or navigation while the request is in flight, a slow cold start); without this
+ * window its next refresh would look like theft and sign the user out.
+ */
+export const REUSE_GRACE_MS = 30_000;
+
+const justRotated = (usedAt: Date | null) => usedAt !== null && Date.now() - usedAt.getTime() <= REUSE_GRACE_MS;
+
+/**
  * Exchanges a refresh token for a new access token and a new refresh token (rotation).
- * A token that was already rotated or revoked is treated as stolen: the whole family is revoked,
- * so both the thief and the legitimate client must sign in again.
+ * A token that was already rotated (outside the short grace window) or revoked is treated as stolen:
+ * the whole family is revoked, so both the thief and the legitimate client must sign in again.
  */
 export const rotateSession = async (presented: string, userAgent?: string): Promise<Session & { user: User }> => {
   const record = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(presented) }, include: { user: true } });
   if (!record) throw invalidSession();
 
-  if (record.usedAt || record.revokedAt) {
+  if (record.revokedAt || (record.usedAt && !justRotated(record.usedAt))) {
     await revokeFamily(record.familyId);
     throw invalidSession();
   }
@@ -64,9 +73,12 @@ export const rotateSession = async (presented: string, userAgent?: string): Prom
   }
 
   const refreshToken = await prisma.$transaction(async (tx) => {
-    // Of two concurrent refreshes with the same token only one can claim it; the other counts as reuse.
+    // Of two concurrent refreshes with the same token only one claims it; the other is a replay inside the grace window.
     const claimed = await tx.refreshToken.updateMany({ where: { id: record.id, usedAt: null, revokedAt: null }, data: { usedAt: new Date() } });
-    if (claimed.count !== 1) return null;
+    if (claimed.count !== 1) {
+      const current = await tx.refreshToken.findUnique({ where: { id: record.id }, select: { usedAt: true, revokedAt: true } });
+      if (!current || current.revokedAt || !justRotated(current.usedAt)) return null;
+    }
     return createRefreshToken(tx, user, record.familyId, userAgent);
   });
   if (!refreshToken) {

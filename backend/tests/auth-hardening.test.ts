@@ -51,6 +51,7 @@ describe("TOTP primitives", () => {
 describe.skipIf(!enabled)("auth hardening", () => {
   let app: import("express").Application;
   let prisma: typeof import("../src/config/database").prisma;
+  let REUSE_GRACE_MS: number;
   const userIds: string[] = [];
 
   const api = () => request(app);
@@ -76,6 +77,7 @@ describe.skipIf(!enabled)("auth hardening", () => {
   beforeAll(async () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
+    ({ REUSE_GRACE_MS } = await import("../src/services/session.service"));
   });
 
   beforeEach(() => {
@@ -133,7 +135,8 @@ describe.skipIf(!enabled)("auth hardening", () => {
       const r1 = await refresh(u.cookie);
       const c2 = refreshCookie(r1)!;
 
-      // An attacker replays the original token...
+      // An attacker replays the original token after the grace window...
+      await prisma.refreshToken.updateMany({ where: { userId: u.id, usedAt: { not: null } }, data: { usedAt: new Date(Date.now() - REUSE_GRACE_MS - 1000) } });
       const replay = await refresh(u.cookie);
       expect(replay.status).toBe(401);
       expect((replay.headers["set-cookie"] as unknown as string[]).join(";")).toMatch(/eavto_rt=;/);
@@ -145,10 +148,22 @@ describe.skipIf(!enabled)("auth hardening", () => {
       expect(live).toBe(0);
     });
 
-    it("concurrent refreshes with the same token never both succeed", async () => {
+    it("a token replayed right after rotation keeps the session (the browser lost the response)", async () => {
+      const u = await register("lost");
+      const r1 = await refresh(u.cookie);
+      expect(r1.status).toBe(200);
+      // A reload aborted the request: the server rotated, the browser never stored the new cookie.
+      const retry = await refresh(u.cookie);
+      expect(retry.status).toBe(200);
+      expect((await refresh(refreshCookie(retry)!)).status).toBe(200);
+    });
+
+    it("concurrent refreshes with the same token do not end the session", async () => {
       const u = await register("race");
       const results = await Promise.all([refresh(u.cookie), refresh(u.cookie)]);
-      expect(results.filter((r) => r.status === 200).length).toBeLessThanOrEqual(1);
+      expect(results.every((r) => r.status === 200)).toBe(true);
+      const live = await prisma.refreshToken.count({ where: { userId: u.id, revokedAt: null, usedAt: null } });
+      expect(live).toBe(2);
     });
 
     it("needs the X-Requested-With header (no cross-site form posts)", async () => {
