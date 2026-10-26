@@ -6,7 +6,7 @@ import { hashPassword, comparePassword } from "../utils/password";
 import { generateTwoFactorChallenge } from "../utils/jwt";
 import { conflict, notFound, unauthorized, badRequest, forbidden, HttpError } from "../utils/errors";
 import { sendMail } from "./mail.service";
-import { revokeAllSessions, startSession, Session } from "./session.service";
+import { revokeAllSessions, startSession, Session, type ClientInfo } from "./session.service";
 import { sendVerificationEmail } from "./emailVerification.service";
 import {
   RegisterInput,
@@ -53,14 +53,14 @@ export type LoginOutcome =
  * The last step shared by every login method (password, Telegram): accounts with 2FA get a
  * short-lived challenge instead of a session.
  */
-export const completeLogin = async (user: User, userAgent?: string): Promise<LoginOutcome> => {
+export const completeLogin = async (user: User, client?: ClientInfo): Promise<LoginOutcome> => {
   if (user.totpEnabledAt && user.totpSecret) {
     return { kind: "2fa", challengeToken: generateTwoFactorChallenge(user.id, user.tokenVersion) };
   }
-  return { kind: "session", user, session: await startSession(user, userAgent) };
+  return { kind: "session", user, session: await startSession(user, client) };
 };
 
-export const register = async (input: RegisterInput, userAgent?: string) => {
+export const register = async (input: RegisterInput, client?: ClientInfo) => {
   if (input.email && (await prisma.user.findUnique({ where: { email: input.email } }))) throw conflict("Email already registered");
   if (input.phone && (await prisma.user.findUnique({ where: { phone: input.phone } }))) throw conflict("Phone number already registered");
 
@@ -76,11 +76,11 @@ export const register = async (input: RegisterInput, userAgent?: string) => {
   });
 
   const emailVerification = await sendVerificationEmail(user);
-  return { user, session: await startSession(user, userAgent), emailVerification };
+  return { user, session: await startSession(user, client), emailVerification };
 };
 
-export const login = async (input: LoginInput, userAgent?: string): Promise<LoginOutcome> =>
-  completeLogin(await checkPassword(input), userAgent);
+export const login = async (input: LoginInput, client?: ClientInfo): Promise<LoginOutcome> =>
+  completeLogin(await checkPassword(input), client);
 
 /**
  * Password check with the per-account lockout, without opening a session. Used by the site login
@@ -166,7 +166,7 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
   return toPublicUser(user);
 };
 
-export const changePassword = async (userId: string, input: ChangePasswordInput, userAgent?: string) => {
+export const changePassword = async (userId: string, input: ChangePasswordInput, client?: ClientInfo) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw notFound("User not found");
   if (!user.passwordHash) throw badRequest("This account has no password; sign in with Telegram");
@@ -181,7 +181,7 @@ export const changePassword = async (userId: string, input: ChangePasswordInput,
     await revokeAllSessions(userId, tx);
     return saved;
   });
-  return { changed: true, session: await startSession(updated, userAgent) };
+  return { changed: true, session: await startSession(updated, client) };
 };
 
 export const logoutEverywhere = async (userId: string) => {

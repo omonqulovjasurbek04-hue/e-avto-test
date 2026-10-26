@@ -1414,11 +1414,7 @@
     "regenToast": "Yangi zaxira kodlar yaratildi, eskilari bekor qilindi",
     "invalidCode": "Kod noto'g'ri",
     "wrongPassword": "Joriy parol noto'g'ri",
-    "error": "Amalni bajarib bo'lmadi",
-    "sessionsTitle": "Sessiyalar",
-    "sessionsDesc": "Barcha qurilmalardagi kirishlarni yopadi (shu qurilma ham). Keyin qaytadan kirasiz.",
-    "logoutAll": "Barcha qurilmalardan chiqish",
-    "logoutAllDone": "Barcha sessiyalar yopildi"
+    "error": "Amalni bajarib bo'lmadi"
   },
   "video": {
     "loadError": "Videoni yuklashda xatolik yuz berdi.",
@@ -1531,5 +1527,24 @@
     "step2": "Mashq qilish tugmasini bosing — shu savollar qayta beriladi.",
     "step3": "To'g'ri javob bersangiz, savol ro'yxatdan chiqadi: demak, uni eslab qoldingiz.",
     "noResultsDesc": "\"Testlar\" bo'limida test topshiring — natijalaringiz shu yerda chiqadi."
+  },
+  "devices": {
+    "title": "Ulangan qurilmalar",
+    "description": "Hisobingizga hozir kirib turgan qurilmalar. Tanimagan qurilmani darhol chiqarib yuboring.",
+    "current": "Joriy qurilma",
+    "type": "Turi",
+    "types": {
+      "desktop": "Kompyuter",
+      "mobile": "Telefon",
+      "tablet": "Planshet"
+    },
+    "ip": "IP manzil",
+    "signedInAt": "Kirgan",
+    "lastActiveAt": "Oxirgi faollik",
+    "signOut": "Qurilmani chiqarish",
+    "signedOut": "Qurilma hisobdan chiqarildi",
+    "signOutOthers": "Boshqa barcha qurilmalardan chiqish",
+    "signOutOthersConfirm": "Shu qurilmadan tashqari barcha qurilmalar hisobdan darhol chiqariladi. Davom etasizmi?",
+    "othersSignedOut": "Boshqa qurilmalar hisobdan chiqarildi"
   }
 }

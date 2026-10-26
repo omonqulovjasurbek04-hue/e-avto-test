@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,33 +9,29 @@ import {
   Moon,
   Languages,
   Shield,
-  LogOut,
   Check,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useUIStore } from "@/store/ui.store";
-import { ROUTES } from "@/constants/routes";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Tabs } from "@/components/ui/Tabs";
-import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
 import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
 import LanguageFlag from "@/components/common/LanguageFlag";
 import NotificationPreferences from "@/components/settings/NotificationPreferences";
 import SecuritySettings from "@/components/settings/SecuritySettings";
+import { ConnectedDevices } from "@/components/settings/ConnectedDevices";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
   const { theme, setTheme } = useUIStore();
   const [params] = useSearchParams();
   type Tab = "appearance" | "language" | "notifications" | "security";
-  const [tab, setTab] = useState<Tab>(params.get("tab") === "security" ? "security" : "appearance");
+  // Security is the first tab and opens by default; ?tab=<id> opens another one.
+  const [tab, setTab] = useState<Tab>((["appearance", "language", "notifications"] as Tab[]).find((id) => id === params.get("tab")) ?? "security");
 
   const passwordSchema = z
     .object({
@@ -70,16 +66,11 @@ export default function Settings() {
     }
   };
 
-  const handleLogout = () => {
-    void logout();
-    navigate(ROUTES.home);
-  };
-
   const tabs = [
+    { id: "security", label: t("security.tab") },
     { id: "appearance", label: t("settings.appearance") },
     { id: "language", label: t("settings.language") },
     { id: "notifications", label: t("settings.notifications") },
-    { id: "security", label: t("security.tab") },
   ];
 
   return (
@@ -189,7 +180,9 @@ export default function Settings() {
 
       {tab === "security" && (
         <div className="space-y-6">
-        <Card className="rounded-3xl border border-slate-200 dark:border-slate-800">
+        {/* One card: password on the left, connected devices on the right, a line between them. */}
+        <Card className="grid overflow-hidden rounded-3xl border border-slate-200 lg:grid-cols-2 lg:divide-x lg:divide-slate-200 dark:border-slate-800 lg:dark:divide-slate-800">
+          <div>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Shield className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("profile.changePassword")}
@@ -222,19 +215,15 @@ export default function Settings() {
               </div>
             </form>
           </CardContent>
+          </div>
+          <div className="border-t border-slate-200 p-6 lg:border-t-0 dark:border-slate-800">
+            <ConnectedDevices />
+          </div>
         </Card>
         <SecuritySettings />
         </div>
       )}
 
-      <Alert variant="warning" title={t("nav.logout")} className="mt-6 rounded-3xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <span className="text-xs sm:text-sm">{t("settings.deleteAccountDesc")}</span>
-          <Button variant="danger" size="sm" leftIcon={<LogOut className="h-4 w-4" />} onClick={handleLogout}>
-            {t("nav.logout")}
-          </Button>
-        </div>
-      </Alert>
     </div>
   );
 }

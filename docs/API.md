@@ -97,6 +97,9 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | POST | `/refresh` | cookie + XHR | — | yangi `token` (refresh aylantiriladi) |
 | POST | `/logout` | cookie + XHR | — | sessiya tugatiladi |
 | POST | `/logout-all` | 🔑 | — | barcha qurilmalardan chiqish |
+| GET | `/devices` | 🔑 + cookie | — | ulangan qurilmalar: `id`, `browser`, `os`, `type`, `ip`, `signedInAt`, `lastActiveAt`, `current` (joriy birinchi) |
+| DELETE | `/devices/:id` | 🔑 + XHR | — | bitta qurilmani chiqarish; `current` — joriy qurilma edimi |
+| POST | `/devices/sign-out-others` | 🔑 + XHR + cookie | — | joriydan boshqa hamma qurilmalarni darhol chiqarish; yangi `token` |
 | GET | `/me` | 🔑 | — | joriy `user` (rol, `userNumber`, `studentNumber?`, `hasPassword`, `twoFactorEnabled`) — qarang: «Hisob raqamlari» |
 | POST | `/complete-registration` | 🔑 | `name` (ism va familiya), `phone`, `password` | Telegram orqali kirganning 2-bosqichi |
 | PUT | `/password` | 🔑 | `currentPassword`, `newPassword` | parol almashadi, boshqa sessiyalar tugaydi |

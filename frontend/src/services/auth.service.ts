@@ -1,7 +1,19 @@
-import { apiGet, apiPost, apiPut } from "./api";
+import { apiDelete, apiGet, apiPost, apiPut } from "./api";
 import { env } from "../config/env";
 import { setAccessToken } from "./session";
 import type { AuthResponse, LoginPayload, LoginResult, RegisterPayload, TwoFactorStatus, UpdateProfilePayload, User } from "../types/user";
+
+export interface ConnectedDevice {
+  /** Login (refresh-token family) id. */
+  id: string;
+  browser: string;
+  os: string;
+  type: "mobile" | "tablet" | "desktop";
+  ip: string | null;
+  signedInAt: string;
+  lastActiveAt: string;
+  current: boolean;
+}
 
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResult> {
@@ -71,6 +83,23 @@ export const authService = {
   async logoutEverywhere(): Promise<void> {
     if (env.useMock) return;
     await apiPost<unknown>("/auth/logout-all");
+  },
+
+  /** Signed-in devices of this account, this one first. */
+  async devices(): Promise<ConnectedDevice[]> {
+    if (env.useMock) return [];
+    return apiGet<ConnectedDevice[]>("/auth/devices");
+  },
+
+  /** Signs one device out; `current` tells whether it was this one. */
+  async signOutDevice(id: string): Promise<{ current: boolean }> {
+    return apiDelete<{ current: boolean }>(`/auth/devices/${id}`);
+  },
+
+  /** Signs every other device out; this one continues with a fresh access token. */
+  async signOutOtherDevices(): Promise<void> {
+    const res = await apiPost<{ token: string }>("/auth/devices/sign-out-others");
+    setAccessToken(res.token);
   },
 
   async twoFactorStatus(): Promise<TwoFactorStatus> {

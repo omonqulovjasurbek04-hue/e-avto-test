@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { KeyRound, MonitorSmartphone, Copy } from "lucide-react";
+import { KeyRound, Copy } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { ROUTES } from "@/constants/routes";
 import type { TwoFactorStatus } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Alert } from "@/components/ui/Alert";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const cardClass = "rounded-3xl border border-slate-200 dark:border-slate-800";
 
@@ -173,46 +170,8 @@ function TwoFactorCard() {
   );
 }
 
-function SessionsCard() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
-  const [confirming, setConfirming] = useState(false);
-
-  const logoutAll = async () => {
-    setConfirming(false);
-    try {
-      await authService.logoutEverywhere();
-      toast.success(t("security.logoutAllDone"));
-    } catch {
-      toast.error(t("security.error"));
-      return;
-    }
-    await logout();
-    navigate(ROUTES.login);
-  };
-
-  return (
-    <Card className={cardClass}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-bold">
-          <MonitorSmartphone className="h-5 w-5 text-brand-600 dark:text-brand-400" /> {t("security.sessionsTitle")}
-        </CardTitle>
-        <CardDescription>{t("security.sessionsDesc")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button variant="outline" onClick={() => setConfirming(true)}>{t("security.logoutAll")}</Button>
-        <ConfirmDialog isOpen={confirming} message={t("security.sessionsDesc")} confirmText={t("security.logoutAll")} onConfirm={() => void logoutAll()} onCancel={() => setConfirming(false)} />
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function SecuritySettings() {
   return (
-    <div className="space-y-6">
-      <TwoFactorCard />
-      <SessionsCard />
-    </div>
+    <TwoFactorCard />
   );
 }

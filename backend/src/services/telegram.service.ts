@@ -3,6 +3,7 @@ import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { badRequest, HttpError } from "../utils/errors";
 import { completeLogin } from "./auth.service";
+import type { ClientInfo } from "./session.service";
 import { handleAdminCallback, handleAdminMessage } from "./telegramAdmin.service";
 import { sendMessage, tgCall, type TgUpdate, type TgUser } from "../lib/telegramApi";
 
@@ -63,7 +64,7 @@ export const startLogin = async () => {
  * issued to; it works once and only within 5 minutes. (Guessing is held back by a strict rate limit
  * on this route: a few active 6-digit codes out of a million.)
  */
-export const verifyLogin = async (code: string, userAgent?: string) => {
+export const verifyLogin = async (code: string, client?: ClientInfo) => {
   if (!isTelegramConfigured()) throw new HttpError(503, "Telegram login is not configured");
   const invalid = () => badRequest("Code is invalid or expired");
   const codeHash = hashCode(code);
@@ -91,7 +92,7 @@ export const verifyLogin = async (code: string, userAgent?: string) => {
 
   if (!user.isActive) throw new HttpError(403, "Account is disabled");
 
-  return completeLogin(user, userAgent);
+  return completeLogin(user, client);
 };
 
 // ---------------------------------------------------------------------------

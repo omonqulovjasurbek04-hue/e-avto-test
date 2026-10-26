@@ -19,8 +19,8 @@ import { success, error } from "../utils/apiResponse";
 import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
 import { REFRESH_COOKIE, clearRefreshCookie, readCookie, setRefreshCookie } from "../utils/cookies";
 import { User } from "@prisma/client";
-
-const userAgent = (req: Request) => req.get("user-agent") ?? undefined;
+import { clientInfo } from "../utils/clientInfo";
+import { z } from "zod";
 
 /** The access token goes in the body (kept in memory by the client); the refresh token only in the httpOnly cookie. */
 const sendSession = (res: Response, user: User, session: sessionService.Session, status = 200, extra: object = {}) => {
@@ -37,17 +37,17 @@ export const sendLoginOutcome = (res: Response, outcome: authService.LoginOutcom
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { user, session, emailVerification } = await authService.register(registerSchema.parse(req.body), userAgent(req));
+  const { user, session, emailVerification } = await authService.register(registerSchema.parse(req.body), clientInfo(req));
   sendSession(res, user, session, 201, { emailVerification });
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  sendLoginOutcome(res, await authService.login(loginSchema.parse(req.body), userAgent(req)));
+  sendLoginOutcome(res, await authService.login(loginSchema.parse(req.body), clientInfo(req)));
 };
 
 export const loginTwoFactor = async (req: Request, res: Response): Promise<void> => {
   const { challengeToken, code } = twoFactorLoginSchema.parse(req.body);
-  const { user, session } = await twoFactorService.completeTwoFactorLogin(challengeToken, code, userAgent(req));
+  const { user, session } = await twoFactorService.completeTwoFactorLogin(challengeToken, code, clientInfo(req));
   sendSession(res, user, session);
 };
 
@@ -59,7 +59,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     return;
   }
   try {
-    const { user, accessToken, refreshToken } = await sessionService.rotateSession(presented, userAgent(req));
+    const { user, accessToken, refreshToken } = await sessionService.rotateSession(presented, clientInfo(req));
     sendSession(res, user, { accessToken, refreshToken });
   } catch (e) {
     clearRefreshCookie(res);
@@ -84,7 +84,7 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
 
 export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
   const input = changePasswordSchema.parse(req.body);
-  const { changed, session } = await authService.changePassword(requireUserId(req), input, userAgent(req));
+  const { changed, session } = await authService.changePassword(requireUserId(req), input, clientInfo(req));
   setRefreshCookie(res, session.refreshToken);
   success(res, { changed, token: session.accessToken });
 };
@@ -93,6 +93,23 @@ export const logoutAll = async (req: AuthRequest, res: Response): Promise<void> 
   const result = await authService.logoutEverywhere(requireUserId(req));
   clearRefreshCookie(res);
   success(res, result);
+};
+
+/** Connected devices: one entry per signed-in browser, this one first. */
+export const listDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await sessionService.listDevices(requireUserId(req), readCookie(req, REFRESH_COOKIE)));
+};
+
+export const revokeDevice = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = z.string().uuid().parse(req.params.id);
+  const result = await sessionService.revokeDevice(requireUserId(req), id, readCookie(req, REFRESH_COOKIE));
+  if (result.current) clearRefreshCookie(res);
+  success(res, result);
+};
+
+/** Signs every device out except this one, which gets a fresh access token. */
+export const revokeOtherDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await sessionService.revokeOtherDevices(requireUserId(req), readCookie(req, REFRESH_COOKIE)));
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {

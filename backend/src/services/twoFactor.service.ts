@@ -12,7 +12,7 @@ import {
   otpauthUrl,
   verifyCode,
 } from "../lib/totp";
-import { startSession } from "./session.service";
+import { startSession, type ClientInfo } from "./session.service";
 import { writeAudit } from "./audit.service";
 import { MAX_FAILED_LOGINS, LOCK_MINUTES } from "./auth.service";
 
@@ -105,7 +105,7 @@ export const checkSecondFactor = async (user: User, code: string): Promise<boole
 };
 
 /** Login step 2: the challenge from the password step plus a code from the authenticator app. */
-export const completeTwoFactorLogin = async (challengeToken: string, code: string, userAgent?: string) => {
+export const completeTwoFactorLogin = async (challengeToken: string, code: string, client?: ClientInfo) => {
   let challenge;
   try {
     challenge = verifyTwoFactorChallenge(challengeToken);
@@ -130,7 +130,7 @@ export const completeTwoFactorLogin = async (challengeToken: string, code: strin
     throw unauthorized("Invalid code");
   }
   if (user.failedLogins > 0) await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0 } });
-  return { user, session: await startSession(user, userAgent) };
+  return { user, session: await startSession(user, client) };
 };
 
 /** Turning 2FA off needs the password (if the account has one) and a current code or recovery code. */

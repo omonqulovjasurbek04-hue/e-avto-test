@@ -3,7 +3,8 @@ import { Prisma, User } from "@prisma/client";
 import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { generateToken } from "../utils/jwt";
-import { HttpError } from "../utils/errors";
+import { HttpError, notFound } from "../utils/errors";
+import { parseUserAgent } from "../utils/userAgent";
 
 type Tx = Prisma.TransactionClient;
 
@@ -16,7 +17,10 @@ export const issueAccessToken = (user: Pick<User, "id" | "role" | "tokenVersion"
 
 const refreshExpiry = () => new Date(Date.now() + env.REFRESH_TOKEN_TTL_DAYS * DAY_MS);
 
-const createRefreshToken = async (db: Tx | typeof prisma, user: Pick<User, "id" | "tokenVersion">, familyId: string, userAgent?: string) => {
+/** Who is signing in: browser string and address, kept with the refresh token for "connected devices". */
+export type ClientInfo = { userAgent?: string; ip?: string };
+
+const createRefreshToken = async (db: Tx | typeof prisma, user: Pick<User, "id" | "tokenVersion">, familyId: string, client?: ClientInfo) => {
   const token = crypto.randomBytes(32).toString("base64url");
   await db.refreshToken.create({
     data: {
@@ -25,7 +29,8 @@ const createRefreshToken = async (db: Tx | typeof prisma, user: Pick<User, "id" 
       tokenHash: hashToken(token),
       tokenVersion: user.tokenVersion,
       expiresAt: refreshExpiry(),
-      userAgent: userAgent?.slice(0, 200),
+      userAgent: client?.userAgent?.slice(0, 200),
+      ip: client?.ip?.slice(0, 64),
     },
   });
   return token;
@@ -37,8 +42,8 @@ export interface Session {
 }
 
 /** Starts a new session (new refresh-token family) after a successful login. */
-export const startSession = async (user: User, userAgent?: string): Promise<Session> => {
-  const refreshToken = await createRefreshToken(prisma, user, crypto.randomUUID(), userAgent);
+export const startSession = async (user: User, client?: ClientInfo): Promise<Session> => {
+  const refreshToken = await createRefreshToken(prisma, user, crypto.randomUUID(), client);
   return { accessToken: issueAccessToken(user), refreshToken };
 };
 
@@ -58,7 +63,7 @@ const justRotated = (usedAt: Date | null) => usedAt !== null && Date.now() - use
  * A token that was already rotated (outside the short grace window) or revoked is treated as stolen:
  * the whole family is revoked, so both the thief and the legitimate client must sign in again.
  */
-export const rotateSession = async (presented: string, userAgent?: string): Promise<Session & { user: User }> => {
+export const rotateSession = async (presented: string, client?: ClientInfo): Promise<Session & { user: User }> => {
   const record = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(presented) }, include: { user: true } });
   if (!record) throw invalidSession();
 
@@ -79,7 +84,7 @@ export const rotateSession = async (presented: string, userAgent?: string): Prom
       const current = await tx.refreshToken.findUnique({ where: { id: record.id }, select: { usedAt: true, revokedAt: true } });
       if (!current || current.revokedAt || !justRotated(current.usedAt)) return null;
     }
-    return createRefreshToken(tx, user, record.familyId, userAgent);
+    return createRefreshToken(tx, user, record.familyId, client);
   });
   if (!refreshToken) {
     await revokeFamily(record.familyId);
@@ -115,4 +120,79 @@ export const revokeAllSessions = async (userId: string, tx?: Tx) => {
 export const pruneRefreshTokens = async () => {
   const res = await prisma.refreshToken.deleteMany({ where: { expiresAt: { lt: new Date(Date.now() - DAY_MS) } } });
   return res.count;
+};
+
+/** The refresh-token family the browser's cookie belongs to, if it is still a live session of this user. */
+const currentFamily = async (userId: string, presented: string | undefined): Promise<string | null> => {
+  if (!presented) return null;
+  const record = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(presented) }, select: { userId: true, familyId: true, revokedAt: true } });
+  return record && record.userId === userId && !record.revokedAt ? record.familyId : null;
+};
+
+export interface ConnectedDevice {
+  id: string;
+  browser: string;
+  os: string;
+  type: "mobile" | "tablet" | "desktop";
+  ip: string | null;
+  signedInAt: Date;
+  lastActiveAt: Date;
+  current: boolean;
+}
+
+/**
+ * Signed-in devices of a user: one per live refresh-token family (one login), newest token first.
+ * The device making the request is marked current and listed first.
+ */
+export const listDevices = async (userId: string, presented: string | undefined): Promise<ConnectedDevice[]> => {
+  const now = new Date();
+  const live = await prisma.refreshToken.findMany({
+    where: { userId, revokedAt: null, usedAt: null, expiresAt: { gt: now } },
+    orderBy: { createdAt: "desc" },
+    select: { familyId: true, userAgent: true, ip: true, createdAt: true },
+  });
+  const latest = new Map<string, (typeof live)[number]>();
+  for (const t of live) if (!latest.has(t.familyId)) latest.set(t.familyId, t);
+  const families = [...latest.keys()];
+  const started = families.length
+    ? await prisma.refreshToken.groupBy({ by: ["familyId"], where: { familyId: { in: families } }, _min: { createdAt: true } })
+    : [];
+  const startedAt = new Map(started.map((g) => [g.familyId, g._min.createdAt]));
+  const current = await currentFamily(userId, presented);
+
+  return [...latest.values()]
+    .map((t) => ({
+      id: t.familyId,
+      ...parseUserAgent(t.userAgent),
+      ip: t.ip,
+      signedInAt: startedAt.get(t.familyId) ?? t.createdAt,
+      lastActiveAt: t.createdAt,
+      current: t.familyId === current,
+    }))
+    .sort((a, b) => Number(b.current) - Number(a.current) || b.lastActiveAt.getTime() - a.lastActiveAt.getTime());
+};
+
+/** Signs one device out. Returns whether it was the device making the request. */
+export const revokeDevice = async (userId: string, familyId: string, presented: string | undefined): Promise<{ current: boolean }> => {
+  const owned = await prisma.refreshToken.findFirst({ where: { userId, familyId, revokedAt: null }, select: { id: true } });
+  if (!owned) throw notFound("Device not found");
+  await revokeFamily(familyId);
+  return { current: familyId === (await currentFamily(userId, presented)) };
+};
+
+/**
+ * Signs every other device out at once: their refresh tokens are revoked and, through tokenVersion, their
+ * access tokens stop working immediately. This device stays signed in with a fresh access token.
+ */
+export const revokeOtherDevices = async (userId: string, presented: string | undefined) => {
+  const family = await currentFamily(userId, presented);
+  if (!family) throw invalidSession();
+  const user = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } });
+    // This device's live token follows the new version, so its next refresh still works.
+    await tx.refreshToken.updateMany({ where: { familyId: family, revokedAt: null }, data: { tokenVersion: updated.tokenVersion } });
+    const others = await tx.refreshToken.updateMany({ where: { userId, familyId: { not: family }, revokedAt: null }, data: { revokedAt: new Date() } });
+    return { ...updated, others: others.count };
+  });
+  return { token: issueAccessToken(user) };
 };

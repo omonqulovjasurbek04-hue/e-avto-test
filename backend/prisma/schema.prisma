@@ -307,6 +307,8 @@ model RefreshToken {
   usedAt       DateTime?
   revokedAt    DateTime?
   userAgent    String?
+  // Client address when this token was issued (login or refresh); shown in "connected devices".
+  ip           String?
   createdAt    DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

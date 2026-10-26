@@ -35,6 +35,10 @@ router.get("/me", asyncHandler(authMiddleware), asyncHandler(authController.me))
 router.post("/complete-registration", asyncHandler(authMiddleware), authRateLimiter, asyncHandler(authController.completeRegistration));
 router.put("/password", asyncHandler(authMiddleware), authRateLimiter, asyncHandler(authController.changePassword));
 router.post("/logout-all", asyncHandler(authMiddleware), asyncHandler(authController.logoutAll));
+// Connected devices. Under /api/auth so the refresh cookie (path /api/auth) tells which device is asking.
+router.get("/devices", asyncHandler(authMiddleware), asyncHandler(authController.listDevices));
+router.post("/devices/sign-out-others", asyncHandler(authMiddleware), requireXhr, asyncHandler(authController.revokeOtherDevices));
+router.delete("/devices/:id", asyncHandler(authMiddleware), requireXhr, asyncHandler(authController.revokeDevice));
 router.post("/forgot-password", passwordResetRateLimiter, asyncHandler(authController.forgotPassword));
 router.post("/reset-password", passwordResetRateLimiter, asyncHandler(authController.resetPassword));
 
