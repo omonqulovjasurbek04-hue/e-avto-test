@@ -577,7 +577,6 @@
     "title": "Sozlamalar",
     "appearance": "Ko'rinish",
     "theme": "Mavzu",
-    "language": "Til",
     "darkMode": "Qorong'u rejim",
     "lightMode": "Yorug'lik rejim",
     "systemMode": "Tizim",
@@ -586,7 +585,8 @@
     "pushNotifications": "Push bildirishnomalar",
     "account": "Hisob",
     "deleteAccount": "Hisobni o'chirish",
-    "deleteAccountDesc": "Ushbu qurilmadagi sessiyani yakunlaydi"
+    "deleteAccountDesc": "Ushbu qurilmadagi sessiyani yakunlaydi",
+    "subtitle": "Xavfsizlik, ko'rinish va bildirishnomalar"
   },
   "errors": {
     "notFound": {
@@ -734,9 +734,7 @@
       "email": "Email orqali xabar",
       "emailDesc": "Muhim xabarlar elektron pochtangizga ham yuboriladi (server pochta xizmati sozlangan bo'lsa).",
       "attendance": "Davomat xabarlari",
-      "attendanceDesc": "Darsga kelmaganingiz haqida eslatma.",
-      "language": "Xabarlar tili",
-      "languageDesc": "Sayt ichidagi xabarlar va elektron xatlar shu tilda yuboriladi."
+      "attendanceDesc": "Darsga kelmaganingiz haqida eslatma."
     }
   },
   "news": {

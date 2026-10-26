@@ -38,8 +38,9 @@ i18n
     fallbackLng: "uz",
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     interpolation: { escapeValue: false },
+    // Uzbek unless the user picked a language with the switcher (remembered here and on the account).
     detection: {
-      order: ["localStorage", "navigator"],
+      order: ["localStorage"],
       caches: ["localStorage"],
       lookupLocalStorage: "i18nextLng",
     },

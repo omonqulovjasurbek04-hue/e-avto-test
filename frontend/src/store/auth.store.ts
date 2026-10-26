@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { applySavedLanguage, saveCurrentLanguage } from "../i18n/preference";
 import type { AuthResponse, LoginResult, User } from "../types/user";
 import { authService } from "../services/auth.service";
 import { env } from "../config/env";
@@ -19,7 +20,8 @@ interface AuthState {
   cancelTwoFactor: () => void;
   register: (input: { name: string; phone: string; email?: string; password: string }) => Promise<AuthResponse>;
   /** Applies the result of any login method: a session, or the 2FA step. */
-  applyLoginResult: (result: LoginResult) => void;
+  /** `newAccount`: the account was just created, so it takes this browser's language instead of the saved one. */
+  applyLoginResult: (result: LoginResult, newAccount?: boolean) => void;
   logout: () => Promise<void>;
   updateUser: (u: Partial<User>) => void;
 }
@@ -47,9 +49,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // it may be absent or unavailable even while the browser still has a valid refresh cookie.
     const session = await refreshSession();
     set({ user: session?.user ?? null, isAuthenticated: !!session, loading: false });
+    if (session) void applySavedLanguage();
   },
 
-  applyLoginResult: (result) => {
+  applyLoginResult: (result, newAccount = false) => {
     if (!isSession(result)) {
       set({ twoFactorChallenge: result.challengeToken, loading: false });
       return;
@@ -57,6 +60,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (env.useMock) sessionStorage.setItem(MOCK_KEY, JSON.stringify(result.user));
     else setAccessToken(result.token);
     set({ user: result.user, isAuthenticated: true, loading: false, twoFactorChallenge: null });
+    if (newAccount) saveCurrentLanguage();
+    else void applySavedLanguage();
   },
 
   login: async (login, password) => {
@@ -84,7 +89,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (input) => {
     const result = await authService.register(input);
-    get().applyLoginResult(result);
+    get().applyLoginResult(result, true);
     return result;
   },
 

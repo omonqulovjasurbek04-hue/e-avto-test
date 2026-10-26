@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Globe, Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { chooseLanguage } from "@/i18n/preference";
+import { useAuthStore } from "@/store/auth.store";
 import LanguageFlag from "./LanguageFlag";
 
 /** Compact labels for the header dropdown; the full name stays in the tooltip and for screen readers. */
@@ -18,6 +20,7 @@ export default function LanguageSwitcher({
   className = "",
 }: LanguageSwitcherProps) {
   const { i18n } = useTranslation();
+  const signedIn = useAuthStore((s) => s.isAuthenticated);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +28,7 @@ export default function LanguageSwitcher({
     SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
 
   const handleSelect = (code: string) => {
-    void setLanguage(code);
+    void chooseLanguage(code, signedIn);
     setOpen(false);
   };
 

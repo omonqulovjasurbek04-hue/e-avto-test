@@ -7,8 +7,6 @@ import { useLoad } from "@/hooks/useLoad";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { Select } from "@/components/ui/Select";
-import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 // No e-mail switch: the platform contacts students by phone and Telegram only.
 type SwitchKey = "inApp" | "attendance";
@@ -65,16 +63,6 @@ export default function NotificationPreferences() {
               />
             </label>
           ))}
-          <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-            <Select
-              label={t("notifications.prefs.language")}
-              options={SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.name }))}
-              value={data.language}
-              disabled={busy === "language"}
-              onChange={(e) => void save("language", e.target.value as NotificationPrefs["language"])}
-            />
-            <p className="mt-2 text-xs text-slate-500">{t("notifications.prefs.languageDesc")}</p>
-          </div>
           </>
         )}
       </CardContent>
