@@ -11,10 +11,10 @@ export function useStartTest() {
   const start = useTestStore((s) => s.start);
   const [starting, setStarting] = useState(false);
 
-  const startTest = async (courseId?: string, count?: number, mode?: TestMode) => {
+  const startTest = async (courseId?: string, count?: number, mode?: TestMode, ticket?: number) => {
     setStarting(true);
     try {
-      const id = await start(courseId, count, undefined, mode);
+      const id = await start(courseId, count, undefined, mode, ticket);
       navigate(ROUTES.testPage(id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Testni boshlashda xatolik");

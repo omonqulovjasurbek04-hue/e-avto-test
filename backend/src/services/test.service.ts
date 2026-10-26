@@ -1,7 +1,8 @@
+import crypto from "crypto";
 import { clearLeaderboardCache } from "./leaderboard.service";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database";
-import { TestStartInput, TestAnswerInput, TestFinishInput } from "../validators/test";
+import { TestStartInput, TestAnswerInput, TestFinishInput, TICKET_COUNT, TICKET_SIZE } from "../validators/test";
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { buildResult } from "./result.service";
 import { notify } from "./notification.service";
@@ -29,11 +30,31 @@ export const durationFor = (count: number): number => {
   return 90 * 60;
 };
 
+/**
+ * The questions of exam ticket `ticket` (1-based): the course pool in a fixed order (a hash of course and
+ * question id, so it does not depend on when questions were added), cut into consecutive blocks. With
+ * TICKET_COUNT * TICKET_SIZE questions every ticket is different; a smaller pool wraps around.
+ */
+export const ticketQuestions = <T extends { id: string }>(pool: T[], courseId: string, ticket: number): T[] => {
+  if (pool.length === 0) return [];
+  const key = (q: T) => crypto.createHash("sha256").update(`${courseId}:${q.id}`).digest("hex");
+  const ordered = pool.map((q) => ({ q, k: key(q) })).sort((a, b) => (a.k < b.k ? -1 : 1)).map((x) => x.q);
+  const size = Math.min(TICKET_SIZE, ordered.length);
+  const start = ((ticket - 1) * TICKET_SIZE) % ordered.length;
+  return Array.from({ length: size }, (_, i) => ordered[(start + i) % ordered.length]);
+};
+
 const optionCount = (options: Prisma.JsonValue): number =>
   Array.isArray(options) ? options.length : 0;
 
 const elapsedSeconds = (startedAt: Date): number =>
   Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 1000));
+
+/** Lessons of these courses that are not open for the viewer yet: their questions stay out of tests. */
+const closedLessonIds = async (viewer: { userId: string; role: string }, courseIds: string[]): Promise<string[]> => {
+  const states = await lessonStates(viewer, courseIds);
+  return [...states].filter(([, st]) => st.locked).map(([id]) => id);
+};
 
 export const startTest = async (userId: string, input: TestStartInput, role = "USER") => {
   const viewer = { userId, role };
@@ -75,7 +96,8 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
   // Exam rules of the course (if the admin configured any) override whatever the client asks for.
   // (Also when the test was started from one of the course's lessons.) Practice ignores them.
   const config = targetCourseId && !practice ? await prisma.testConfig.findUnique({ where: { courseId: targetCourseId } }) : null;
-  if (config?.maxAttempts) {
+  // Tickets are practice before the exam: they do not use up the course's exam attempts.
+  if (config?.maxAttempts && !input.ticket) {
     const used = await prisma.test.count({ where: { userId, courseId: targetCourseId!, mode: "EXAM" } });
     if (used >= config.maxAttempts) throw conflict("Attempt limit reached for this course");
   }
@@ -89,19 +111,21 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
       if (allowed !== "all") return [...allowed];
       return (await prisma.course.findMany({ where: { isPublished: true }, select: { id: true } })).map((c) => c.id);
     })();
-    const states = await lessonStates(viewer, scope);
-    const closed = [...states].filter(([, st]) => st.locked).map(([id]) => id);
+    const closed = await closedLessonIds(viewer, scope);
     if (closed.length) where.AND = [{ OR: [{ lessonId: null }, { lessonId: { notIn: closed } }] }];
   }
 
   const available = await prisma.question.findMany({ where });
   if (available.length === 0) throw badRequest("No questions available");
 
+  // A ticket always serves the same questions in the same order; any other test draws at random.
   const requested = config?.questionCount ?? input.count ?? DEFAULT_QUESTION_COUNT;
-  const totalQuestions = Math.min(requested, available.length);
-  const picked = shuffle(available).slice(0, totalQuestions);
+  const picked = input.ticket
+    ? ticketQuestions(available, targetCourseId!, input.ticket)
+    : shuffle(available).slice(0, Math.min(requested, available.length));
+  const totalQuestions = picked.length;
   // Time follows the number of questions actually served, not the number requested.
-  const duration = config?.durationSeconds ?? durationFor(totalQuestions);
+  const duration = (!input.ticket && config?.durationSeconds) || durationFor(totalQuestions);
 
   // Every attempt gets its own question order and option order (Fisher-Yates).
   const prepared = picked.map((q) => ({
@@ -118,6 +142,7 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
       passScore: config?.passScore ?? PASS_THRESHOLD,
       maxMistakes: config?.maxMistakes ?? null,
       mode,
+      ticket: input.ticket ?? null,
       answers: {
         create: prepared.map(({ question, optionOrder }) => ({
           questionId: question.id,
@@ -149,6 +174,7 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
       startedAt: test.startedAt,
       mode: test.mode,
       maxMistakes: test.maxMistakes,
+      ticket: test.ticket,
     },
     questions,
   };
@@ -264,3 +290,44 @@ export const finishTest = async (testId: string, userId: string, input: TestFini
 };
 
 export default { startTest, answerQuestion, finishTest };
+
+/** At or above this score a ticket counts as learned; below it the ticket should be taken again. */
+export const TICKET_LEARNED_SCORE = 90;
+
+export type TicketStatus = { ticket: number; status: "active" | "passed" | "retry"; score: number | null; testId: string | null };
+
+/**
+ * The student's state on every ticket of a course they have tried: the latest finished attempt decides
+ * learned/retry; an attempt still running (and not timed out) shows as active.
+ */
+export const ticketStatuses = async (userId: string, courseId: string, role = "USER") => {
+  const viewer = { userId, role };
+  if (!(await canAccessCourse(viewer, courseId))) throw forbidden("You need access to this course to take its test");
+  const attempts = await prisma.test.findMany({
+    where: { userId, courseId, ticket: { not: null } },
+    select: { id: true, ticket: true, score: true, finishedAt: true, startedAt: true, duration: true },
+    orderBy: { startedAt: "desc" },
+  });
+  const byTicket = new Map<number, TicketStatus>();
+  for (const a of attempts) {
+    const ticket = a.ticket!;
+    if (byTicket.has(ticket)) continue;
+    if (!a.finishedAt) {
+      // A running attempt is only the newest one; an abandoned (timed-out) one is skipped.
+      if (!isExpired(a)) byTicket.set(ticket, { ticket, status: "active", score: null, testId: a.id });
+      continue;
+    }
+    byTicket.set(ticket, { ticket, status: a.score >= TICKET_LEARNED_SCORE ? "passed" : "retry", score: a.score, testId: a.id });
+  }
+  // The same pool a ticket draws from: published questions of the course outside lessons not open yet.
+  const closed = await closedLessonIds(viewer, [courseId]);
+  const pool = await prisma.question.count({
+    where: { isPublished: true, courseId, ...(closed.length ? { OR: [{ lessonId: null }, { lessonId: { notIn: closed } }] } : {}) },
+  });
+  return {
+    count: TICKET_COUNT,
+    size: Math.min(TICKET_SIZE, pool),
+    learnedScore: TICKET_LEARNED_SCORE,
+    tickets: [...byTicket.values()].sort((a, b) => a.ticket - b.ticket),
+  };
+};

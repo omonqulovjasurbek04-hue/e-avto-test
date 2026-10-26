@@ -37,7 +37,8 @@
     "failed": "O'tilmadi",
     "areYouSure": "Tasdiqlaysizmi?",
     "showPassword": "Parolni ko'rsatish",
-    "hidePassword": "Parolni yashirish"
+    "hidePassword": "Parolni yashirish",
+    "skipped": "Javobsiz"
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -447,7 +448,7 @@
   },
   "tests": {
     "title": "Test topshirish",
-    "description": "Har urinishda kursning ochiq darslaridagi savollar aralashtirib beriladi (50 tagacha). O'tish bali — 70%.",
+    "description": "Biletni tanlang: har bir bilet — kursning doim bir xil savollar to'plami. O'tish bali — 70%.",
     "startTest": "Testni boshlash",
     "previousResults": "Oldingi natijalar",
     "noTests": "Hali testlar topshirmagansiz",
@@ -472,6 +473,10 @@
       "badge": "Mashq",
       "save": "Saqlash",
       "unsave": "Saqlangan"
+    },
+    "tickets": {
+      "ticketLabel": "{{n}}-bilet",
+      "scoreHint": "{{n}}-bilet: {{score}}%"
     }
   },
   "testPage": {

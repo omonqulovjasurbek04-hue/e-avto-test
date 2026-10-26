@@ -18,6 +18,7 @@ export const listResults = async (userId: string) => {
       score: true,
       passed: true,
       mode: true,
+      ticket: true,
       timeSpent: true,
       finishedAt: true,
       course: { select: { title: true } },
@@ -35,6 +36,7 @@ export const listResults = async (userId: string) => {
     score: t.score,
     passed: t.passed,
     mode: t.mode,
+    ticket: t.ticket,
     timeSpent: t.timeSpent,
     createdAt: t.finishedAt,
   }));
@@ -74,6 +76,7 @@ export const buildResult = async (id: string, userId: string) => {
     score: test.score,
     passed: test.passed,
     mode: test.mode,
+    ticket: test.ticket,
     maxMistakes: test.maxMistakes ?? undefined,
     timeSpent: test.timeSpent,
     createdAt: test.finishedAt,

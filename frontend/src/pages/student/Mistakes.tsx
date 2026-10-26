@@ -125,6 +125,9 @@ export default function Mistakes() {
                 <div>
                   <p className="font-medium text-slate-800 dark:text-slate-100">
                     {r.courseTitle || t("tests.generalTest")}
+                    {r.ticket && (
+                      <Badge variant="primary" className="ml-2">{t("tests.tickets.ticketLabel", { n: r.ticket })}</Badge>
+                    )}
                     {r.mode && r.mode !== "EXAM" && (
                       <Badge variant="neutral" className="ml-2">{t("tests.practice.badge")}</Badge>
                     )}

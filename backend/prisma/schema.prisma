@@ -206,6 +206,7 @@ model Test {
   passScore      Int       @default(70) // percent needed, snapshotted at start
   maxMistakes    Int? // wrong + unanswered allowed (official exam: 2 of 20), snapshotted at start; null = no limit
   mode           TestMode  @default(EXAM)
+  ticket         Int? // exam ticket 1..60 of the course (fixed question set); null = random test
   timeSpent      Int       @default(0) // seconds
   startedAt      DateTime  @default(now())
   finishedAt     DateTime?
@@ -216,6 +217,7 @@ model Test {
 
   @@index([userId])
   @@index([courseId])
+  @@index([userId, courseId, ticket])
   @@map("tests")
 }
 

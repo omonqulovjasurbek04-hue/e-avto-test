@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PlayCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { studentService } from "@/services/platform.service";
 import { Alert } from "@/components/ui/Alert";
-import { useStartTest } from "@/hooks/useStartTest";
 import type { Course } from "@/types/course";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { TicketMatrix } from "@/components/test/TicketMatrix";
+import { cn } from "@/utils/cn";
 
 export default function Tests() {
   const { t } = useTranslation();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const { startTest, starting } = useStartTest();
-  const [startingId, setStartingId] = useState<string | null>(null);
   // Which courses this student bought: the server decides, the page only mirrors it (null = still loading).
   const [access, setAccess] = useState<{ all: boolean; courseIds: string[] } | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const canOpen = (courseId: string) => !access || access.all || access.courseIds.includes(courseId);
 
   const load = async () => {
@@ -30,7 +27,7 @@ export default function Tests() {
     try {
       const [cs, ac] = await Promise.all([
         courseService.getCourses(),
-        // If this fails the buttons stay enabled and the server still refuses a locked test.
+        // If this fails every course is offered and the server still refuses a locked test.
         studentService.courseAccess().catch(() => null),
       ]);
       setCourses(cs);
@@ -46,65 +43,59 @@ export default function Tests() {
     void load();
   }, []);
 
-  const handleStart = async (courseId: string) => {
-    setStartingId(courseId);
-    await startTest(courseId);
-    setStartingId(null);
-  };
-
   // Only the courses this student can test in; the rest are bought on the course pages.
   const owned = courses.filter((c) => canOpen(c.id));
-  // Their categories (Yengil avtomobillar, …) are shown once, next to the title.
-  const categories = [...new Set(owned.map((c) => c.category).filter((c): c is string => Boolean(c)))];
+  const course = owned.find((c) => c.id === selected) ?? owned[0];
 
   return (
     <div className="container-page py-8">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("tests.title")}</h1>
-        {!loading && categories.map((cat) => (
-          <Badge key={cat} variant="primary">{cat}</Badge>
-        ))}
+        {!loading && course?.category && <Badge variant="primary">{course.category}</Badge>}
       </div>
       <p className="mt-1 text-sm text-slate-500">
         {t("tests.description")}
       </p>
 
       {loading ? (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 w-full" />
-          ))}
-        </div>
+        <Skeleton className="mt-6 h-72 w-full rounded-2xl" />
       ) : error ? (
         <div className="mt-6">
           <ErrorState onRetry={load} />
         </div>
-      ) : owned.length === 0 ? (
+      ) : !course ? (
         <Alert variant="warning" title={t("tests.lockedTitle")} className="mt-6">
           {t("tests.lockedHint")}{" "}
           <Link to="/my-courses" className="font-semibold underline">{t("nav.courses")}</Link>
         </Alert>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {owned.map((c) => (
-            <Card key={c.id}>
-              <CardContent className="flex h-full flex-col">
-                <h3 className="font-semibold text-slate-800 dark:text-slate-100">{c.title}</h3>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-500">{c.description}</p>
-                {/* Pushes the button to the bottom so the cards line up. */}
-                <div className="flex-1" />
-                <Button
-                  className="mt-4"
-                  loading={starting && startingId === c.id}
-                  leftIcon={<PlayCircle className="h-5 w-5" />}
-                  onClick={() => handleStart(c.id)}
+        <>
+          {/* With more than one bought course the student picks whose tickets to show. */}
+          {owned.length > 1 && (
+            <div className="mt-6 flex flex-wrap gap-2" role="tablist">
+              {owned.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={c.id === course.id}
+                  onClick={() => setSelected(c.id)}
+                  className={cn(
+                    "rounded-full border px-4 py-1.5 text-sm font-semibold transition",
+                    c.id === course.id
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  )}
                 >
-                  {t("tests.startTest")}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  {c.title}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-6">
+            <TicketMatrix key={course.id} courseId={course.id} />
+          </div>
+        </>
       )}
     </div>
   );

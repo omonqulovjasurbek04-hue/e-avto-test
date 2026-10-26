@@ -7,6 +7,7 @@ import { asyncHandler } from "../middleware/asyncHandler";
 const router = Router();
 
 router.use("/tests", asyncHandler(authMiddleware), testRateLimiter);
+router.get("/tests/tickets", asyncHandler(testController.listTickets));
 router.post("/tests/start", asyncHandler(testController.startTest));
 router.post("/tests/:id/answer", asyncHandler(testController.answerQuestion));
 router.post("/tests/:id/finish", asyncHandler(testController.finishTest));

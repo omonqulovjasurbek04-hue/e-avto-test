@@ -25,6 +25,8 @@ export interface TestResultSummary {
   score: number;
   passed: boolean;
   mode?: TestMode;
+  /** Exam ticket number (1..60) when the attempt was a ticket. */
+  ticket?: number | null;
   /** Wrong + unanswered allowed by the exam rule (official exam: 2 of 20); absent = no limit. */
   maxMistakes?: number;
   timeSpent: number;

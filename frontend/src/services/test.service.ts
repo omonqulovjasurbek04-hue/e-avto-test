@@ -1,14 +1,32 @@
-import { apiPost, apiClient } from "./api";
+import { apiGet, apiPost, apiClient } from "./api";
 import { env } from "../config/env";
 import type { Question } from "../types/question";
 import type { StartTestResponse, TestMode, TestResultDetail } from "../types/result";
 import { PASS_THRESHOLD, DEFAULT_QUESTION_COUNT } from "../constants/config";
 import { resultService } from "./result.service";
 
+export interface TicketState {
+  ticket: number;
+  /** active = running now; passed = last score >= learnedScore; retry = take it again. */
+  status: "active" | "passed" | "retry";
+  score: number | null;
+  testId: string | null;
+}
+
+export interface TicketOverview {
+  count: number;
+  /** Questions per ticket (fewer while the course has a small question bank). */
+  size: number;
+  learnedScore: number;
+  tickets: TicketState[];
+}
+
 export interface StartTestOptions {
   courseId?: string;
   count?: number;
   mode?: TestMode;
+  /** Exam ticket 1..60 of the course: always the same questions. */
+  ticket?: number;
   /** Mock mode only: prefer questions of this topic. */
   topicId?: string;
 }
@@ -116,7 +134,14 @@ export const testService = {
       courseId: options.courseId,
       count: options.count ?? DEFAULT_QUESTION_COUNT,
       mode: options.mode,
+      ticket: options.ticket,
     });
+  },
+
+  /** The student's state on the course's exam tickets (only tickets they have tried are listed). */
+  async tickets(courseId: string): Promise<TicketOverview> {
+    if (env.useMock) return { count: 60, size: DEFAULT_QUESTION_COUNT, learnedScore: 90, tickets: [] };
+    return apiGet<TicketOverview>(`/tests/tickets?courseId=${encodeURIComponent(courseId)}`);
   },
 
   /** Fire-and-forget autosave of one answer. Failures are fine: /finish sends all answers again. */

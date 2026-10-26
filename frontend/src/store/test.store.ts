@@ -19,7 +19,7 @@ interface TestState {
   status: "idle" | "active" | "finished";
   finishing: boolean;
   result: TestResultDetail | null;
-  start: (courseId?: string, count?: number, topicId?: string, mode?: TestMode) => Promise<string>;
+  start: (courseId?: string, count?: number, topicId?: string, mode?: TestMode, ticket?: number) => Promise<string>;
   setAnswer: (qid: string, idx: number) => void;
   next: () => void;
   prev: () => void;
@@ -64,8 +64,8 @@ export const useTestStore = create<TestState>()(
     (set, get) => ({
       ...initial,
 
-      start: async (courseId, count = DEFAULT_QUESTION_COUNT, topicId, mode) => {
-        const res = await testService.start({ courseId, count, topicId, mode });
+      start: async (courseId, count = DEFAULT_QUESTION_COUNT, topicId, mode, ticket) => {
+        const res = await testService.start({ courseId, count, topicId, mode, ticket });
         const duration = res.test.duration ?? 45 * 60;
         set({
           ...initial,

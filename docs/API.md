@@ -154,7 +154,8 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 
 | Metod | Yo'l | Kim | Yuboriladi | Qaytadi |
 |---|---|---|---|---|
-| POST | `/api/tests/start` | 🔑 | `courseId?`, `lessonId?`, `count?` (1–100), `mode?` (`EXAM`\|`MISTAKES`\|`SAVED`) | test `id`, savollar (to'g'ri javobsiz), `duration` |
+| POST | `/api/tests/start` | 🔑 | `courseId?`, `lessonId?`, `count?` (1–100), `mode?` (`EXAM`\|`MISTAKES`\|`SAVED`), `ticket?` (1–60, `courseId` bilan) | test `id`, savollar (to'g'ri javobsiz), `duration` |
+| GET | `/api/tests/tickets?courseId=` | 🔑 | — | `count` (60), `size` (bilet savollari, ≤50), `tickets[]`: `ticket`, `status` (`active`\|`passed` ≥90%\|`retry`), `score`, `testId` |
 | POST | `/api/tests/:id/answer` | 🔑 | `questionId`, `selectedIndex` (0–7) | qabul qilindi |
 | POST | `/api/tests/:id/finish` | 🔑 | `answers?[{ questionId, selectedIndex }]` | natija: ball, `passed`, xatolar |
 | GET | `/api/results` | 🔑 | | o'z natijalari |
