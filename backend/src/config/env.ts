@@ -55,9 +55,11 @@ if (nodeEnv === "production" && !/^https:\/\/[^/\s]+\/?$/i.test(process.env.PUBL
   throw new Error("PUBLIC_API_ORIGIN must be the public https origin of the API in production, without a path (e.g. https://api.example.uz); used for image links");
 }
 // The username is public (https://t.me/<username> on the site), so a bot token pasted here by mistake would be published.
-const botUsername = (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
-if (botUsername && !/^[A-Za-z0-9_]{5,32}$/.test(botUsername)) {
-  throw new Error("TELEGRAM_BOT_USERNAME must be the bot's @username (letters, digits, _), not the bot token");
+// Such a value is dropped (Telegram login stays off) instead of stopping the site; the value itself is never logged.
+const rawBotUsername = (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
+const botUsername = /^[A-Za-z0-9_]{5,32}$/.test(rawBotUsername) ? rawBotUsername : "";
+if (rawBotUsername && !botUsername) {
+  console.warn("TELEGRAM_BOT_USERNAME is not a bot @username (letters, digits, _) — ignored, Telegram login is off. Is it the bot token?");
 }
 if (nodeEnv === "production" && process.env.METRICS_TOKEN && process.env.METRICS_TOKEN.length < 24) {
   throw new Error("METRICS_TOKEN must be at least 24 characters");
@@ -88,7 +90,7 @@ export const env = {
   MAIL_FROM: process.env.MAIL_FROM || "E-Avto Test <no-reply@localhost>",
   // Telegram login bot (optional). Create the bot with @BotFather.
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
-  TELEGRAM_BOT_USERNAME: (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, ""),
+  TELEGRAM_BOT_USERNAME: botUsername,
   // If set, updates are received on POST /api/telegram/webhook/<secret> instead of long polling.
   TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || "",
   // Payments. Only "mock" exists (no real gateway is integrated). Empty = payments disabled.
