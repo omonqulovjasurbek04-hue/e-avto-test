@@ -335,7 +335,7 @@ Oxirgi ichki audit 2026-10-15/16; mustaqil pentest o‘tkazilmagan. Ochiq **Crit
 2FA majburiy emas; ro‘yxatdan o‘tishda email mavjudligi oshkor (`409`); frontend hostida qat’iy CSP qo‘yish kerak:
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; connect-src 'self' https://<api-domen>; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' https: blob:; connect-src 'self' https://<api-domen>; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ```
 
 Private media: yuklash standartda o‘chiq. Yoqilsa — 5 daqiqalik imzolangan URL, Range stream, har safar ruxsat qayta tekshiriladi,

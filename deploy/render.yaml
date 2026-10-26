@@ -116,7 +116,7 @@ services:
     headers:
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: blob:; worker-src 'self' blob:; connect-src 'self' https://eavto-test-uz-api-rgw9.onrender.com https://br-mute-field-b99ij4pe.storage.c-7.eu-central-1.aws.neon.tech; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' https: blob:; worker-src 'self' blob:; connect-src 'self' https://eavto-test-uz-api-rgw9.onrender.com https://br-mute-field-b99ij4pe.storage.c-7.eu-central-1.aws.neon.tech; frame-src https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
