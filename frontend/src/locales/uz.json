@@ -344,7 +344,7 @@
       "phone": "Telefon raqam",
       "emailOptional": "Email (ixtiyoriy)",
       "stepsLabel": "Ro'yxatdan o'tish bosqichlari",
-      "step1": "Telegram orqali tasdiqlash",
+      "step1": "Tasdiqlash",
       "step2": "Ma'lumotlar",
       "telegramIntro": "Avval Telegram orqali tasdiqlang: bot sizga 6 xonali kod yuboradi. Shundan keyin ism, telefon raqam va parolni kiritasiz.",
       "finish": "Ro'yxatdan o'tishni yakunlash",

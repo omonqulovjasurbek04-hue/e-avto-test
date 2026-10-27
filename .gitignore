@@ -26,3 +26,6 @@ backups/
 *.dump
 deploy/.deployed_tag
 deploy/.previous_tag
+
+# Google OAuth client downloads (contain the client secret)
+client_secret*.json

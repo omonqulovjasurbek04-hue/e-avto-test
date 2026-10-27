@@ -51,7 +51,7 @@ type FormSubmit = (v: { name: string; phone: string; password: string }) => Prom
 const TELEGRAM_PLACEHOLDER = "Telegram foydalanuvchi";
 
 /**
- * Sign-up in two steps: 1) confirm the person through the Telegram bot code, 2) name, phone and password.
+ * Sign-up in two steps: 1) confirm the person (Telegram bot code or Google), 2) name, phone and password.
  * If the server has no Telegram bot configured, the form is shown directly (sign-up must not get stuck).
  */
 export default function Register() {
