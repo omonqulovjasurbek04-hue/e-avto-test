@@ -1,9 +1,9 @@
 import { Prisma, Role } from "@prisma/client";
 import { prisma } from "../config/database";
 import { ListQuery } from "../validators/course";
-import { badRequest, forbidden, notFound } from "../utils/errors";
+import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { canAssignRole } from "../lib/permissions";
-import { accountIdFilter } from "../lib/accountNumbers";
+import { accountIdFilter, assignStudentNumber, becomeTeacher, leaveTeacher } from "../lib/accountNumbers";
 import { writeAudit } from "./audit.service";
 import { revokeAllSessions } from "./session.service";
 import { getPagination } from "../utils/pagination";
@@ -13,7 +13,14 @@ export const listUsers = async (query: ListQuery) => {
   const digits = query.search?.replace(/\D/g, "") ?? "";
   const where: Prisma.UserWhereInput = {
     ...(query.role ? { role: query.role } : {}),
-    ...(query.kind === "student" ? { studentNumber: { not: null } } : query.kind === "user" ? { studentNumber: null } : {}),
+    // student = had a course; user = only signed up; teacher = teaches now (role TEACHER).
+    ...(query.kind === "student"
+      ? { studentNumber: { not: null } }
+      : query.kind === "user"
+        ? { studentNumber: null, NOT: { role: "TEACHER" as const } }
+        : query.kind === "teacher"
+          ? { role: "TEACHER" as const }
+          : {}),
     ...(query.search
       ? {
           // "student0007" / "user0042" → that account; otherwise name, e-mail or phone.
@@ -42,6 +49,7 @@ export const listUsers = async (query: ListQuery) => {
         phone: true,
         userNumber: true,
         studentNumber: true,
+        teacherNumber: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -54,34 +62,83 @@ export const listUsers = async (query: ListQuery) => {
   return { items, page, limit, total };
 };
 
-/** Role changes are admin-only (enforced by the route) and an admin cannot change their own role. */
-export const updateUserRole = async (actorId: string, actorRole: string, userId: string, role: Role) => {
+/**
+ * Role changes are admin-only (enforced by the route) and an admin cannot change their own role.
+ * Becoming a teacher gives a teacher number (teacher0001) and frees the user number for a new sign-up;
+ * no longer being one gives a user number back. The account id never changes, so courses, payments,
+ * results, groups and attendance stay with the person. A teacher with active groups keeps the role until
+ * the groups are handed to another teacher.
+ */
+export const updateUserRole = async (actorId: string, actorRole: string, userId: string, role: Role, reason?: string) => {
   if (actorId === userId) throw badRequest("You cannot change your own role");
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) throw notFound("User not found");
   if (!canAssignRole(actorRole, existing.role, role)) throw forbidden("Only a superadmin can grant or change admin roles");
+  if (existing.role === role) return publicRole(existing);
+
+  const leavingTeacher = existing.role === "TEACHER" && role !== "TEACHER";
+  if (leavingTeacher) {
+    const groups = await prisma.teacherGroup.count({ where: { teacherId: userId, status: "ACTIVE" } });
+    if (groups > 0) throw conflict(`This teacher still has ${groups} active group(s); hand them to another teacher first`);
+  }
+
   const user = await prisma.$transaction(async (tx) => {
-    const updated = await tx.user.update({
+    await tx.user.update({
       where: { id: userId },
       // A role change revokes existing sessions so the new rights apply immediately.
       data: { role, tokenVersion: { increment: 1 } },
     });
     await revokeAllSessions(userId, tx);
-    // A new teacher gets the teacher profile at once (bio, photo on the site); an older one is reactivated.
     if (role === "TEACHER") {
+      // The teacher profile (bio, photo on the site) at once; an older one is reactivated.
       await tx.teacherProfile.upsert({ where: { userId }, create: { userId }, update: { isActive: true } });
+      await becomeTeacher(tx, userId);
+    } else if (leavingTeacher) {
+      // Kept for history (lessons, attendance); the teacher number stays on the account.
+      await tx.teacherProfile.updateMany({ where: { userId }, data: { isActive: false } });
+      await leaveTeacher(tx, userId);
     }
+    const updated = await tx.user.findUniqueOrThrow({ where: { id: userId } });
     await writeAudit(
-      { actorId, action: "user.role.change", entity: "User", entityId: userId, before: { role: existing.role }, after: { role } },
+      {
+        actorId,
+        action: "user.role.change",
+        entity: "User",
+        entityId: userId,
+        before: { role: existing.role, userNumber: existing.userNumber, teacherNumber: existing.teacherNumber },
+        after: { role, userNumber: updated.userNumber, teacherNumber: updated.teacherNumber },
+        reason: reason || undefined,
+      },
       tx
     );
     return updated;
   });
-  return { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt };
+  return publicRole(user);
 };
 
-/** Deactivating revokes all existing sessions; admins cannot deactivate themselves. */
-export const updateUserStatus = async (actorId: string, actorRole: string, userId: string, isActive: boolean) => {
+type RoleRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  role: Role;
+  createdAt: Date;
+  userNumber: number | null;
+  studentNumber: number | null;
+  teacherNumber: number | null;
+};
+const publicRole = (u: RoleRow) => ({
+  id: u.id,
+  name: u.name,
+  email: u.email,
+  role: u.role,
+  createdAt: u.createdAt,
+  userNumber: u.userNumber,
+  studentNumber: u.studentNumber,
+  teacherNumber: u.teacherNumber,
+});
+
+/** Deactivating revokes all existing sessions; admins cannot deactivate themselves. Audited, with the reason. */
+export const updateUserStatus = async (actorId: string, actorRole: string, userId: string, isActive: boolean, reason?: string) => {
   if (actorId === userId) throw badRequest("You cannot change your own status");
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) throw notFound("User not found");
@@ -93,9 +150,80 @@ export const updateUserStatus = async (actorId: string, actorRole: string, userI
       data: { isActive, ...(isActive ? {} : { tokenVersion: { increment: 1 } }) },
     });
     if (!isActive) await revokeAllSessions(userId, tx);
+    await writeAudit(
+      {
+        actorId,
+        action: isActive ? "user.activate" : "user.block",
+        entity: "User",
+        entityId: userId,
+        before: { isActive: existing.isActive },
+        after: { isActive },
+        reason: reason || undefined,
+      },
+      tx
+    );
     return saved;
   });
   return { id: user.id, isActive: user.isActive };
+};
+
+/** Every public number the account has held (user, student, teacher), newest first. */
+export const userIdentifiers = async (userId: string) => {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) throw notFound("User not found");
+  return prisma.userIdentifier.findMany({
+    where: { userId },
+    orderBy: { assignedAt: "desc" },
+    select: { id: true, kind: true, number: true, assignedAt: true, releasedAt: true, releaseReason: true },
+  });
+};
+
+/** The account's courses (paid or granted), for the admin's user page. */
+export const userEnrollments = async (userId: string) =>
+  prisma.enrollment.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true, startsAt: true, expiresAt: true, orderId: true, course: { select: { id: true, title: true } } },
+  });
+
+/**
+ * Opens a course without payment (a free place, a special case). Needs its own permission and a reason;
+ * the account becomes a student like after a purchase. Refused while the course is already open.
+ */
+export const grantEnrollment = async (actorId: string, userId: string, input: { courseId: string; days?: number | null; reason: string }) => {
+  const [user, course] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+    prisma.course.findUnique({ where: { id: input.courseId }, select: { id: true, title: true } }),
+  ]);
+  if (!user) throw notFound("User not found");
+  if (!course) throw notFound("Course not found");
+  const now = new Date();
+  const current = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId: course.id } } });
+  if (current && current.status === "ACTIVE" && (!current.expiresAt || current.expiresAt > now)) {
+    throw conflict("The course is already open for this account");
+  }
+  const expiresAt = input.days ? new Date(now.getTime() + input.days * 86_400_000) : null;
+
+  return prisma.$transaction(async (tx) => {
+    const enrollment = await tx.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId: course.id } },
+      create: { userId, courseId: course.id, expiresAt },
+      update: { status: "ACTIVE", expiresAt, startsAt: now, orderId: null, packageId: null },
+    });
+    await assignStudentNumber(tx, userId);
+    await writeAudit(
+      {
+        actorId,
+        action: "enrollment.grant",
+        entity: "Enrollment",
+        entityId: enrollment.id,
+        after: { userId, courseId: course.id, course: course.title, expiresAt },
+        reason: input.reason,
+      },
+      tx
+    );
+    return enrollment;
+  });
 };
 
 /**
@@ -146,4 +274,4 @@ export const getStatistics = async () => {
   };
 };
 
-export default { listUsers, updateUserRole, updateUserStatus, resetTwoFactor, getStatistics };
+export default { listUsers, updateUserRole, updateUserStatus, resetTwoFactor, getStatistics, userIdentifiers, userEnrollments, grantEnrollment };

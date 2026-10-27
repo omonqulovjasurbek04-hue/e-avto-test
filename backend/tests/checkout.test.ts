@@ -92,10 +92,12 @@ describe.skipIf(!enabled)("checkout flow", () => {
     const paid = await request(app).get(`/api/orders/${order.id}`).set(bearer(student.token));
     expect(paid.body.data.status).toBe("PAID");
 
-    // The paid course makes the account a student with its own number: user0042 -> student0042.
+    // The paid course makes the account a student with a number of its own (student sequence); the
+    // user number and the account stay the same.
     const after = (await request(app).get("/api/auth/me").set(bearer(student.token))).body.data;
-    expect(after.studentNumber).toBe(before.userNumber);
+    expect(typeof after.studentNumber).toBe("number");
     expect(after.userNumber).toBe(before.userNumber);
+    expect(after.id).toBe(before.id);
   });
 
   it("keeps the student number on renewal", async () => {
@@ -128,8 +130,9 @@ describe.skipIf(!enabled)("checkout flow", () => {
   it("processes concurrent duplicate callbacks exactly once", async () => {
     const orders = (await request(app).get("/api/orders").set(bearer(other.token))).body.data;
     const paymentId = `mock_${orders[0].payments[0].id}`;
-    // A user number past user99999 (the counter has no limit) becomes the same student number.
+    // A user number past user99999 (the counter has no limit) does not matter for the student number.
     await prisma.user.update({ where: { id: other.id }, data: { userNumber: 1_000_000 + (Date.now() % 1_000_000) } });
+    const lastStudent = (await prisma.user.aggregate({ _max: { studentNumber: true } }))._max.studentNumber ?? 0;
     const raw = JSON.stringify({ eventId: `${run}-race`, paymentId, state: "PAID", amount: 100_000, currency: "UZS" });
     const send = () => request(app).post("/api/payments/webhook/mock").set("Content-Type", "application/json").set("x-signature", sign("checkout-test-secret", raw)).send(raw);
     const results = await Promise.all(Array.from({ length: 6 }, send));
@@ -139,9 +142,10 @@ describe.skipIf(!enabled)("checkout flow", () => {
     expect(await prisma.enrollment.count({ where: { userId: other.id, courseId } })).toBe(1);
     expect(await prisma.notification.count({ where: { userId: other.id, type: "PAYMENT_PAID" } })).toBe(1);
 
-    // Six concurrent callbacks: the buyer becomes a student once, under their own number.
+    // Six concurrent callbacks: the buyer becomes a student once, with the next student number.
     const buyer = await prisma.user.findUniqueOrThrow({ where: { id: other.id } });
-    expect(buyer.studentNumber).toBe(buyer.userNumber);
+    expect(buyer.studentNumber).toBeGreaterThan(lastStudent);
+    expect(await prisma.userIdentifier.count({ where: { userId: other.id, kind: "STUDENT" } })).toBe(1);
   });
 
   it("a coupon with one use left is granted to exactly one of several simultaneous buyers", async () => {

@@ -10,6 +10,8 @@ import type {
   AdminQuestion,
   AdminQuestionInput,
   PageMeta,
+  UserIdentifierRow,
+  AdminEnrollment,
 } from "../types/admin";
 
 interface Page<T> {
@@ -21,11 +23,18 @@ interface Page<T> {
 export const adminService = {
   getStatistics: () => apiGet<AdminStats>("/admin/statistics"),
 
-  listUsers: (params: { page?: number; search?: string; role?: string; kind?: "student" | "user"; limit?: number }): Promise<Page<AdminUser>> =>
+  listUsers: (params: { page?: number; search?: string; role?: string; kind?: "student" | "user" | "teacher"; limit?: number }): Promise<Page<AdminUser>> =>
     apiGetPage<AdminUser>("/admin/users", { limit: 10, ...params }),
-  setUserActive: (id: string, isActive: boolean) =>
-    apiPatch<{ id: string; isActive: boolean }>(`/admin/users/${id}/status`, { isActive }),
-  setUserRole: (id: string, role: UserRole) => apiPatch<AdminUser>(`/admin/users/${id}/role`, { role }),
+  /** The reason goes to the audit log. */
+  setUserActive: (id: string, isActive: boolean, reason?: string) =>
+    apiPatch<{ id: string; isActive: boolean }>(`/admin/users/${id}/status`, { isActive, reason }),
+  setUserRole: (id: string, role: UserRole, reason?: string) => apiPatch<AdminUser>(`/admin/users/${id}/role`, { role, reason }),
+  /** Every user/student/teacher number the account has held. */
+  userIdentifiers: (id: string) => apiGet<UserIdentifierRow[]>(`/admin/users/${id}/identifiers`),
+  userEnrollments: (id: string) => apiGet<AdminEnrollment[]>(`/admin/users/${id}/enrollments`),
+  /** Opens a course without payment (enrollments:grant); the reason is required and audited. */
+  grantEnrollment: (id: string, d: { courseId: string; days?: number | null; reason: string }) =>
+    apiPost<AdminEnrollment>(`/admin/users/${id}/enrollments`, d),
   /** Superadmin only: removes 2FA from an account that lost its authenticator and recovery codes. */
   resetUserTwoFactor: (id: string) => apiDelete<{ id: string; twoFactorEnabled: boolean }>(`/admin/users/${id}/two-factor`),
 

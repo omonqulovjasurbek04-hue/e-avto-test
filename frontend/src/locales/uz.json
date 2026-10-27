@@ -214,7 +214,8 @@
       "COMBINED": "Ikki toifa bitta dasturda yoki tirkama bilan boshqarish",
       "EXTRA": "Nazariya, avtodrom, shahar va imtihonga tayyorgarlik"
     },
-    "sampleNote": "Narxlar namunaviy: avtomaktablarning e'lon qilingan tariflari asosida. Aniq narx va unga nimalar kirishi shartnomada ko'rsatiladi."
+    "sampleNote": "Narxlar namunaviy: avtomaktablarning e'lon qilingan tariflari asosida. Aniq narx va unga nimalar kirishi shartnomada ko'rsatiladi.",
+    "drafts": "Qoralama (saytda ko'rinmaydigan) kurslar"
   },
   "courseDetails": {
     "aboutCourse": "Kurs haqida",
@@ -423,7 +424,9 @@
       "title": "Tavsiya etilgan darslar",
       "empty": "Hozircha darslar yo'q",
       "emptyDesc": "Tez orada yangi darslar qo'shiladi."
-    }
+    },
+    "adminSubtitle": "Platformaning umumiy statistikasi.",
+    "openAdmin": "Admin panelga o'tish"
   },
   "lessons": {
     "title": "Darslar",
@@ -939,7 +942,43 @@
       "byKind": "Turi bo'yicha",
       "allKinds": "Hammasi",
       "kindStudent": "O'quvchi (kurs olgan)",
-      "kindUser": "Foydalanuvchi (kurs olmagan)"
+      "kindUser": "Foydalanuvchi (kurs olmagan)",
+      "kindTeacher": "O'qituvchilar",
+      "details": "Batafsil",
+      "toTeacherHint": "O'qituvchiga alohida raqam beriladi (teacher0001…). Uning {{id}} raqami bo'shaydi va keyingi ro'yxatdan o'tgan foydalanuvchiga beriladi. Student raqami, kurslari, to'lovlari va natijalari o'zida qoladi.",
+      "fromTeacherHint": "Faol guruhlari bo'lsa, avval ularni boshqa o'qituvchiga bering. Akkauntga yana oddiy raqam (user…) beriladi; o'qituvchi raqami tarixda qoladi.",
+      "reasonLabel": "Sabab (audit jurnaliga yoziladi)",
+      "reasonPlaceholder": "Masalan: o'qituvchi sifatida ishga olindi",
+      "blockTitle": "{{name}} — bloklash",
+      "blockReasonPlaceholder": "Masalan: qoidabuzarlik, spam",
+      "blockHint": "Barcha sessiyalari darhol yopiladi. Amal sababi bilan audit jurnaliga yoziladi.",
+      "detail": {
+        "numbers": "Raqamlar tarixi",
+        "numbersHint": "Akkauntning ichki ID'si o'zgarmaydi; bu yerda u ega bo'lgan ko'rinadigan raqamlar.",
+        "number": "Raqam",
+        "given": "Berilgan",
+        "freed": "Bo'shatilgan",
+        "active": "Faol",
+        "reason": {
+          "ROLE_CHANGE": "rol o'zgardi",
+          "ACCOUNT_DELETED": "akkaunt o'chirildi"
+        },
+        "courses": "Kurslari",
+        "noCourses": "Kurs yo'q",
+        "paid": "To'langan",
+        "grantedBadge": "Admin ochgan",
+        "noEnd": "muddatsiz",
+        "grantTitle": "To'lovsiz kurs ochish",
+        "grantHint": "Bepul o'rin yoki maxsus holat uchun. Sabab majburiy va audit jurnaliga yoziladi; foydalanuvchi student raqamini oladi.",
+        "course": "Kurs",
+        "chooseCourse": "Kursni tanlang",
+        "days": "Muddat (kun)",
+        "daysPlaceholder": "Bo'sh = muddatsiz",
+        "grantReasonPlaceholder": "Masalan: imtiyozli o'rin (buyruq №12)",
+        "grant": "Kursni ochish",
+        "granted": "Kurs ochildi",
+        "grantError": "Kursni ochib bo'lmadi"
+      }
     },
     "exam": {
       "title": "Imtihon sozlamalari va savollar importi",

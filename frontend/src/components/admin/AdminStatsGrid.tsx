@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import StatCard from "@/components/common/StatCard";
 
-export default function AdminDashboard() {
+/** The platform's numbers (users, courses, questions, tests, scores), shown on an admin's start page. */
+export function AdminStatsGrid() {
   const { t } = useTranslation();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,9 +38,7 @@ export default function AdminDashboard() {
   if (error || !stats) return <ErrorState message={error ?? undefined} onRetry={load} />;
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-white">{t("admin.dashboard.title")}</h1>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard icon={<Users className="h-5 w-5" />} label={t("admin.dashboard.users")} value={stats.totalUsers} />
         {stats.totalStudents !== undefined && (
           <StatCard icon={<GraduationCap className="h-5 w-5" />} label={t("admin.dashboard.students")} value={stats.totalStudents} />
@@ -49,7 +48,6 @@ export default function AdminDashboard() {
         <StatCard icon={<ClipboardCheck className="h-5 w-5" />} label={t("admin.dashboard.tests")} value={stats.totalTests} />
         <StatCard icon={<Target className="h-5 w-5" />} label={t("admin.dashboard.avgScore")} value={`${stats.averageScore}%`} />
         <StatCard icon={<Percent className="h-5 w-5" />} label={t("admin.dashboard.passRate")} value={`${stats.passRate}%`} />
-      </div>
     </div>
   );
 }

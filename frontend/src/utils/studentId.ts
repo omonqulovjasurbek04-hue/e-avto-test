@@ -7,17 +7,25 @@ export const formatStudentId = (n?: number | null): string => (valid(n) ? `stude
 /** 1 → "user0001". Empty when there is no number. */
 export const formatUserId = (n?: number | null): string => (valid(n) ? `user${pad(n)}` : "");
 
+/** 1 → "teacher0001". Empty when there is no number. */
+export const formatTeacherId = (n?: number | null): string => (valid(n) ? `teacher${pad(n)}` : "");
+
+type Numbers = { role?: string; userNumber?: number | null; studentNumber?: number | null; teacherNumber?: number | null };
+
 /**
- * The id shown for an account: "user0002" until a course is bought, then "student0002" (same number).
+ * The id shown for an account: "teacher0001" for a teacher, else "student0007" once a course was opened,
+ * else "user0005". Same rule as the server (backend/src/lib/accountNumbers.ts).
  */
-export const formatAccountId = (u?: { userNumber?: number | null; studentNumber?: number | null } | null): string =>
-  formatStudentId(u?.studentNumber) || formatUserId(u?.userNumber);
+export const formatAccountId = (u?: Numbers | null): string => {
+  if (u?.teacherNumber && (u.role === undefined || u.role === "TEACHER")) return formatTeacherId(u.teacherNumber);
+  return formatStudentId(u?.studentNumber) || formatUserId(u?.userNumber) || formatTeacherId(u?.teacherNumber);
+};
 
 /**
  * What the account badge shows: staff are known by their role ("O'qituvchi", "Admin", …), not by the
  * sign-up number they had as a user; students keep "user0002" / "student0002".
  */
 export const accountLabel = (
-  u: { role?: string; userNumber?: number | null; studentNumber?: number | null } | null | undefined,
+  u: Numbers | null | undefined,
   t: (key: string, fallback: string) => string
 ): string => (u?.role && u.role !== "USER" ? t(`roles.${u.role}`, u.role) : formatAccountId(u));

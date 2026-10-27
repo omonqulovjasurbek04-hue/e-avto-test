@@ -21,6 +21,10 @@ router.get("/users", readUsers, asyncHandler(adminController.listUsers));
 router.patch("/users/:id/role", users, asyncHandler(adminController.updateUserRole));
 router.patch("/users/:id/status", users, asyncHandler(adminController.updateUserStatus));
 router.delete("/users/:id/two-factor", users, asyncHandler(adminController.resetUserTwoFactor));
+// Number history (user/student/teacher) and courses of one account; opening a course without payment.
+router.get("/users/:id/identifiers", readUsers, asyncHandler(adminController.userIdentifiers));
+router.get("/users/:id/enrollments", readUsers, asyncHandler(adminController.userEnrollments));
+router.post("/users/:id/enrollments", requirePermission("enrollments:grant"), asyncHandler(adminController.grantEnrollment));
 
 router.get("/courses", readCatalog, asyncHandler(adminController.listCourses));
 router.post("/courses", catalog, asyncHandler(adminController.createCourse));

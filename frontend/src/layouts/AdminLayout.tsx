@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/auth.store";
 import {
   Shield,
-  LayoutDashboard,
   BookOpen,
   FolderTree,
   HelpCircle,
@@ -42,7 +41,6 @@ export const AdminLayout: React.FC = () => {
   };
 
   const allItems: { to: string; label: string; icon: React.ReactNode; perm: Permission; end?: boolean }[] = [
-    { to: "/admin", label: t("admin.nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" />, end: true, perm: "users:manage" },
     { to: "/admin/courses", label: t("admin.nav.courses"), icon: <BookOpen className="h-5 w-5" />, perm: "catalog:manage" },
     { to: "/admin/categories", label: t("admin.nav.categories"), icon: <FolderTree className="h-5 w-5" />, perm: "catalog:manage" },
     { to: "/admin/lessons", label: t("admin.nav.lessons"), icon: <PlayCircle className="h-5 w-5" />, perm: "catalog:manage" },

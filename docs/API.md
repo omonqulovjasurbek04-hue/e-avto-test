@@ -57,16 +57,20 @@ Xato kodlari: `400` noto'g'ri so'rov · `401` kirilmagan / token eskirgan · `40
 
 ### Hisob raqamlari
 
-| Maydon | Qachon beriladi | Ko'rinishi |
-|---|---|---|
-| `userNumber` | Ro'yxatdan o'tishda, har bir hisobga | `user0001`, `user0002`, … |
-| `studentNumber` | **Birinchi kurs to'langanda** (to'lov provayderi tasdiqlaganda) — `userNumber` bilan **bir xil raqam** | `user0002` → `student0002` |
+Hisobning doimiy identifikatori — ichki `id` (UUID). Kurslar, to'lovlar, natijalar, guruhlar, davomat va audit faqat shu `id` ga bog'lanadi va u hech qachon o'zgarmaydi.
+Ko'rinadigan raqamlar alohida:
 
-Raqam odamniki bo'lib qoladi, faqat old qo'shimchasi o'zgaradi; shuning uchun studentlar raqami ketma-ket emas (masalan, `student0002`, `student0034`).
-Kurs muddati tugasa ham `studentNumber` saqlanadi, qayta sotib olishda o'zgarmaydi.
-Raqamda chegara yo'q: kamida 4 xona, `user9999` dan keyin `user10000` … `user99999`, keyin `user100000` va hokazo (hisoblagich — bazadagi sequence).
-Baza qoidasi `users_studentNumber_is_userNumber` boshqa raqam yozishga yo'l qo'ymaydi.
-`studentNumber` yo'q = kurs sotib olmagan. Saytda ko'rinadigan ID: `studentNumber` bo'lsa `student####`, aks holda `user####`.
+| Maydon | Qachon beriladi | Ko'rinishi | Qayta beriladimi |
+|---|---|---|---|
+| `userNumber` | Ro'yxatdan o'tishda (telefon, Telegram, Google — hammasida baza o'zi beradi) | `user0001`, … `user9999`, `user10000` … | **Ha**: hisob o'qituvchi bo'lganda raqam bo'shaydi va keyingi yangi foydalanuvchiga beriladi (eng kichik bo'sh raqam) |
+| `studentNumber` | Birinchi kurs ochilganda (to'lov provayder tomonidan tasdiqlanganda yoki admin sabab bilan ochganda) — **o'z ketma-ketligi** | `student0001`, `student0002`, … | Yo'q |
+| `teacherNumber` | Hisob birinchi marta o'qituvchi qilinganda — o'z ketma-ketligi | `teacher0001`, … | Yo'q (rol olib tashlansa ham tarixda qoladi) |
+
+- Saytda ko'rinadigan ID: o'qituvchi bo'lsa `teacher####`, aks holda `student####`, aks holda `user####`.
+- Ikkinchi kurs yangi student raqami yoki yangi hisob ochmaydi; har bir kurs — alohida buyurtma va `Enrollment`.
+- O'qituvchilik olib tashlansa hisobga yana `userNumber` beriladi (bo'sh raqam yoki yangisi); faol guruhlari bo'lsa rol o'zgarmaydi (409) — avval guruhlar boshqa o'qituvchiga beriladi.
+- Raqamlar tarixi — `user_identifiers` jadvali (kim, qaysi raqam, qachon berilgan/bo'shatilgan, sababi). Uni bazadagi triggerlar yozadi, shuning uchun hech bir yo'l chetlab o'tolmaydi.
+- Bir vaqtda ro'yxatdan o'tganlar bir xil raqam olmaydi: `users` dagi UNIQUE ustunlar + bo'sh raqam tanlashda advisory lock.
 
 ### Rate limit (cheklovlar)
 
@@ -240,9 +244,12 @@ Davomatni belgilash/yakunlash uchun alohida `attendance:mark` kerak (MANAGER'da 
 
 | Metod | Yo'l | 🛡 | Yuboriladi / so'rov |
 |---|---|---|---|
-| GET | `/users` | `users:manage` yoki `users:read` | `?page&limit&search&role&kind=student\|user` — `search`: ism, email, telefon yoki `student0001`/`user0001`; javobda `userNumber`, `studentNumber`, `phone` |
-| PATCH | `/users/:id/role` | `users:manage` (+ ADMIN/SUPERADMIN uchun `roles:manage`) | `{ role }` |
-| PATCH | `/users/:id/status` | `users:manage` | `{ isActive }` |
+| GET | `/users` | `users:manage` yoki `users:read` | `?page&limit&search&role&kind=student\|user\|teacher` — `search`: ism, email, telefon yoki `teacher0001`/`student0001`/`user0001`; javobda `userNumber`, `studentNumber`, `teacherNumber`, `phone` |
+| PATCH | `/users/:id/role` | `users:manage` (+ ADMIN/SUPERADMIN uchun `roles:manage`) | `{ role, reason? }` — o'qituvchi qilinsa `teacherNumber` beriladi va `userNumber` bo'shaydi; faol guruhli o'qituvchidan rol olinmaydi (409) |
+| PATCH | `/users/:id/status` | `users:manage` | `{ isActive, reason? }` — audit jurnaliga yoziladi |
+| GET | `/users/:id/identifiers` | `users:manage` yoki `users:read` | raqamlar tarixi: `kind`, `number`, `assignedAt`, `releasedAt`, `releaseReason` |
+| GET | `/users/:id/enrollments` | `users:manage` yoki `users:read` | hisobning kurslari (`orderId: null` — admin ochgan) |
+| POST | `/users/:id/enrollments` | `enrollments:grant` (ADMIN, SUPERADMIN) | `{ courseId, days?, reason }` — to'lovsiz kurs ochish; sabab majburiy, audit; ochiq kurs qayta ochilmaydi (409) |
 | DELETE | `/users/:id/two-factor` | `users:manage` | 2FA ni tiklash |
 | GET | `/statistics` | `users:manage` | umumiy statistika (`totalUsers`, `totalStudents` — kurs sotib olganlar, …) |
 | GET | `/courses` | katalog/test/guruh | |

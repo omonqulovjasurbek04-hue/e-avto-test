@@ -18,14 +18,36 @@ export interface AdminUser {
   name: string;
   email: string | null;
   phone?: string | null;
-  userNumber: number;
-  /** null = never bought a course. */
+  /** null while the account is a teacher (the number was freed for a new sign-up). */
+  userNumber: number | null;
+  /** null = never had a course. */
   studentNumber: number | null;
+  /** Set once the account was made a teacher; kept as history afterwards. */
+  teacherNumber: number | null;
   role: UserRole;
   isActive: boolean;
   createdAt: string;
   emailVerifiedAt?: string | null;
   totpEnabledAt?: string | null;
+}
+
+export interface UserIdentifierRow {
+  id: string;
+  kind: "USER" | "STUDENT" | "TEACHER";
+  number: number;
+  assignedAt: string;
+  releasedAt: string | null;
+  releaseReason: string | null;
+}
+
+export interface AdminEnrollment {
+  id: string;
+  status: string;
+  startsAt: string;
+  expiresAt: string | null;
+  /** null = opened by an admin without payment. */
+  orderId: string | null;
+  course: { id: string; title: string };
 }
 
 export interface AdminCourse {

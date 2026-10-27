@@ -26,6 +26,8 @@ export type Permission =
   | "tests:manage"
   // Put questions into the course's exam tickets, edit and remove them (teachers).
   | "tickets:edit"
+  // Open a course for an account without payment (with a reason, audited).
+  | "enrollments:grant"
   | "media:manage"
   | "reports:read"
   | "audit:read"
@@ -47,6 +49,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   "attendance:edit",
   "tests:manage",
   "tickets:edit",
+  "enrollments:grant",
   "media:manage",
   "reports:read",
   "audit:read",

@@ -7,10 +7,12 @@ export interface User {
   name: string;
   phone?: string;
   role: UserRole;
-  /** Sign-up number, every account: shown as "user0001". */
+  /** Sign-up number: shown as "user0001". Absent for a teacher (the number was freed for a new sign-up). */
   userNumber?: number;
-  /** Only after the first bought course: shown as "student0001". */
+  /** Only after the first course: shown as "student0001" (own sequence). */
   studentNumber?: number;
+  /** Once the account was made a teacher: shown as "teacher0001". */
+  teacherNumber?: number;
   avatarUrl?: string;
   /** undefined for accounts without an e-mail (Telegram). */
   emailVerified?: boolean;

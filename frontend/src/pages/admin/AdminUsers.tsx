@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { AdminUser, PageMeta } from "@/types/admin";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -17,7 +17,8 @@ import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAssignRole, ROLE_LABEL } from "@/lib/permissions";
-import { formatStudentId, formatUserId } from "@/utils/studentId";
+import { formatAccountId, formatUserId } from "@/utils/studentId";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
 import type { UserRole } from "@/types/user";
 
 export default function AdminUsers() {
@@ -34,9 +35,14 @@ export default function AdminUsers() {
   const [nextRole, setNextRole] = useState<UserRole>("USER");
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleFilter, setRoleFilter] = useState("");
-  // "student" = bought a course, "user" = only signed up.
-  const [kindFilter, setKindFilter] = useState<"" | "student" | "user">("");
+  // "student" = had a course, "user" = only signed up, "teacher" = teaches now.
+  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher">("");
   const [resetting, setResetting] = useState<AdminUser | null>(null);
+  // Role changes and blocking ask for a reason; it goes to the audit log.
+  const [roleReason, setRoleReason] = useState("");
+  const [blocking, setBlocking] = useState<AdminUser | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+  const [detail, setDetail] = useState<AdminUser | null>(null);
 
   const resetTwoFactor = async () => {
     const u = resetting;
@@ -51,9 +57,10 @@ export default function AdminUsers() {
     }
   };
 
-  const toggleActive = async (u: AdminUser) => {
+  const toggleActive = async (u: AdminUser, reason?: string) => {
+    setBlocking(null);
     try {
-      await adminService.setUserActive(u.id, !u.isActive);
+      await adminService.setUserActive(u.id, !u.isActive, reason);
       toast.success(u.isActive ? t("admin.users.blockedToast") : t("admin.users.activatedToast"));
       load();
     } catch (e) {
@@ -82,6 +89,7 @@ export default function AdminUsers() {
 
   const openRole = (u: AdminUser) => {
     setNextRole(u.role);
+    setRoleReason("");
     setChanging(u);
   };
 
@@ -89,7 +97,7 @@ export default function AdminUsers() {
     if (!changing || nextRole === changing.role) return;
     setRoleBusy(true);
     try {
-      await adminService.setUserRole(changing.id, nextRole);
+      await adminService.setUserRole(changing.id, nextRole, roleReason.trim());
       toast.success(t("admin.users.roleUpdated"));
       setChanging(null);
       load();
@@ -124,9 +132,10 @@ export default function AdminUsers() {
               { value: "", label: t("admin.users.allKinds") },
               { value: "student", label: t("admin.users.kindStudent") },
               { value: "user", label: t("admin.users.kindUser") },
+              { value: "teacher", label: t("admin.users.kindTeacher") },
             ]}
             value={kindFilter}
-            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user")}
+            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user" | "teacher")}
           />
         </div>
       </div>
@@ -156,8 +165,8 @@ export default function AdminUsers() {
                 {items.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-800/40">
                     <td className="px-4 py-3 font-mono text-xs">
-                      {/* Same number, the prefix tells: student#### bought a course, user#### only signed up. */}
-                      <Badge variant={u.studentNumber ? "success" : "neutral"}>{u.studentNumber ? formatStudentId(u.studentNumber) : formatUserId(u.userNumber)}</Badge>
+                      {/* The prefix tells: teacher#### teaches, student#### had a course, user#### only signed up. */}
+                      <Badge variant={u.role === "TEACHER" && u.teacherNumber ? "primary" : u.studentNumber ? "success" : "neutral"}>{formatAccountId(u)}</Badge>
                     </td>
                     <td className="px-4 py-3 font-medium text-white">
                       {u.name}
@@ -179,6 +188,9 @@ export default function AdminUsers() {
                     <td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => setDetail(u)}>
+                          {t("admin.users.details")}
+                        </Button>
                         <Button size="sm" variant="outline" disabled={u.id === me?.id || !ALL_ROLES.some((r) => r !== u.role && canAssignRole(me?.role, u.role, r))} onClick={() => openRole(u)}>
                           {t("admin.users.changeRole")}
                         </Button>
@@ -186,7 +198,13 @@ export default function AdminUsers() {
                           size="sm"
                           variant={u.isActive ? "danger" : "success"}
                           disabled={u.id === me?.id}
-                          onClick={() => void toggleActive(u)}
+                          onClick={() => {
+                            // Blocking asks why; activating again is immediate.
+                            if (u.isActive) {
+                              setBlockReason("");
+                              setBlocking(u);
+                            } else void toggleActive(u);
+                          }}
                         >
                           {u.isActive ? t("admin.users.block") : t("admin.users.activate")}
                         </Button>
@@ -224,14 +242,39 @@ export default function AdminUsers() {
               value={nextRole}
               onChange={(e) => setNextRole(e.target.value as UserRole)}
             />
+            {/* What happens to the numbers: a teacher gets teacher#### and the user number is freed. */}
+            {nextRole === "TEACHER" && changing.role !== "TEACHER" && (
+              <p className="rounded-lg bg-brand-500/10 px-3 py-2 text-xs text-brand-200">{t("admin.users.toTeacherHint", { id: formatUserId(changing.userNumber) })}</p>
+            )}
+            {changing.role === "TEACHER" && nextRole !== "TEACHER" && (
+              <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{t("admin.users.fromTeacherHint")}</p>
+            )}
+            <Textarea label={t("admin.users.reasonLabel")} rows={2} value={roleReason} onChange={(e) => setRoleReason(e.target.value)} placeholder={t("admin.users.reasonPlaceholder")} />
             <p className="text-xs text-slate-500">{t("admin.users.roleHint")}</p>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setChanging(null)}>{t("admin.common.cancel")}</Button>
-              <Button loading={roleBusy} disabled={nextRole === changing.role} onClick={confirmRoleChange}>{t("admin.common.save")}</Button>
+              <Button loading={roleBusy} disabled={nextRole === changing.role || roleReason.trim().length < 3} onClick={confirmRoleChange}>{t("admin.common.save")}</Button>
             </div>
           </div>
         )}
       </Modal>
+
+      <Modal isOpen={blocking !== null} onClose={() => setBlocking(null)} title={t("admin.users.blockTitle", { name: blocking?.name ?? "" })} maxWidth="md">
+        {blocking && (
+          <div className="space-y-4">
+            <Textarea label={t("admin.users.reasonLabel")} rows={2} value={blockReason} onChange={(e) => setBlockReason(e.target.value)} placeholder={t("admin.users.blockReasonPlaceholder")} />
+            <p className="text-xs text-slate-500">{t("admin.users.blockHint")}</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setBlocking(null)}>{t("admin.common.cancel")}</Button>
+              <Button variant="danger" disabled={blockReason.trim().length < 3} onClick={() => void toggleActive(blocking, blockReason.trim())}>
+                {t("admin.users.block")}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {detail && <UserDetailModal user={detail} onClose={() => setDetail(null)} onChanged={load} />}
     </div>
   );
 }

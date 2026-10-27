@@ -36,11 +36,16 @@ model User {
   googleUnlinkedAt   DateTime?
   unlinkedTelegramId String?
   role               Role      @default(USER)
-  // Permanent sequential account number given at sign-up, shown as "user0001". Never reused.
-  userNumber         Int       @unique @default(autoincrement())
-  // Set at the first paid course, equal to userNumber (user0002 -> "student0002").
-  // Empty = never bought a course. Kept when access later expires.
+  // Public account numbers (the internal `id` above is the permanent one; everything links to `id`).
+  // user0001…: given at sign-up by the database (a released number first, else the next one). Released
+  // (NULL) when the account becomes a teacher, and then given to a new sign-up; see user_identifiers.
+  userNumber         Int?      @unique @default(autoincrement())
+  // student0001…: own sequence, set at the first paid (or admin-granted) course. Never reused, kept
+  // when access later expires. Empty = never had a course.
   studentNumber      Int?      @unique
+  // teacher0001…: own sequence, set when the account first becomes a teacher. Never reused; kept (as
+  // history) when the teacher role is taken away.
+  teacherNumber      Int?      @unique
   isActive           Boolean   @default(true)
   // Incremented on password change / "log out everywhere"; older JWTs stop working.
   tokenVersion       Int       @default(0)
@@ -70,6 +75,7 @@ model User {
   refreshTokens      RefreshToken[]
   emailVerifications EmailVerification[]
 
+  identifiers           UserIdentifier[]
   studentProfile        StudentProfile?
   teacherProfile        TeacherProfile?
   orders                Order[]
@@ -378,6 +384,33 @@ model TelegramLogin {
 }
 
 // ───────────────────────── Profiles ─────────────────────────
+
+enum IdentifierKind {
+  USER
+  STUDENT
+  TEACHER
+}
+
+// Who held which public number and when. Written by database triggers on "users" (every sign-up path,
+// every change), so it cannot be skipped. A row is open while `releasedAt` is NULL; the users table's
+// unique columns guarantee one active holder per number. `userId` is kept (SET NULL only if the account
+// is deleted) so old records never point at the number's new holder.
+model UserIdentifier {
+  id            String         @id @default(uuid())
+  userId        String?
+  kind          IdentifierKind
+  number        Int
+  assignedAt    DateTime       @default(now())
+  releasedAt    DateTime?
+  // ROLE_CHANGE (user number freed for a teacher), ACCOUNT_DELETED, …; only ROLE_CHANGE numbers are reused.
+  releaseReason String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([kind, number])
+  @@index([userId])
+  @@map("user_identifiers")
+}
 
 model StudentProfile {
   id             String    @id @default(uuid())

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 import * as adminService from "../services/admin.service";
 import * as courseService from "../services/course.service";
 import {
@@ -10,6 +11,7 @@ import {
   questionUpdateSchema,
   userRoleSchema,
   userStatusSchema,
+  grantEnrollmentSchema,
   listQuerySchema,
 } from "../validators/course";
 import { success, paginated } from "../utils/apiResponse";
@@ -21,13 +23,28 @@ export const listUsers = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const updateUserRole = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { role } = userRoleSchema.parse(req.body);
-  success(res, await adminService.updateUserRole(requireUserId(req), req.user!.role, req.params.id, role));
+  const { role, reason } = userRoleSchema.parse(req.body);
+  success(res, await adminService.updateUserRole(requireUserId(req), req.user!.role, req.params.id, role, reason));
 };
 
 export const updateUserStatus = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { isActive } = userStatusSchema.parse(req.body);
-  success(res, await adminService.updateUserStatus(requireUserId(req), req.user!.role, req.params.id, isActive));
+  const { isActive, reason } = userStatusSchema.parse(req.body);
+  success(res, await adminService.updateUserStatus(requireUserId(req), req.user!.role, req.params.id, isActive, reason));
+};
+
+const userId = z.string().uuid();
+
+export const userIdentifiers = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await adminService.userIdentifiers(userId.parse(req.params.id)));
+};
+
+export const userEnrollments = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await adminService.userEnrollments(userId.parse(req.params.id)));
+};
+
+export const grantEnrollment = async (req: AuthRequest, res: Response): Promise<void> => {
+  const body = grantEnrollmentSchema.parse(req.body);
+  success(res, await adminService.grantEnrollment(requireUserId(req), userId.parse(req.params.id), body), 201);
 };
 
 export const resetUserTwoFactor = async (req: AuthRequest, res: Response): Promise<void> => {

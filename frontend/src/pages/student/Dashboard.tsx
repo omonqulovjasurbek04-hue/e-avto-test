@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle, Clock } from "lucide-react";
+import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle, Clock, LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { lessonService } from "@/services/lesson.service";
@@ -18,11 +18,40 @@ import GuideList from "@/components/guide/GuideList";
 import WeeklyActivityChart, { formatStudyMinutes } from "@/components/common/WeeklyActivityChart";
 import UpcomingSchedule from "@/components/common/UpcomingSchedule";
 import TeacherDashboard from "@/pages/teacher/TeacherDashboard";
+import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
+import { Button } from "@/components/ui/Button";
+import { can } from "@/lib/permissions";
 
-/** Teachers get their own start page; everyone else the student one. */
+/** Teachers and admins get their own start page; everyone else the student one. */
 export default function Dashboard() {
   const { user } = useAuth();
-  return user?.role === "TEACHER" ? <TeacherDashboard /> : <StudentDashboard />;
+  if (user?.role === "TEACHER") return <TeacherDashboard />;
+  // Whoever may read the platform statistics sees them here instead of a student's progress.
+  if (can(user?.role, "users:manage")) return <AdminStart />;
+  return <StudentDashboard />;
+}
+
+function AdminStart() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  return (
+    <div className="container-page py-8">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.name ?? "" })}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t("dashboard.adminSubtitle")}</p>
+        </div>
+        <Link to="/admin">
+          <Button variant="outline" leftIcon={<LayoutDashboard className="h-4 w-4" />}>
+            {t("dashboard.openAdmin")}
+          </Button>
+        </Link>
+      </motion.div>
+      <div className="mt-6">
+        <AdminStatsGrid />
+      </div>
+    </div>
+  );
 }
 
 function StudentDashboard() {

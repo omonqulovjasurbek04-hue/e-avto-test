@@ -54,12 +54,24 @@ export const questionCreateSchema = questionBase.refine(
 
 export const questionUpdateSchema = questionBase.partial();
 
+// The reason goes to the audit log (the admin panel asks for it).
+const reason = z.string().trim().max(500).optional();
+
 export const userRoleSchema = z.object({
   role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]),
+  reason,
 });
 
 export const userStatusSchema = z.object({
   isActive: z.boolean(),
+  reason,
+});
+
+/** A course opened by an admin without payment: the reason is required. */
+export const grantEnrollmentSchema = z.object({
+  courseId: z.string().uuid(),
+  days: z.number().int().min(1).max(3650).nullable().optional(),
+  reason: z.string().trim().min(3).max(500),
 });
 
 export const listQuerySchema = z.object({
@@ -69,7 +81,7 @@ export const listQuerySchema = z.object({
   // Only used by the user list (e.g. to pick teachers/students for a group).
   role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]).optional(),
   // User list: "student" = bought a course (has a student number), "user" = only signed up.
-  kind: z.enum(["student", "user"]).optional(),
+  kind: z.enum(["student", "user", "teacher"]).optional(),
 });
 
 export type CourseCreateInput = z.infer<typeof courseCreateSchema>;

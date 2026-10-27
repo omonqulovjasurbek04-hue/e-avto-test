@@ -44,6 +44,8 @@ Qoidalar:
 | `reports:read` | Hisobotlar, reyting, Telegram statistika | | | | ✅ | | ✅ | ✅ |
 | `audit:read` | Audit jurnali | | | | | | ✅ | ✅ |
 | `settings:manage` | Sayt sozlamalari, bildirishnoma shablonlari, tizim holati | | | | | | ✅ | ✅ |
+| `tickets:edit` | Imtihon biletlariga savol qo'shish, tahrirlash, olib tashlash | | ✅ | | | | ✅ | ✅ |
+| `enrollments:grant` | Hisobga to'lovsiz kurs ochish (sabab majburiy, audit) | | | | | | ✅ | ✅ |
 
 ## 3. Har bir rolning vazifalari va API'si
 
@@ -155,10 +157,13 @@ Hozirgi 7 rol avtomaktab uchun yetarli, lekin bir nechta bo'shliq bor:
 | # | Muammo | Taklif |
 |---|---|---|
 | 1 | ✅ Bajarildi: qabulxona uchun **`MANAGER`** roli (3.5) — ADMIN bermasdan guruh va jadval bilan ishlash | — |
-| 2 | O'qituvchi o'z guruhidagi o'quvchilarning test natijalarini ko'rmaydi | `GET /api/groups/:id/results` (🛡 `teaching:access`, faqat o'z guruhi) — o'quvchining tayyorgarligini kuzatish uchun |
+| 2 | ✅ Bajarildi: o'qituvchi o'z guruhi o'quvchilarining natijalari va xatolarini ko'radi ("Bilim nazorati", `GET /api/teacher/knowledge`) | — |
 | 3 | MODERATOR `POST /announcements` orqali **barcha** foydalanuvchilarga xabar yubora oladi | `audience: all` uchun alohida ruxsat (`announcements:broadcast`) yoki faqat ADMIN |
 | 4 | Xodimlar uchun 2FA ixtiyoriy | `admin:access` bor rollar uchun 2FA'ni majburiy qilish (BACKEND_TODO #10) |
 | 5 | Ruxsatlar kodda qattiq yozilgan | Hozircha to'g'ri yondashuv (oddiy, xavfsiz). Rollar ko'paysa — bazada rol→ruxsat jadvali va SUPERADMIN uchun tahrirlash sahifasi |
+| 6 | ✅ Bajarildi (2026-10-28): `user/student/teacher` raqamlari alohida, raqamlar tarixi; o'qituvchi bo'lganda user raqami bo'shab, yangi foydalanuvchiga beriladi; rol o'zgarishi va bloklash sabab bilan audit qilinadi; admin to'lovsiz kurs ochadi (`enrollments:grant`, sabab majburiy) | Batafsil: [API.md → Hisob raqamlari](API.md) |
+| 7 | Har bir hisobda **bitta** rol (`users.role`): bir odam bir vaqtda ham o'qituvchi, ham admin bo'la olmaydi | Kerak bo'lsa `user_roles` jadvali (bir nechta rol). Ataylab qilinmadi: barcha ruxsat tekshiruvlari bitta rolga qurilgan, ko'chirish katta va xavfli |
+| 8 | Taklif qilingan qo'shimcha rollar (`system_admin`, `education_manager`, `course_manager`, `support_agent`, …) yo'q | Hozirgi 7 rol vazifalarni qoplaydi (MANAGER — guruh boshqaruvchisi, FINANCE — buxgalter, MODERATOR — kontent va testlar). Yangi rol kerak bo'lsa `permissions.ts` matritsasiga qo'shiladi |
 
 ## 5. Lokal sinov akkauntlari
 
