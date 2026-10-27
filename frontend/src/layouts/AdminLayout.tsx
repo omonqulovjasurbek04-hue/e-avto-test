@@ -24,6 +24,7 @@ import {
   BarChart3,
   Activity,
   ShieldCheck,
+  Brain,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { can, type Permission } from "../lib/permissions";
@@ -49,6 +50,7 @@ export const AdminLayout: React.FC = () => {
     { to: "/admin/catalog", label: t("admin.nav.catalog"), icon: <BadgeDollarSign className="h-5 w-5" />, perm: "catalog:manage" },
     { to: "/admin/orders", label: t("admin.nav.orders"), icon: <Receipt className="h-5 w-5" />, perm: "orders:read" },
     { to: "/admin/groups", label: t("admin.nav.groups"), icon: <CalendarRange className="h-5 w-5" />, perm: "groups:manage" },
+    { to: "/admin/knowledge", label: t("admin.nav.knowledge"), icon: <Brain className="h-5 w-5" />, perm: "groups:manage" },
     { to: "/admin/exam", label: t("admin.nav.exam"), icon: <ClipboardList className="h-5 w-5" />, perm: "tests:manage" },
     { to: "/admin/cms", label: t("admin.nav.cms"), icon: <Newspaper className="h-5 w-5" />, perm: "content:manage" },
     { to: "/admin/users", label: t("admin.nav.users"), icon: <Users className="h-5 w-5" />, perm: "users:manage" },

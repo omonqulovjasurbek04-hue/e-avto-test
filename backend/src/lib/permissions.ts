@@ -24,6 +24,8 @@ export type Permission =
   | "attendance:mark"
   | "attendance:edit"
   | "tests:manage"
+  // Put questions into the course's exam tickets, edit and remove them (teachers).
+  | "tickets:edit"
   | "media:manage"
   | "reports:read"
   | "audit:read"
@@ -44,6 +46,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   "attendance:mark",
   "attendance:edit",
   "tests:manage",
+  "tickets:edit",
   "media:manage",
   "reports:read",
   "audit:read",
@@ -52,7 +55,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
 
 const MATRIX: Record<Role, readonly Permission[]> = {
   USER: [],
-  TEACHER: ["teaching:access", "attendance:mark", "groups:own", "courses:open-all"],
+  TEACHER: ["teaching:access", "attendance:mark", "groups:own", "courses:open-all", "tickets:edit"],
   MODERATOR: ["admin:access", "content:manage", "tests:manage"],
   FINANCE: ["admin:access", "orders:read", "payments:manage", "reports:read"],
   // Front desk: enrols students into groups and plans classes; no prices, settings or audit.

@@ -112,7 +112,8 @@ export const StudentLayout: React.FC = () => {
     { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
     { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
-    { to: "/mistakes", label: t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
+    // Teachers: the same place shows their students' knowledge instead of their own mistakes.
+    { to: "/mistakes", label: user?.role === "TEACHER" ? t("nav.knowledge") : t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
     ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
   ];
 

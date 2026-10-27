@@ -23,6 +23,13 @@ describe("ticket question sets", () => {
     expect(new Set(ids(7, small)).size).toBe(30);
     expect(ticketQuestions([], "course-1", 1)).toEqual([]);
   });
+
+  it("serves a ticket filled by hand as it is, and keeps its questions out of the other tickets", () => {
+    const mixed = [...pool, { id: "own2", ticket: 5, order: 2 }, { id: "own1", ticket: 5, order: 1 }];
+    expect(ids(5, mixed)).toEqual(["own1", "own2"]);
+    expect(ids(1, mixed)).toEqual(ids(1));
+    expect([1, 2, 3].flatMap((t) => ids(t, mixed))).not.toContain("own1");
+  });
 });
 
 // Integration: tickets over HTTP. Needs PostgreSQL.

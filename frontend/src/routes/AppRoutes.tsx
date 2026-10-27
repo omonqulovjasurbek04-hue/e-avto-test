@@ -47,6 +47,8 @@ const Orders = lazy(() => import("@/pages/student/Orders"));
 const Notifications = lazy(() => import("@/pages/student/Notifications"));
 const TeacherGroups = lazy(() => import("@/pages/teacher/TeacherGroups"));
 const TeacherGroupDetail = lazy(() => import("@/pages/teacher/TeacherGroupDetail"));
+const TicketEditor = lazy(() => import("@/pages/teacher/TicketEditor"));
+const StudentKnowledge = lazy(() => import("@/pages/teacher/StudentKnowledge"));
 const Settings = lazy(() => import("@/pages/student/Settings"));
 
 const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
@@ -56,6 +58,7 @@ const AdminLessons = lazy(() => import("@/pages/admin/AdminLessons"));
 const AdminCatalog = lazy(() => import("@/pages/admin/AdminCatalog"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminGroups = lazy(() => import("@/pages/admin/AdminGroups"));
+const AdminKnowledge = lazy(() => import("@/pages/admin/AdminKnowledge"));
 const AdminCms = lazy(() => import("@/pages/admin/AdminCms"));
 const AdminExam = lazy(() => import("@/pages/admin/AdminExam"));
 const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
@@ -128,6 +131,8 @@ export default function AppRoutes() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teacher" element={<TeacherRoute><TeacherGroups /></TeacherRoute>} />
             <Route path="/teacher/groups/:groupId" element={<TeacherRoute><TeacherGroupDetail /></TeacherRoute>} />
+            <Route path="/tests/manage/:courseId/:ticket" element={<TeacherRoute><TicketEditor /></TeacherRoute>} />
+            <Route path="/mistakes/students/:studentId" element={<TeacherRoute><StudentKnowledge /></TeacherRoute>} />
           </Route>
         </Route>
 
@@ -146,6 +151,8 @@ export default function AppRoutes() {
           <Route path="/admin/catalog" element={<RequirePerm perm="catalog:manage"><AdminCatalog /></RequirePerm>} />
           <Route path="/admin/orders" element={<RequirePerm perm="orders:read"><AdminOrders /></RequirePerm>} />
           <Route path="/admin/groups" element={<RequirePerm perm="groups:manage"><AdminGroups /></RequirePerm>} />
+          <Route path="/admin/knowledge" element={<RequirePerm perm="groups:manage"><AdminKnowledge /></RequirePerm>} />
+          <Route path="/admin/knowledge/students/:studentId" element={<RequirePerm perm="groups:manage"><StudentKnowledge /></RequirePerm>} />
           <Route path="/admin/exam" element={<RequirePerm perm="tests:manage"><AdminExam /></RequirePerm>} />
           <Route path="/admin/cms" element={<RequirePerm perm="content:manage"><AdminCms /></RequirePerm>} />
           <Route path="/admin/users" element={<RequirePerm perm="users:manage"><AdminUsers /></RequirePerm>} />

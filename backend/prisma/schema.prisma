@@ -188,6 +188,8 @@ model Question {
   options      Json // array of strings
   correctIndex Int      @default(0)
   order        Int      @default(1)
+  // Exam ticket the teacher put this question in (1..60); null = the ticket is picked automatically.
+  ticket       Int?
   isPublished  Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -199,6 +201,7 @@ model Question {
 
   @@index([courseId])
   @@index([lessonId])
+  @@index([courseId, ticket])
   @@map("questions")
 }
 

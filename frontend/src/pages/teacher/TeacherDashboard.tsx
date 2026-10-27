@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { AlertCircle, CalendarClock, CalendarDays, CheckCircle2, ChevronRight, ClipboardCheck, MapPin, Percent, Plus, Users, UsersRound } from "lucide-react";
+import { AlertCircle, CalendarClock, CalendarDays, CheckCircle2, ChevronRight, ClipboardCheck, MapPin, Percent, Users, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useLoad } from "@/hooks/useLoad";
@@ -38,17 +38,9 @@ export default function TeacherDashboard() {
 
   return (
     <div className="container-page py-8">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.name ?? "" })}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t("teacherDash.subtitle")}</p>
-        </div>
-        <Link
-          to="/teacher?new=1"
-          className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-        >
-          <Plus className="h-4 w-4" aria-hidden /> {t("groupForm.open")}
-        </Link>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.name ?? "" })}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("teacherDash.subtitle")}</p>
       </motion.div>
 
       {loading && !data ? (
@@ -63,6 +55,41 @@ export default function TeacherDashboard() {
         </div>
       ) : (
         <>
+          {/* First thing to do: lessons that took place but still have no attendance. */}
+          {data.unmarked.length === 0 ? (
+            // Nothing to catch up on: a slim line instead of a whole card.
+            <p className="mt-6 flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+              <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden /> {t("teacherDash.allMarked")}
+            </p>
+          ) : (
+          <Card className="mt-6 border-amber-200 dark:border-amber-500/30">
+            <CardContent>
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+                <AlertCircle className="h-5 w-5 text-amber-500" /> {t("teacherDash.unmarkedTitle")}
+              </h2>
+                <ul className="space-y-2">
+                  {data.unmarked.map((s) => (
+                    <li key={s.id}>
+                      <Link
+                        to={`/teacher/groups/${s.group.id}?attendance=${s.id}`}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold text-slate-800 dark:text-slate-100">{s.group.name}</span>
+                          <span className="text-xs text-slate-500">
+                            {day(s.startsAt, weekdays)} · {time(s.startsAt)}
+                            {s.topic ? ` · ${s.topic}` : ""}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">{t("teacherDash.mark")} →</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+            </CardContent>
+          </Card>
+          )}
+
           {/* The next lesson, with the actions a teacher needs right before class. */}
           {data.next[0] ? (
             <Card className="mt-6 overflow-hidden border-brand-200 bg-gradient-to-r from-brand-600 to-brand-500 text-white dark:border-brand-500/30">
@@ -123,7 +150,7 @@ export default function TeacherDashboard() {
             />
           </div>
 
-          <div className="mt-8 grid gap-6 xl:grid-cols-2">
+          <div className="mt-8">
             {/* What is coming next. */}
             <Card>
               <CardContent>
@@ -169,39 +196,6 @@ export default function TeacherDashboard() {
               </CardContent>
             </Card>
 
-            {/* Lessons that took place but still have no attendance. */}
-            <Card>
-              <CardContent>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
-                  <AlertCircle className="h-5 w-5 text-amber-500" /> {t("teacherDash.unmarkedTitle")}
-                </h2>
-                {data.unmarked.length === 0 ? (
-                  <p className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-6 text-sm font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                    <CheckCircle2 className="h-5 w-5" aria-hidden /> {t("teacherDash.allMarked")}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {data.unmarked.map((s) => (
-                      <li key={s.id}>
-                        <Link
-                          to={`/teacher/groups/${s.group.id}?attendance=${s.id}`}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10"
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate font-semibold text-slate-800 dark:text-slate-100">{s.group.name}</span>
-                            <span className="text-xs text-slate-500">
-                              {day(s.startsAt, weekdays)} · {time(s.startsAt)}
-                              {s.topic ? ` · ${s.topic}` : ""}
-                            </span>
-                          </span>
-                          <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">{t("teacherDash.mark")} →</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </>
       )}

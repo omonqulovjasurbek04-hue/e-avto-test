@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { Check, PenLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { courseService } from "@/services/course.service";
 import { studentService } from "@/services/platform.service";
@@ -9,7 +10,12 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { TicketMatrix } from "@/components/test/TicketMatrix";
-import { cn } from "@/utils/cn";
+import { CoursePicker } from "@/components/test/CoursePicker";
+import { TicketEditGrid } from "@/components/test/TicketEditGrid";
+import { Button } from "@/components/ui/Button";
+import { useAuthStore } from "@/store/auth.store";
+
+const TICKET_EDITORS = ["TEACHER", "ADMIN", "SUPERADMIN"];
 
 export default function Tests() {
   const { t } = useTranslation();
@@ -18,7 +24,18 @@ export default function Tests() {
   const [error, setError] = useState(false);
   // Which courses this student bought: the server decides, the page only mirrors it (null = still loading).
   const [access, setAccess] = useState<{ all: boolean; courseIds: string[] } | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  // The course and the teacher's edit mode live in the URL, so coming back from a ticket keeps both.
+  const [params, setParams] = useSearchParams();
+  const selected = params.get("course");
+  const editing = params.get("edit") === "1";
+  const canEdit = TICKET_EDITORS.includes(useAuthStore((s) => s.user?.role) ?? "");
+  const setParam = (key: string, value: string | null) =>
+    setParams((p) => {
+      const next = new URLSearchParams(p);
+      if (value) next.set(key, value);
+      else next.delete(key);
+      return next;
+    }, { replace: true });
   const canOpen = (courseId: string) => !access || access.all || access.courseIds.includes(courseId);
 
   const load = async () => {
@@ -70,30 +87,30 @@ export default function Tests() {
         </Alert>
       ) : (
         <>
-          {/* With more than one bought course the student picks whose tickets to show. */}
-          {owned.length > 1 && (
-            <div className="mt-6 flex flex-wrap gap-2" role="tablist">
-              {owned.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={c.id === course.id}
-                  onClick={() => setSelected(c.id)}
-                  className={cn(
-                    "rounded-full border px-4 py-1.5 text-sm font-semibold transition",
-                    c.id === course.id
-                      ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-brand-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                  )}
+          {/* With more than one course (bought, or all of them for a teacher) one picker chooses whose tickets to show. */}
+          {(owned.length > 1 || canEdit) && (
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              {owned.length > 1 && (
+                <div className="min-w-0 flex-1">
+                  <CoursePicker courses={owned} value={course.id} onChange={(id) => setParam("course", id)} />
+                </div>
+              )}
+              {/* Teachers switch the grid into edit mode: a ticket then opens its questions instead of a test. */}
+              {canEdit && (
+                <Button
+                  variant={editing ? "success" : "outline"}
+                  size="lg"
+                  className="h-auto min-h-[3.5rem] shrink-0 rounded-2xl px-5"
+                  leftIcon={editing ? <Check className="h-5 w-5" /> : <PenLine className="h-5 w-5" />}
+                  onClick={() => setParam("edit", editing ? null : "1")}
                 >
-                  {c.title}
-                </button>
-              ))}
+                  {editing ? t("ticketEdit.done") : t("ticketEdit.open")}
+                </Button>
+              )}
             </div>
           )}
           <div className="mt-6">
-            <TicketMatrix key={course.id} courseId={course.id} />
+            {editing && canEdit ? <TicketEditGrid key={course.id} courseId={course.id} /> : <TicketMatrix key={course.id} courseId={course.id} />}
           </div>
         </>
       )}

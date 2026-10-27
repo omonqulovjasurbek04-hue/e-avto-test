@@ -31,14 +31,19 @@ export const durationFor = (count: number): number => {
 };
 
 /**
- * The questions of exam ticket `ticket` (1-based): the course pool in a fixed order (a hash of course and
- * question id, so it does not depend on when questions were added), cut into consecutive blocks. With
- * TICKET_COUNT * TICKET_SIZE questions every ticket is different; a smaller pool wraps around.
+ * The questions of exam ticket `ticket` (1-based). A ticket a teacher filled by hand (questions with
+ * `ticket` set) serves exactly those, in their order. Any other ticket is cut from the rest of the pool:
+ * a fixed order (a hash of course and question id, so it does not depend on when questions were added),
+ * cut into consecutive blocks. With TICKET_COUNT * TICKET_SIZE questions every ticket is different; a
+ * smaller pool wraps around.
  */
-export const ticketQuestions = <T extends { id: string }>(pool: T[], courseId: string, ticket: number): T[] => {
-  if (pool.length === 0) return [];
+export const ticketQuestions = <T extends { id: string; ticket?: number | null; order?: number }>(pool: T[], courseId: string, ticket: number): T[] => {
+  const own = pool.filter((q) => q.ticket === ticket);
+  if (own.length) return own.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.id < b.id ? -1 : 1));
+  const rest = pool.filter((q) => q.ticket == null);
+  if (rest.length === 0) return [];
   const key = (q: T) => crypto.createHash("sha256").update(`${courseId}:${q.id}`).digest("hex");
-  const ordered = pool.map((q) => ({ q, k: key(q) })).sort((a, b) => (a.k < b.k ? -1 : 1)).map((x) => x.q);
+  const ordered = rest.map((q) => ({ q, k: key(q) })).sort((a, b) => (a.k < b.k ? -1 : 1)).map((x) => x.q);
   const size = Math.min(TICKET_SIZE, ordered.length);
   const start = ((ticket - 1) * TICKET_SIZE) % ordered.length;
   return Array.from({ length: size }, (_, i) => ordered[(start + i) % ordered.length]);

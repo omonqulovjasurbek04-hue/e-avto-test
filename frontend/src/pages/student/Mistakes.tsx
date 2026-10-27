@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuthStore } from "@/store/auth.store";
+import TeacherKnowledge from "@/pages/teacher/TeacherKnowledge";
 import { Link } from "react-router-dom";
 import { Bookmark, CheckCircle2, History, Repeat, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +25,13 @@ const PRACTICE_MAX_QUESTIONS = 20;
 type PracticeMode = Exclude<TestMode, "EXAM">;
 
 /** Work on mistakes: questions last answered wrong and bookmarked ones, practised until they stick. */
+/** Teachers see their students' knowledge here; students practise their own mistakes. */
 export default function Mistakes() {
+  const role = useAuthStore((st) => st.user?.role);
+  return role === "TEACHER" ? <TeacherKnowledge /> : <StudentMistakes />;
+}
+
+function StudentMistakes() {
   const { t } = useTranslation();
   const { data, loading, error, reload } = useLoad(() => studentService.practice(), []);
   const results = useLoad(() => resultService.list(), []);

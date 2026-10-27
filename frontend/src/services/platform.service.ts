@@ -300,8 +300,95 @@ export interface TeacherOverview {
   next: { id: string; startsAt: string; endsAt: string; topic: string | null; room: string | null; group: { id: string; name: string; students: number } }[];
 }
 
+/** Knowledge control: a group's test activity for the last 7 days. */
+export interface TeachersKnowledge {
+  summary: { teachers: number; groups: number; students: number; tests7d: number; average7d: number | null; inactive7d: number };
+  teachers: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    phone: string | null;
+    groups: number;
+    students: number;
+    tests7d: number;
+    average7d: number | null;
+    inactive7d: number;
+  }[];
+}
+export interface GroupKnowledge {
+  groups: { id: string; name: string; course: string; students: number }[];
+  groupId: string | null;
+  summary: { students: number; tests7d: number; average7d: number | null; inactive7d: number } | null;
+  students: {
+    id: string;
+    name: string;
+    userNumber: number;
+    studentNumber: number | null;
+    avatarUrl: string | null;
+    tests7d: number;
+    average7d: number | null;
+    passed7d: number;
+    mistakes: number;
+    lastTestAt: string | null;
+  }[];
+}
+
+/** One student: recent tests, the questions they still get wrong and their weakest topics. */
+export interface StudentKnowledge {
+  student: { id: string; name: string; userNumber: number; studentNumber: number | null; avatarUrl: string | null; phone: string | null };
+  week: { tests: number; average: number | null };
+  recent: { id: string; score: number; passed: boolean; mode: string; ticket: number | null; totalQuestions: number; correctAnswers: number; finishedAt: string; course: string | null }[];
+  mistakes: { questionId: string; text: string; imageUrl: string | null; topic: string | null; chosen: string | null; correct: string | null; times: number; lastAt: string }[];
+  weakTopics: { topic: string; count: number }[];
+}
+
+export interface TicketSummary {
+  course: { id: string; title: string };
+  size: number;
+  tickets: { ticket: number; questions: number; custom: boolean }[];
+}
+export interface TicketQuestion {
+  id: string;
+  text: string;
+  imageUrl: string | null;
+  options: string[];
+  correctIndex: number;
+  explanation: string | null;
+  lessonId: string | null;
+}
+export interface TicketDetail {
+  course: { id: string; title: string };
+  ticket: number;
+  custom: boolean;
+  questions: TicketQuestion[];
+  lessons: { id: string; title: string }[];
+}
+export type TicketQuestionInput = Omit<TicketQuestion, "id">;
+
 export const teacherService = {
   overview: () => apiGet<TeacherOverview>("/teacher/overview"),
+  knowledge: (groupId?: string, teacherId?: string) =>
+    apiGet<GroupKnowledge>("/teacher/knowledge", { ...(groupId ? { groupId } : {}), ...(teacherId ? { teacherId } : {}) }),
+  /** Admin: every teacher with their groups' activity for the last 7 days. */
+  teachersKnowledge: () => apiGet<TeachersKnowledge>("/teacher/knowledge/teachers"),
+  studentKnowledge: (studentId: string) => apiGet<StudentKnowledge>(`/teacher/students/${studentId}/knowledge`),
+  /** Exam tickets of a course: what each holds; add, edit or remove a ticket's questions. */
+  tickets: (courseId: string) => apiGet<TicketSummary>(`/teacher/courses/${courseId}/tickets`),
+  ticket: (courseId: string, ticket: number) => apiGet<TicketDetail>(`/teacher/courses/${courseId}/tickets/${ticket}`),
+  addTicketQuestion: (courseId: string, ticket: number, d: TicketQuestionInput) =>
+    apiPost<TicketQuestion>(`/teacher/courses/${courseId}/tickets/${ticket}/questions`, d),
+  updateTicketQuestion: (courseId: string, id: string, d: TicketQuestionInput) => apiPut<TicketQuestion>(`/teacher/courses/${courseId}/questions/${id}`, d),
+  removeTicketQuestion: (courseId: string, ticket: number, id: string) =>
+    apiDelete<unknown>(`/teacher/courses/${courseId}/tickets/${ticket}/questions/${id}`),
+  resetTicket: (courseId: string, ticket: number) => apiDelete<{ reset: number }>(`/teacher/courses/${courseId}/tickets/${ticket}/questions`),
+  /** Uploads a question picture as the raw request body; returns its public URL. */
+  async uploadImage(image: Blob): Promise<string> {
+    const res = await apiClient.put<{ data: { url: string } }>("/teacher/images", image, {
+      headers: { "Content-Type": image.type || "application/octet-stream" },
+      timeout: 60_000,
+    });
+    return res.data.data.url;
+  },
   groups: () => apiGet<Group[]>("/groups"),
   /** A teacher opens a group for themselves; the lessons follow from days + startTime. */
   createGroup: (d: GroupInput) => apiPost<Group & { lessonsCreated: number }>("/groups", d),
