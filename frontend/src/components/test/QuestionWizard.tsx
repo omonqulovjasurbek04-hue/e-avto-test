@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { QuestionMedia } from "@/components/test/QuestionMedia";
+import { Progress } from "@/components/ui/Progress";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { teacherService, type TicketQuestion, type TicketQuestionInput } from "@/services/platform.service";
@@ -38,6 +40,7 @@ export function QuestionWizard({
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<TicketQuestionInput>(() => (initial ? { ...initial } : blank()));
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const set = (patch: Partial<TicketQuestionInput>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -52,18 +55,22 @@ export function QuestionWizard({
   };
   const error = stepError(step);
 
-  const pickImage = async (file: File | undefined) => {
+  // A picture (PNG/JPEG/WebP) or a short video (MP4/WebM): each goes to its own checked upload.
+  const pickMedia = async (file: File | undefined) => {
     if (!file) return;
     setUploading(true);
     try {
-      set({ imageUrl: await teacherService.uploadImage(file) });
+      const url = file.type.startsWith("video/") ? await teacherService.uploadClip(file, setProgress) : await teacherService.uploadImage(file);
+      set({ imageUrl: url });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("ticketEdit.wizard.uploadError"));
     } finally {
       setUploading(false);
+      setProgress(null);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
 
   const removeOption = (i: number) => {
     const next = options.filter((_, j) => j !== i);
@@ -115,7 +122,7 @@ export function QuestionWizard({
               <span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">{t("ticketEdit.wizard.image")}</span>
               {form.imageUrl ? (
                 <div className="relative inline-block">
-                  <img src={form.imageUrl} alt="" className="max-h-44 rounded-xl border border-slate-200 object-contain dark:border-slate-700" />
+                  <QuestionMedia url={form.imageUrl} className="max-h-44 rounded-xl border border-slate-200 object-contain dark:border-slate-700" />
                   <button
                     type="button"
                     onClick={() => set({ imageUrl: null })}
@@ -130,7 +137,8 @@ export function QuestionWizard({
                   {t("ticketEdit.wizard.addImage")}
                 </Button>
               )}
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => pickImage(e.target.files?.[0])} />
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" className="hidden" onChange={(e) => pickMedia(e.target.files?.[0])} />
+              {progress !== null && <Progress value={progress} className="mt-2" />}
               <p className="mt-1.5 text-xs text-slate-500">{t("ticketEdit.wizard.imageHint")}</p>
             </div>
           </div>
@@ -212,7 +220,7 @@ export function QuestionWizard({
         {step === 3 && (
           <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
             <p className="font-semibold text-slate-800 dark:text-slate-100">{form.text}</p>
-            {form.imageUrl && <img src={form.imageUrl} alt="" className="mt-3 max-h-40 rounded-xl object-contain" />}
+            {form.imageUrl && <QuestionMedia url={form.imageUrl} className="mt-3 max-h-40 rounded-xl object-contain" />}
             <ul className="mt-3 space-y-1.5">
               {options.map((o, i) => (
                 <li

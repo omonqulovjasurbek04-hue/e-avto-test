@@ -21,15 +21,15 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatDateTime } from "@/utils/money";
 
 const th = "px-4 py-3";
-const thead = "bg-slate-950 text-xs uppercase text-slate-400";
-const wrap = "overflow-x-auto rounded-2xl border border-slate-800";
+const thead = "bg-slate-50 dark:bg-slate-950 text-xs uppercase text-slate-500 dark:text-slate-400";
+const wrap = "overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800";
 
 export default function AdminCms() {
   const { t } = useTranslation();
   const [tab, setTab] = useState("pages");
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">{t("admin.cms.title")}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.cms.title")}</h1>
       <Tabs
         activeTab={tab}
         onChange={setTab}
@@ -144,7 +144,7 @@ function DocEditor({ kind, initial, onClose, onSaved, id }: { kind: "page" | "ne
           <Input label={t("admin.cms.seoDescription")} value={text.seoDescription} onChange={(e) => set("seoDescription", e.target.value)} />
         </div>
         <Select label={t("admin.common.status")} helperText={t("admin.cms.statusAllLangs")} options={[{ value: "DRAFT", label: t("admin.common.draft") }, { value: "PUBLISHED", label: t("admin.common.published") }]} value={f.status} onChange={(e) => setF({ ...f, status: e.target.value as DocForm["status"] })} />
-        {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
+        {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
         <div className="flex justify-end gap-3"><Button variant="outline" onClick={onClose}>{t("admin.common.cancel")}</Button><Button loading={busy} onClick={save}>{t("admin.common.save")}</Button></div>
       </div>
     </Modal>
@@ -162,8 +162,8 @@ function Pages() {
       {list.loading && !list.data ? <Skeleton className="h-32 rounded-2xl" /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : !list.data || list.data.length === 0 ? <EmptyState title={t("admin.cms.noPages")} description={t("admin.cms.noPagesHint")} /> : (
         <div className={wrap}><table className="w-full text-left text-sm">
           <thead className={thead}><tr><th className={th}>{t("admin.common.title")}</th><th className={th}>Slug</th><th className={th}>{t("admin.cms.languages")}</th><th className={th}>{t("admin.common.status")}</th><th className={th}>{t("admin.cms.updated")}</th><th className={`${th} text-right`}>{t("admin.common.action")}</th></tr></thead>
-          <tbody className="divide-y divide-slate-800">{list.data.map((p) => (
-            <tr key={p.id}><td className="px-4 py-3 font-medium text-white">{p.title}</td><td className="px-4 py-3 font-mono text-xs">{p.slug}</td><td className="px-4 py-3"><LangBadges translations={p.translations} /></td><td className="px-4 py-3"><StatusBadge status={p.status} /></td><td className="px-4 py-3">{formatDateTime(p.updatedAt)}</td>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{list.data.map((p) => (
+            <tr key={p.id}><td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{p.title}</td><td className="px-4 py-3 font-mono text-xs">{p.slug}</td><td className="px-4 py-3"><LangBadges translations={p.translations} /></td><td className="px-4 py-3"><StatusBadge status={p.status} /></td><td className="px-4 py-3">{formatDateTime(p.updatedAt)}</td>
               <td className="px-4 py-3 text-right"><Button size="sm" variant="outline" aria-label={t("admin.common.edit")} onClick={() => edit(p)}><Pencil className="h-4 w-4" /></Button></td></tr>
           ))}</tbody></table></div>
       )}
@@ -178,7 +178,7 @@ function LangBadges({ translations }: { translations?: CmsTranslations<string> }
     <span className="flex gap-1">
       {SUPPORTED_LANGUAGES.map((l) => {
         const has = l.code === "uz" || Boolean(translations?.[l.code as ExtraLang]);
-        return <span key={l.code} title={l.name} className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${has ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-800 text-slate-500"}`}>{l.short}</span>;
+        return <span key={l.code} title={l.name} className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${has ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}`}>{l.short}</span>;
       })}
     </span>
   );
@@ -195,8 +195,8 @@ function News() {
       {list.loading && !list.data ? <Skeleton className="h-32 rounded-2xl" /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : !list.data || list.data.length === 0 ? <EmptyState title={t("admin.cms.noNews")} /> : (
         <div className={wrap}><table className="w-full text-left text-sm">
           <thead className={thead}><tr><th className={th}>{t("admin.common.title")}</th><th className={th}>{t("admin.cms.languages")}</th><th className={th}>{t("admin.common.status")}</th><th className={th}>{t("admin.cms.publishedAt")}</th><th className={`${th} text-right`}>{t("admin.common.action")}</th></tr></thead>
-          <tbody className="divide-y divide-slate-800">{list.data.map((n) => (
-            <tr key={n.id}><td className="px-4 py-3 font-medium text-white">{n.title}</td><td className="px-4 py-3"><LangBadges translations={n.translations} /></td><td className="px-4 py-3"><StatusBadge status={n.status} /></td><td className="px-4 py-3">{n.publishedAt ? formatDateTime(n.publishedAt) : "—"}</td>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{list.data.map((n) => (
+            <tr key={n.id}><td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{n.title}</td><td className="px-4 py-3"><LangBadges translations={n.translations} /></td><td className="px-4 py-3"><StatusBadge status={n.status} /></td><td className="px-4 py-3">{n.publishedAt ? formatDateTime(n.publishedAt) : "—"}</td>
               <td className="px-4 py-3 text-right"><Button size="sm" variant="outline" aria-label={t("admin.common.edit")} onClick={() => edit(n)}><Pencil className="h-4 w-4" /></Button></td></tr>
           ))}</tbody></table></div>
       )}
@@ -247,10 +247,10 @@ function Faq() {
     <div className="space-y-4">
       <div className="flex justify-end"><Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => open({ id: null, question: "", answer: "", published: true, tr: toTr(FAQ_FIELDS, undefined) })}>{t("admin.cms.newQuestion")}</Button></div>
       {list.loading && !list.data ? <Skeleton className="h-32 rounded-2xl" /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : !list.data || list.data.length === 0 ? <EmptyState title={t("admin.cms.faqEmpty")} /> : (
-        <ul className="divide-y divide-slate-800 rounded-2xl border border-slate-800">
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800">
           {list.data.map((f) => (
             <li key={f.id} className="flex items-start justify-between gap-4 px-4 py-3">
-              <div className="space-y-1"><p className="font-medium text-white">{f.question} {!f.isPublished && <Badge variant="neutral">{t("admin.cms.hidden")}</Badge>}</p><LangBadges translations={f.translations} /></div>
+              <div className="space-y-1"><p className="font-medium text-slate-900 dark:text-white">{f.question} {!f.isPublished && <Badge variant="neutral">{t("admin.cms.hidden")}</Badge>}</p><LangBadges translations={f.translations} /></div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" aria-label={t("admin.common.edit")} onClick={() => open({ id: f.id, question: f.question, answer: f.answer, published: f.isPublished, tr: toTr(FAQ_FIELDS, f.translations) })}><Pencil className="h-4 w-4" /></Button>
                 <Button size="sm" variant="danger" aria-label={t("admin.common.delete")} onClick={() => setDeleting(f)}><Trash2 className="h-4 w-4" /></Button>
@@ -266,8 +266,8 @@ function Faq() {
             <FallbackHint lang={lang} />
             <Input label={t("admin.cms.question")} value={text.question} placeholder={lang === "uz" ? undefined : editing.question} onChange={(e) => set("question", e.target.value)} />
             <Textarea label={t("admin.cms.answer")} rows={5} value={text.answer} onChange={(e) => set("answer", e.target.value)} />
-            <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={editing.published} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} /> {t("admin.cms.visible")}</label>
-            {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" checked={editing.published} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} /> {t("admin.cms.visible")}</label>
+            {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
             <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setEditing(null)}>{t("admin.common.cancel")}</Button><Button loading={busy} onClick={save}>{t("admin.common.save")}</Button></div>
           </div>
         )}
@@ -287,13 +287,13 @@ function Messages() {
   return (
     <div className="space-y-3">
       {list.loading && !list.data ? <Skeleton className="h-32 rounded-2xl" /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : !list.data || list.data.length === 0 ? <EmptyState title={t("admin.cms.noMessages")} /> : list.data.map((m) => (
-        <div key={m.id} className="rounded-2xl border border-slate-800 p-4">
+        <div key={m.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold text-white">{m.name} <span className="font-normal text-slate-400">· {m.contact}</span></p>
+            <p className="font-semibold text-slate-900 dark:text-white">{m.name} <span className="font-normal text-slate-500 dark:text-slate-400">· {m.contact}</span></p>
             <div className="flex items-center gap-2"><span className="text-xs text-slate-500">{formatDateTime(m.createdAt)}</span><Badge variant={MSG[m.status]}>{t(`admin.cms.msg${m.status}`)}</Badge></div>
           </div>
           {/* Stored as plain text; React escapes it on render. */}
-          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{m.message}</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{m.message}</p>
           <div className="mt-3 flex gap-2">
             {m.status !== "READ" && <Button size="sm" variant="outline" onClick={() => set(m.id, "READ")}>{t("admin.cms.markRead")}</Button>}
             {m.status !== "ARCHIVED" && <Button size="sm" variant="ghost" onClick={() => set(m.id, "ARCHIVED")}>{t("admin.common.archive")}</Button>}
@@ -340,8 +340,8 @@ function Announce() {
       <Input label={t("admin.common.title")} value={f.title} maxLength={120} onChange={(e) => setF({ ...f, title: e.target.value })} />
       <Textarea label={t("admin.cms.body")} rows={5} value={f.body} maxLength={1000} onChange={(e) => setF({ ...f, body: e.target.value })} />
       <p className="text-xs text-slate-500">{t("admin.cms.announceHint")}</p>
-      {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
-      {result && <p role="status" className="text-sm text-emerald-400">{result}</p>}
+      {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
+      {result && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{result}</p>}
       <Button loading={busy} onClick={send}>{t("admin.cms.send")}</Button>
     </div>
   );
@@ -399,12 +399,12 @@ function Settings() {
   return (
     <div className="max-w-2xl space-y-4">
       <LangTabs value={lang} onChange={setLang} filled={{ uz_cyrl: hasText(current.tr.uz_cyrl), ru: hasText(current.tr.ru) }} />
-      {lang !== "uz" && <p className="text-xs text-amber-300/80">{t("admin.cms.settingsLangHint")}</p>}
+      {lang !== "uz" && <p className="text-xs text-amber-700/80 dark:text-amber-300/80">{t("admin.cms.settingsLangHint")}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         {shown.map((key) => <Input key={`${lang}-${key}`} label={t(`admin.cms.field${key}`)} value={valueOf(key)} placeholder={lang === "uz" ? undefined : current.base[key]} onChange={(e) => set(key, e.target.value)} />)}
       </div>
       {lang === "uz" && <BranchesEditor rows={current.branches} onChange={(branches) => setVals({ ...current, branches })} />}
-      {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
+      {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
       <Button loading={busy} onClick={save}>{t("admin.common.save")}</Button>
     </div>
   );
@@ -417,7 +417,7 @@ function BranchesEditor({ rows, onChange }: { rows: BranchRow[]; onChange: (rows
   return (
     <fieldset className="space-y-3 rounded-2xl border border-slate-700/60 p-4">
       <legend className="px-1 text-sm font-semibold">{t("admin.cms.branches")}</legend>
-      <p className="text-xs text-slate-400">{t("admin.cms.branchesHint")}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.cms.branchesHint")}</p>
       {rows.map((r, i) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
           <Input label={t("admin.cms.branchName")} value={r.name} maxLength={80} onChange={(e) => update(i, { name: e.target.value })} />
@@ -446,7 +446,7 @@ function Templates() {
   if (error || !data) return <ErrorState message={error ?? t("admin.common.error")} onRetry={reload} />;
   return (
     <div className="max-w-3xl space-y-4">
-      <p className="text-sm text-slate-400">{t("admin.cms.tplIntro")}</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">{t("admin.cms.tplIntro")}</p>
       <LangTabs value={lang} onChange={setLang} />
       {data.map((tpl) => <TemplateCard key={`${tpl.key}-${lang}`} tpl={tpl} lang={lang} onSaved={reload} />)}
     </div>
@@ -476,18 +476,18 @@ function TemplateCard({ tpl, lang, onSaved }: { tpl: NotificationTemplate; lang:
   };
 
   return (
-    <section data-template={tpl.key} className="space-y-3 rounded-2xl border border-slate-800 p-4">
+    <section data-template={tpl.key} className="space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-white">{t(`admin.cms.tpl${tpl.key}`)}</h3>
+        <h3 className="font-semibold text-slate-900 dark:text-white">{t(`admin.cms.tpl${tpl.key}`)}</h3>
         <Badge variant={text.custom ? "success" : "neutral"}>{text.custom ? t("admin.cms.tplCustom") : t("admin.cms.tplBuiltin")}</Badge>
       </div>
       <p className="text-xs text-slate-500">
-        {t("admin.cms.tplPlaceholders")}: {tpl.placeholders.map((p) => <code key={p} className="mr-1 rounded bg-slate-800 px-1 text-slate-300">{`{${p}}`}</code>)}
+        {t("admin.cms.tplPlaceholders")}: {tpl.placeholders.map((p) => <code key={p} className="mr-1 rounded bg-slate-100 dark:bg-slate-800 px-1 text-slate-600 dark:text-slate-300">{`{${p}}`}</code>)}
         {tpl.required.length > 0 && <> · {t("admin.cms.tplRequired")}: {tpl.required.map((p) => `{${p}}`).join(", ")}</>}
       </p>
       <Input id={`tpl-${tpl.key}-subject`} label={t("admin.cms.tplSubject")} value={f.subject} maxLength={160} onChange={(e) => setF({ ...f, subject: e.target.value })} />
       <Textarea id={`tpl-${tpl.key}-body`} label={t("admin.cms.body")} rows={3} value={f.body} maxLength={1000} onChange={(e) => setF({ ...f, body: e.target.value })} />
-      {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
+      {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
       <div className="flex justify-end gap-2">
         {text.custom && <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(() => api.resetNotificationTemplate(tpl.key, lang), t("admin.cms.tplResetDone"))}>{t("admin.cms.tplReset")}</Button>}
         <Button size="sm" loading={busy} disabled={!dirty || !f.subject.trim() || !f.body.trim()} onClick={() => void run(() => api.saveNotificationTemplate(tpl.key, lang, { subject: f.subject, body: f.body }), t("admin.common.saved"))}>{t("admin.common.save")}</Button>

@@ -59,7 +59,7 @@ export function UserDetailModal({ user, onClose, onChanged }: { user: AdminUser;
     <Modal isOpen onClose={onClose} title={`${user.name} · ${formatAccountId(user)}`} maxWidth="2xl">
       <div className="space-y-6">
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-slate-200">{t("admin.users.detail.numbers")}</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">{t("admin.users.detail.numbers")}</h3>
           <p className="mb-3 text-xs text-slate-500">{t("admin.users.detail.numbersHint")}</p>
           {ids.loading && !ids.data ? (
             <Skeleton className="h-20 w-full" />
@@ -72,14 +72,14 @@ export function UserDetailModal({ user, onClose, onChanged }: { user: AdminUser;
                   <th className="py-1.5">{t("admin.users.detail.freed")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {(ids.data ?? []).map((r) => (
                   <tr key={r.id}>
                     <td className="py-2 font-mono text-xs">
                       <Badge variant={r.releasedAt ? "neutral" : r.kind === "TEACHER" ? "primary" : r.kind === "STUDENT" ? "success" : "neutral"}>{FORMAT[r.kind](r.number)}</Badge>
                     </td>
-                    <td className="py-2 text-slate-300">{day(r.assignedAt)}</td>
-                    <td className="py-2 text-slate-400">
+                    <td className="py-2 text-slate-700 dark:text-slate-300">{day(r.assignedAt)}</td>
+                    <td className="py-2 text-slate-500 dark:text-slate-400">
                       {r.releasedAt ? `${day(r.releasedAt)} · ${t(`admin.users.detail.reason.${r.releaseReason ?? "ROLE_CHANGE"}`, r.releaseReason ?? "")}` : t("admin.users.detail.active")}
                     </td>
                   </tr>
@@ -90,7 +90,7 @@ export function UserDetailModal({ user, onClose, onChanged }: { user: AdminUser;
         </section>
 
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-slate-200">{t("admin.users.detail.courses")}</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">{t("admin.users.detail.courses")}</h3>
           {enrollments.loading && !enrollments.data ? (
             <Skeleton className="h-16 w-full" />
           ) : (enrollments.data ?? []).length === 0 ? (
@@ -98,8 +98,8 @@ export function UserDetailModal({ user, onClose, onChanged }: { user: AdminUser;
           ) : (
             <ul className="space-y-1.5">
               {(enrollments.data ?? []).map((e) => (
-                <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm">
-                  <span className="font-medium text-slate-200">{e.course.title}</span>
+                <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900">
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{e.course.title}</span>
                   <Badge variant={e.status === "ACTIVE" ? "success" : "neutral"}>{e.status}</Badge>
                   <Badge variant={e.orderId ? "primary" : "warning"}>{e.orderId ? t("admin.users.detail.paid") : t("admin.users.detail.grantedBadge")}</Badge>
                   <span className="text-xs text-slate-500">
@@ -113,8 +113,8 @@ export function UserDetailModal({ user, onClose, onChanged }: { user: AdminUser;
 
         {mayGrant && (
           <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
-            <h3 className="text-sm font-semibold text-amber-300">{t("admin.users.detail.grantTitle")}</h3>
-            <p className="mb-3 text-xs text-slate-400">{t("admin.users.detail.grantHint")}</p>
+            <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300">{t("admin.users.detail.grantTitle")}</h3>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t("admin.users.detail.grantHint")}</p>
             <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
               <Select
                 label={t("admin.users.detail.course")}

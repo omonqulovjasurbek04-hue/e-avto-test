@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { MainLayout } from "@/layouts/MainLayout";
+import { Navigate, Routes, Route } from "react-router-dom";
+import { PanelRedirect, SiteLayout } from "./SiteLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { StudentLayout } from "@/layouts/StudentLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
@@ -51,19 +51,10 @@ const TicketEditor = lazy(() => import("@/pages/teacher/TicketEditor"));
 const StudentKnowledge = lazy(() => import("@/pages/teacher/StudentKnowledge"));
 const Settings = lazy(() => import("@/pages/student/Settings"));
 
-const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
-const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
-const AdminQuestions = lazy(() => import("@/pages/admin/AdminQuestions"));
-const AdminLessons = lazy(() => import("@/pages/admin/AdminLessons"));
-const AdminCatalog = lazy(() => import("@/pages/admin/AdminCatalog"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
-const AdminGroups = lazy(() => import("@/pages/admin/AdminGroups"));
-const AdminKnowledge = lazy(() => import("@/pages/admin/AdminKnowledge"));
 const AdminCms = lazy(() => import("@/pages/admin/AdminCms"));
 const AdminExam = lazy(() => import("@/pages/admin/AdminExam"));
-const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
 const AdminAudit = lazy(() => import("@/pages/admin/AdminAudit"));
-const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
 const AdminSystem = lazy(() => import("@/pages/admin/AdminSystem"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
@@ -76,18 +67,24 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<FullSpinner />}>
       <Routes>
-        <Route element={<MainLayout />}>
+        {/* Public pages: guests see the site's top menu, signed-in users the same page inside the app. */}
+        <Route element={<SiteLayout />}>
           {/* The landing page is for guests: a signed-in user opening the site goes to the dashboard. */}
           <Route element={<GuestRoute />}>
             <Route path={ROUTES.home} element={<Home />} />
           </Route>
-          <Route path={ROUTES.courses} element={<Courses />} />
+          {/* The catalogue and the ranking have their own place in the app: signed-in users go there. */}
+          <Route element={<PanelRedirect to="/my-courses" />}>
+            <Route path={ROUTES.courses} element={<Courses />} />
+          </Route>
           <Route path="/courses/:courseId" element={<CourseLinkRoute />} />
           <Route path={ROUTES.about} element={<About />} />
           <Route path={ROUTES.contact} element={<Contact />} />
           <Route path={ROUTES.faq} element={<Faq />} />
           {/* Public: guests see the ranking too; a signed-in student also sees their own place. */}
-          <Route path={ROUTES.leaderboard} element={<Leaderboard />} />
+          <Route element={<PanelRedirect to="/my-rating" />}>
+            <Route path={ROUTES.leaderboard} element={<Leaderboard />} />
+          </Route>
           <Route path="/news" element={<News />} />
           <Route path="/news/:slug" element={<NewsDetail />} />
           <Route path="/p/:slug" element={<CmsPage />} />
@@ -131,8 +128,16 @@ export default function AppRoutes() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teacher" element={<TeacherRoute><TeacherGroups /></TeacherRoute>} />
             <Route path="/teacher/groups/:groupId" element={<TeacherRoute><TeacherGroupDetail /></TeacherRoute>} />
-            <Route path="/tests/manage/:courseId/:ticket" element={<TeacherRoute><TicketEditor /></TeacherRoute>} />
-            <Route path="/mistakes/students/:studentId" element={<TeacherRoute><StudentKnowledge /></TeacherRoute>} />
+            <Route path="/tests/manage/:ticket" element={<RequirePerm perm="tickets:edit"><TicketEditor /></RequirePerm>} />
+            <Route path="/users" element={<RequirePerm perm="users:manage"><AdminUsers /></RequirePerm>} />
+            {/* Staff tools inside the app (they used to be admin panel pages). */}
+            {/* The question bank lives in the Tests page now (Biletlar | Savollar banki). */}
+            <Route path="/question-bank" element={<Navigate to="/tests" replace />} />
+            <Route path="/site-content" element={<RequirePerm perm="content:manage"><div className="container-page py-8"><AdminCms /></div></RequirePerm>} />
+            <Route path="/revenue" element={<RequirePerm perm="orders:read"><div className="container-page py-8"><AdminOrders /></div></RequirePerm>} />
+            <Route path="/audit" element={<RequirePerm perm="audit:read"><div className="container-page py-8"><AdminAudit /></div></RequirePerm>} />
+            <Route path="/system" element={<RequirePerm perm="settings:manage"><div className="container-page py-8"><AdminSystem /></div></RequirePerm>} />
+            <Route path="/mistakes/student" element={<TeacherRoute><StudentKnowledge /></TeacherRoute>} />
           </Route>
         </Route>
 
@@ -144,22 +149,21 @@ export default function AppRoutes() {
           }
         >
           <Route path="/admin" element={<AdminHome />} />
-          <Route path="/admin/courses" element={<RequirePerm perm="catalog:manage"><AdminCourses /></RequirePerm>} />
-          <Route path="/admin/categories" element={<RequirePerm perm="catalog:manage"><AdminCategories /></RequirePerm>} />
-          <Route path="/admin/lessons" element={<RequirePerm perm="catalog:manage"><AdminLessons /></RequirePerm>} />
-          <Route path="/admin/questions" element={<RequirePerm perm="tests:manage"><AdminQuestions /></RequirePerm>} />
-          <Route path="/admin/catalog" element={<RequirePerm perm="catalog:manage"><AdminCatalog /></RequirePerm>} />
-          <Route path="/admin/orders" element={<RequirePerm perm="orders:read"><AdminOrders /></RequirePerm>} />
-          <Route path="/admin/groups" element={<RequirePerm perm="groups:manage"><AdminGroups /></RequirePerm>} />
-          <Route path="/admin/knowledge" element={<RequirePerm perm="groups:manage"><AdminKnowledge /></RequirePerm>} />
-          <Route path="/admin/knowledge/students/:studentId" element={<RequirePerm perm="groups:manage"><StudentKnowledge /></RequirePerm>} />
+          <Route path="/admin/courses" element={<Navigate to="/my-courses" replace />} />
+          <Route path="/admin/categories" element={<Navigate to="/my-courses" replace />} />
+          <Route path="/admin/lessons" element={<Navigate to="/lessons" replace />} />
+          <Route path="/admin/questions" element={<Navigate to="/tests" replace />} />
+          <Route path="/admin/catalog" element={<Navigate to="/my-courses" replace />} />
+          <Route path="/admin/orders" element={<Navigate to="/revenue" replace />} />
+          <Route path="/admin/groups" element={<Navigate to="/teacher" replace />} />
+          <Route path="/admin/knowledge/*" element={<Navigate to="/mistakes" replace />} />
           <Route path="/admin/exam" element={<RequirePerm perm="tests:manage"><AdminExam /></RequirePerm>} />
-          <Route path="/admin/cms" element={<RequirePerm perm="content:manage"><AdminCms /></RequirePerm>} />
-          <Route path="/admin/users" element={<RequirePerm perm="users:manage"><AdminUsers /></RequirePerm>} />
-          <Route path="/admin/media" element={<RequirePerm perm="media:manage"><AdminMedia /></RequirePerm>} />
-          <Route path="/admin/audit" element={<RequirePerm perm="audit:read"><AdminAudit /></RequirePerm>} />
-          <Route path="/admin/reports" element={<RequirePerm perm="reports:read"><AdminReports /></RequirePerm>} />
-          <Route path="/admin/system" element={<RequirePerm perm="settings:manage"><AdminSystem /></RequirePerm>} />
+          <Route path="/admin/cms" element={<Navigate to="/site-content" replace />} />
+          <Route path="/admin/users" element={<Navigate to="/users" replace />} />
+          <Route path="/admin/media" element={<Navigate to="/lessons" replace />} />
+          <Route path="/admin/audit" element={<Navigate to="/audit" replace />} />
+          <Route path="/admin/reports" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/admin/system" element={<Navigate to="/system" replace />} />
         </Route>
 
         {/* Google sign-in returns here (signed in or with a 2FA challenge), outside the guest/protected guards. */}

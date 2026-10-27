@@ -70,6 +70,35 @@ describe.skipIf(!enabled)("platform extras", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
+  describe("question clips", () => {
+    // "....ftyp…": what an MP4 file starts with.
+    const MP4 = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftypisom"), Buffer.alloc(200, 7)]);
+    let clipPath = "";
+
+    it("a question editor uploads a scanned clip and gets a public URL", async () => {
+      const before = scans;
+      const res = await request(app).put("/api/teacher/clips").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(MP4);
+      expect(res.status).toBe(201);
+      expect(scans).toBe(before + 1);
+      expect(res.body.data.url).toMatch(/^https:\/\/api\.example\.uz\/api\/clips\/[a-f0-9-]{36}\.mp4$/);
+      clipPath = res.body.data.path;
+    });
+
+    it("plays from any point (Range) for anyone", async () => {
+      const res = await request(app).get(clipPath).set("Range", "bytes=0-3");
+      expect(res.status).toBe(206);
+      expect(res.headers["content-range"]).toBe(`bytes 0-3/${MP4.length}`);
+      expect(res.headers["content-type"]).toBe("video/mp4");
+      expect((await request(app).get(clipPath)).status).toBe(200);
+    });
+
+    it("accepts only video, and only from question editors", async () => {
+      expect((await request(app).put("/api/teacher/clips").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(PNG)).status).toBe(415);
+      expect((await request(app).put("/api/teacher/clips").set(bearer("student")).set("Content-Type", "application/octet-stream").send(MP4)).status).toBe(403);
+      expect((await request(app).get("/api/clips/not-a-clip.mp4")).status).toBe(404);
+    });
+  });
+
   describe("CMS images", () => {
     let imageId = "";
     let imagePath = "";

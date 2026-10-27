@@ -62,22 +62,22 @@ export function ImageLibrary({ onPick }: { onPick?: (img: CmsImage) => void }) {
         <Button size="sm" leftIcon={<Upload className="h-4 w-4" />} loading={progress !== null} onClick={() => fileRef.current?.click()}>{t("admin.images.upload")}</Button>
       </div>
       {progress !== null && <Progress value={progress} />}
-      {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
+      {err && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{err}</p>}
 
       {list.loading && !list.data ? <Skeleton className="h-40 rounded-2xl" /> : list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : !list.data || list.data.length === 0 ? (
         <EmptyState icon={<ImagePlus className="h-10 w-10" />} title={t("admin.images.empty")} description={t("admin.images.emptyHint")} />
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" data-testid="image-library">
           {list.data.map((img) => (
-            <li key={img.id} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
-              <button type="button" disabled={!onPick} onClick={() => onPick?.(img)} className={`block aspect-video w-full bg-slate-900 ${onPick ? "cursor-pointer hover:opacity-80" : "cursor-default"}`} aria-label={onPick ? t("admin.images.choose", { name: img.filename }) : img.filename}>
+            <li key={img.id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+              <button type="button" disabled={!onPick} onClick={() => onPick?.(img)} className={`block aspect-video w-full bg-white dark:bg-slate-900 ${onPick ? "cursor-pointer hover:opacity-80" : "cursor-default"}`} aria-label={onPick ? t("admin.images.choose", { name: img.filename }) : img.filename}>
                 <img src={img.url} alt={img.filename} loading="lazy" className="h-full w-full object-cover" />
               </button>
               <div className="flex items-center justify-between gap-1 px-2 py-1.5">
-                <span className="min-w-0 truncate text-xs text-slate-400" title={img.filename}>{img.filename} · {kb(img.sizeBytes)}</span>
+                <span className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400" title={img.filename}>{img.filename} · {kb(img.sizeBytes)}</span>
                 <span className="flex shrink-0 gap-1">
                   <Button size="sm" variant="ghost" aria-label={t("admin.images.copy")} onClick={() => void copy(img)}><Copy className="h-3.5 w-3.5" /></Button>
-                  {!onPick && <Button size="sm" variant="ghost" aria-label={t("admin.common.delete")} onClick={() => setDeleting(img)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>}
+                  {!onPick && <Button size="sm" variant="ghost" aria-label={t("admin.common.delete")} onClick={() => setDeleting(img)}><Trash2 className="h-3.5 w-3.5 text-red-700 dark:text-red-400" /></Button>}
                 </span>
               </div>
             </li>

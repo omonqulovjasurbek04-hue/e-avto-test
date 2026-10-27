@@ -16,7 +16,7 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
   const base = () => `/api/teacher/courses/${courseId}`;
   const question = { text: `${run} Qaysi belgi?`, options: ["To'xtash", "Yurish", "Burilish"], correctIndex: 0, explanation: "Qoida 1" };
 
-  const signup = async (k: string, role?: "TEACHER") => {
+  const signup = async (k: string, role?: "TEACHER" | "MODERATOR") => {
     const email = `${run}-${k}@example.com`;
     const res = await request(app).post("/api/auth/register").send({ name: `${run} ${k}`, email, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
@@ -29,6 +29,7 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
     ({ prisma } = await import("../src/config/database"));
     await signup("teacher", "TEACHER");
     await signup("student");
+    await signup("moderator", "MODERATOR");
     courseId = (await prisma.course.create({ data: { title: `Ticket edit ${run}`, description: "d" } })).id;
     lessonId = (await prisma.lesson.create({ data: { courseId, title: "Belgilar" } })).id;
     await prisma.question.createMany({ data: Array.from({ length: 120 }, (_, i) => ({ courseId, text: `${run} q${i}`, options: ["OK", "No"], correctIndex: 0 })) });
@@ -92,6 +93,24 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
     expect(res.body.data.reset).toBe(50);
     const list = await request(app).get(`${base()}/tickets`).set(as("teacher"));
     expect(list.body.data.tickets.every((t: { custom: boolean }) => !t.custom)).toBe(true);
+  });
+
+  it("keeps the course's question bank: list, search, add outside tickets, remove", async () => {
+    const list = await request(app).get(`${base()}/questions`).query({ limit: 5 }).set(as("teacher"));
+    expect(list.status).toBe(200);
+    expect(list.body.data.items).toHaveLength(5);
+    expect(list.body.data.total).toBeGreaterThanOrEqual(120);
+
+    // A moderator edits questions too (no teaching rights needed).
+    const add = await request(app).post(`${base()}/questions`).set(as("moderator")).send({ ...question, text: `${run} Bank savoli`, imageUrl: "https://cdn.example.uz/clip.mp4" });
+    expect(add.status).toBe(201);
+    expect(add.body.data.ticket).toBeNull();
+    const found = await request(app).get(`${base()}/questions`).query({ search: "Bank savoli" }).set(as("teacher"));
+    expect(found.body.data.items).toEqual([expect.objectContaining({ id: add.body.data.id, imageUrl: "https://cdn.example.uz/clip.mp4" })]);
+
+    expect((await request(app).delete(`${base()}/questions/${add.body.data.id}`).set(as("teacher"))).status).toBe(200);
+    expect((await request(app).get(`${base()}/questions`).query({ search: "Bank savoli" }).set(as("teacher"))).body.data.items).toEqual([]);
+    expect((await request(app).get(`${base()}/questions`).set(as("student"))).status).toBe(403);
   });
 
   it("refuses bad input, other courses' questions and students", async () => {

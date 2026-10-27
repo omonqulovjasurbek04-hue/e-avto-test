@@ -15,7 +15,7 @@ const ADMIN: Permission[] = ["admin:access", "users:read", "users:manage", "cont
 const MATRIX: Record<UserRole, Permission[]> = {
   USER: [],
   TEACHER: ["groups:own", "courses:open-all", "tickets:edit"],
-  MODERATOR: ["admin:access", "content:manage", "tests:manage"],
+  MODERATOR: ["admin:access", "content:manage", "tests:manage", "tickets:edit", "courses:open-all"],
   FINANCE: ["admin:access", "orders:read", "payments:manage", "reports:read"],
   MANAGER: ["admin:access", "users:read", "groups:manage", "schedule:manage", "orders:read"],
   ADMIN,

@@ -19,6 +19,7 @@ import WeeklyActivityChart, { formatStudyMinutes } from "@/components/common/Wee
 import UpcomingSchedule from "@/components/common/UpcomingSchedule";
 import TeacherDashboard from "@/pages/teacher/TeacherDashboard";
 import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
+import AdminReports from "@/pages/admin/AdminReports";
 import { Button } from "@/components/ui/Button";
 import { can } from "@/lib/permissions";
 
@@ -27,7 +28,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   if (user?.role === "TEACHER") return <TeacherDashboard />;
   // Whoever may read the platform statistics sees them here instead of a student's progress.
-  if (can(user?.role, "users:manage")) return <AdminStart />;
+  if (can(user?.role, "users:manage") || can(user?.role, "reports:read")) return <AdminStart />;
   return <StudentDashboard />;
 }
 
@@ -47,9 +48,17 @@ function AdminStart() {
           </Button>
         </Link>
       </motion.div>
-      <div className="mt-6">
-        <AdminStatsGrid />
-      </div>
+      {can(user?.role, "users:manage") && (
+        <div className="mt-6">
+          <AdminStatsGrid />
+        </div>
+      )}
+      {/* Test results and teacher load by period, right under the totals. */}
+      {can(user?.role, "reports:read") && (
+        <div className="mt-10">
+          <AdminReports />
+        </div>
+      )}
     </div>
   );
 }

@@ -8,9 +8,9 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { formatDateTime } from "@/utils/money";
 
 const ICON: Record<CheckLevel, React.ReactNode> = {
-  ok: <CheckCircle2 className="h-5 w-5 text-emerald-400" />,
-  warning: <AlertTriangle className="h-5 w-5 text-amber-400" />,
-  error: <XCircle className="h-5 w-5 text-red-400" />,
+  ok: <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />,
+  warning: <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />,
+  error: <XCircle className="h-5 w-5 text-red-700 dark:text-red-400" />,
 };
 
 /** One human sentence per check, built only from the non-secret details the server returns. */
@@ -63,20 +63,20 @@ export default function AdminSystem() {
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">{t("admin.system.title")}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.system.title")}</h1>
         <Button variant="outline" size="sm" leftIcon={<RefreshCw className="h-4 w-4" />} loading={status.loading} onClick={() => void status.reload()}>{t("admin.system.refresh")}</Button>
       </div>
       <p className="text-xs text-slate-500">{t("admin.system.hint")}</p>
 
       {status.loading && !s ? <Skeleton className="h-64 rounded-2xl" /> : status.error ? <ErrorState message={status.error} onRetry={status.reload} /> : !s ? null : (
         <>
-          <ul className="divide-y divide-slate-800 rounded-2xl border border-slate-800">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800">
             {s.checks.map((c) => (
               <li key={c.key} className="flex items-start gap-3 px-4 py-3" data-check={c.key} data-level={c.level}>
                 <span className="mt-0.5 shrink-0">{ICON[c.level]}</span>
                 <div className="min-w-0">
-                  <p className="font-medium text-white">{t(`admin.system.check_${c.key}`)}</p>
-                  <p className="text-sm text-slate-400">{describe(c)}</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{t(`admin.system.check_${c.key}`)}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{describe(c)}</p>
                 </div>
               </li>
             ))}

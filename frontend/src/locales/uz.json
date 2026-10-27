@@ -438,7 +438,9 @@
     "continueLesson": "Davom ettirish",
     "completed": "Tugallangan",
     "inProgress": "Jarayonda",
-    "notStarted": "Boshlanmagan"
+    "notStarted": "Boshlanmagan",
+    "manageHint": "Kursni tanlang: darslarni qo'shing, tahrirlang, video yuklang. Qoralama darslar o'quvchilarga ko'rinmaydi.",
+    "count": "{{count}} dars"
   },
   "lessonDetails": {
     "backToLessons": "Darslarga qaytish",
@@ -1031,7 +1033,7 @@
       "archiveText": "O'quvchilar bu videoni ko'rolmay qoladi. Fayl serverda saqlanib qoladi."
     },
     "catalog": {
-      "title": "Katalog: paketlar, chegirmalar, promo-kodlar",
+      "title": "Paketlar va narxlar",
       "tabPackages": "Paketlar va narxlar",
       "tabDiscounts": "Chegirmalar",
       "tabCoupons": "Promo-kodlar",
@@ -1101,7 +1103,12 @@
       "priceSom": "Narx (so'm)",
       "priceHint": "Asosiy paket narxi. Bo'sh qoldirilsa, narx olib tashlanadi. Boshqa paketlar \"Paketlar va narxlar\" bo'limida.",
       "priceInvalid": "Narxni faqat raqam bilan kiriting (masalan, 5 900 000)",
-      "sample": "namuna"
+      "sample": "namuna",
+      "manageCategories": "Kategoriyalar",
+      "materials": "Kurs materiallari",
+      "uploadMaterial": "Material yuklash",
+      "materialHint": "PDF, PNG yoki JPEG, {{limit}} MB gacha.",
+      "packages": "Paketlar va narxlar"
     },
     "cms": {
       "title": "Sayt kontenti",
@@ -1249,10 +1256,14 @@
       "duration": "Davomiyligi",
       "minutesShort": "{{count}} daq",
       "videoUrl": "Video havolasi (tashqi CDN/storage URL)",
-      "videoUrlHint": "Bu yerda faqat tashqi havola saqlanadi. Serverga yuklangan videolar \"Video va fayllar\" bo'limida.",
+      "videoUrlHint": "Tashqi havola (YouTube, CDN). Yoki pastdan videoni platformaga yuklang.",
       "durationMinutes": "Davomiyligi (daqiqa)",
       "deleteTitle": "Darsni o'chirish",
-      "deleteText": "\"{{title}}\" darsi o'chiriladi. Davom etasizmi?"
+      "deleteText": "\"{{title}}\" darsi o'chiriladi. Davom etasizmi?",
+      "videoSection": "Video",
+      "uploadVideo": "Video yuklash",
+      "uploadVideoHint": "MP4 yoki WebM, {{limit}} MB gacha. Saqlanganda yuklanadi; o'quvchiga himoyalangan holda ko'rsatiladi.",
+      "uploadDisabled": "Serverda fayl yuklash o'chirilgan (MEDIA_UPLOAD_ENABLED). Hozircha video havolasini kiriting."
     },
     "questions": {
       "title": "Savollar banki",
@@ -1359,7 +1370,12 @@
       "needName": "Nomini kiriting (kamida 2 belgi)",
       "deleteTitle": "Kategoriyani o'chirish",
       "deleteText": "«{{name}}» o'chiriladi. Undagi {{count}} ta kurs o'chirilmaydi, faqat kategoriyasiz qoladi.",
-      "deleted": "Kategoriya o'chirildi"
+      "deleted": "Kategoriya o'chirildi",
+      "added": "Kategoriya qo'shildi",
+      "courseCount": "{{count}} kurs",
+      "inlineDeleteHint": "Kategoriya o'chirilsa, uning kurslari kategoriyasiz qoladi (kurslar o'chmaydi).",
+      "newPlaceholder": "Yangi kategoriya nomi",
+      "add": "Qo'shish"
     },
     "images": {
       "hint": "PNG, JPEG yoki WebP, {{mb}} MB gacha. Rasm hammaga ochiq bo'ladi: shaxsiy hujjat yuklamang.",
@@ -1757,7 +1773,17 @@
     "teacherGroups": "{{name}} — guruhlar",
     "teacherWeek": "7 kunda {{tests}} ta test, {{students}} ta o'quvchi",
     "teacherNoGroups": "Bu o'qituvchining faol guruhi yo'q",
-    "teacherNoGroupsHint": "Guruhlar & Jadval bo'limida unga guruh ochish mumkin."
+    "teacherNoGroupsHint": "Guruhlar & Jadval bo'limida unga guruh ochish mumkin.",
+    "teachersShort": "O'qituvchilar",
+    "searchTeacher": "O'qituvchini qidirish",
+    "teacherLine": "{{groups}} guruh · {{students}} o'quvchi",
+    "searchStudent": "O'quvchini qidirish",
+    "noMatch": "Hech narsa topilmadi",
+    "filter": {
+      "all": "Hammasi",
+      "inactive": "7 kun test yechmagan",
+      "mistakes": "Xatosi bor"
+    }
   },
   "ticketEdit": {
     "open": "Biletlarni tahrirlash",
@@ -1795,10 +1821,10 @@
       },
       "text": "Savol matni",
       "textPlaceholder": "Masalan: Qaysi belgi to'xtashni taqiqlaydi?",
-      "image": "Rasm (ixtiyoriy)",
-      "addImage": "Rasm yuklash",
-      "removeImage": "Rasmni olib tashlash",
-      "imageHint": "PNG, JPEG yoki WebP.",
+      "image": "Rasm yoki video (ixtiyoriy)",
+      "addImage": "Rasm yoki video yuklash",
+      "removeImage": "Olib tashlash",
+      "imageHint": "Rasm: PNG, JPEG, WebP. Video: MP4 yoki WebM, 30 MB gacha.",
       "uploadError": "Rasmni yuklab bo'lmadi",
       "answersHint": "Javob variantlarini yozing va to'g'ri javobni chap tomondagi doirani bosib belgilang.",
       "optionPlaceholder": "{{n}}-javob",
@@ -1817,5 +1843,22 @@
       "next": "Keyingi",
       "save": "Saqlash"
     }
+  },
+  "questionBank": {
+    "view": "Ko'rinish",
+    "tickets": "Biletlar",
+    "title": "Savollar banki",
+    "search": "Savol matni bo'yicha qidirish",
+    "total": "{{count}} ta savol",
+    "empty": "Bu kursda hali savol yo'q",
+    "added": "Savol bankka qo'shildi"
+  },
+  "groupsByRoom": {
+    "title": "Barcha guruhlar — xonalar bo'yicha",
+    "hint": "Xonani tanlang: shu xonada qaysi guruhlar, qachon dars o'tishini ko'rasiz. Guruhni bosing — a'zolar, davomat va jadval.",
+    "all": "Hammasi",
+    "noRoom": "Xonasiz",
+    "room": "{{room}}-xona",
+    "count": "{{count}} ta guruh"
   }
 }

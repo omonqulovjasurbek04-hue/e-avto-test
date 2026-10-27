@@ -68,37 +68,6 @@ staffRoutes.get("/teacher/knowledge", h(async (req, res) => {
 // Admin: every teacher with their groups' activity (group managers only).
 staffRoutes.get("/teacher/knowledge/teachers", requirePermission("groups:manage"), h(async (_req, res) => success(res, await knowledge.teachersOverview())));
 staffRoutes.get("/teacher/students/:id/knowledge", h(async (req, res) => success(res, await knowledge.studentKnowledge(actorOf(req), uuid.parse(req.params.id)))));
-// Exam tickets: what each ticket holds, and adding, editing or removing its questions.
-const ticketEditors = requirePermission("tickets:edit");
-const ticketParams = (req: AuthRequest) => ({
-  courseId: uuid.parse(req.params.courseId),
-  ticket: z.coerce.number().int().parse(req.params.ticket),
-});
-staffRoutes.get("/teacher/courses/:courseId/tickets", ticketEditors, h(async (req, res) => success(res, await tickets.listTickets(uuid.parse(req.params.courseId)))));
-staffRoutes.get("/teacher/courses/:courseId/tickets/:ticket", ticketEditors, h(async (req, res) => {
-  const { courseId, ticket } = ticketParams(req);
-  success(res, await tickets.getTicket(courseId, ticket));
-}));
-staffRoutes.post("/teacher/courses/:courseId/tickets/:ticket/questions", ticketEditors, h(async (req, res) => {
-  const { courseId, ticket } = ticketParams(req);
-  success(res, await tickets.addQuestion(requireUserId(req), courseId, ticket, ticketQuestionSchema.parse(req.body)), 201);
-}));
-staffRoutes.put("/teacher/courses/:courseId/questions/:id", ticketEditors, h(async (req, res) => {
-  success(res, await tickets.updateQuestion(requireUserId(req), uuid.parse(req.params.courseId), uuid.parse(req.params.id), ticketQuestionSchema.parse(req.body)));
-}));
-staffRoutes.delete("/teacher/courses/:courseId/tickets/:ticket/questions/:id", ticketEditors, h(async (req, res) => {
-  const { courseId, ticket } = ticketParams(req);
-  success(res, await tickets.removeQuestion(requireUserId(req), courseId, ticket, uuid.parse(req.params.id)));
-}));
-staffRoutes.delete("/teacher/courses/:courseId/tickets/:ticket/questions", ticketEditors, h(async (req, res) => {
-  const { courseId, ticket } = ticketParams(req);
-  success(res, await tickets.resetTicket(requireUserId(req), courseId, ticket));
-}));
-// A picture for a ticket question (same checks as every uploaded image).
-staffRoutes.put("/teacher/images", ticketEditors, h(async (req, res) => {
-  const length = Number(req.headers["content-length"]);
-  success(res, await media.uploadImage({ userId: requireUserId(req), role: req.user!.role }, req, { contentLength: Number.isFinite(length) && length > 0 ? length : undefined }), 201);
-}));
 // The teacher's dashboard numbers and lists (own groups only).
 staffRoutes.get("/teacher/overview", h(async (req, res) => success(res, await groups.teacherOverview(actorOf(req)))));
 staffRoutes.get("/teacher/schedule", h(async (req, res) => {
@@ -113,6 +82,61 @@ staffRoutes.put("/slots/:id/attendance", h(async (req, res) => {
   success(res, await attendance.markAttendance(actorOf(req), uuid.parse(req.params.id), records, reason));
 }));
 staffRoutes.post("/slots/:id/attendance/finalize", h(async (req, res) => success(res, await attendance.finalizeSession(actorOf(req), uuid.parse(req.params.id)))));
+
+// ───────────── questions: /api/teacher/courses/:id/(tickets|questions), /api/teacher/images|clips ─────────────
+// Teachers, moderators and admins (tickets:edit) fill the exam tickets and the course's question bank. Own
+// router (mounted before staffRoutes) so a question editor does not also need the teaching rights.
+export const questionRoutes = Router();
+const QUESTION_PATHS = ["/teacher/courses", "/teacher/images", "/teacher/clips"];
+questionRoutes.use(QUESTION_PATHS, asyncHandler(authMiddleware));
+questionRoutes.use(QUESTION_PATHS, requirePermission("tickets:edit"));
+
+// Exam tickets: what each ticket holds, and adding, editing or removing its questions.
+const ticketParams = (req: AuthRequest) => ({
+  courseId: uuid.parse(req.params.courseId),
+  ticket: z.coerce.number().int().parse(req.params.ticket),
+});
+questionRoutes.get("/teacher/courses/:courseId/tickets", h(async (req, res) => success(res, await tickets.listTickets(uuid.parse(req.params.courseId)))));
+questionRoutes.get("/teacher/courses/:courseId/tickets/:ticket", h(async (req, res) => {
+  const { courseId, ticket } = ticketParams(req);
+  success(res, await tickets.getTicket(courseId, ticket));
+}));
+questionRoutes.post("/teacher/courses/:courseId/tickets/:ticket/questions", h(async (req, res) => {
+  const { courseId, ticket } = ticketParams(req);
+  success(res, await tickets.addQuestion(requireUserId(req), courseId, ticket, ticketQuestionSchema.parse(req.body)), 201);
+}));
+questionRoutes.put("/teacher/courses/:courseId/questions/:id", h(async (req, res) => {
+  success(res, await tickets.updateQuestion(requireUserId(req), uuid.parse(req.params.courseId), uuid.parse(req.params.id), ticketQuestionSchema.parse(req.body)));
+}));
+questionRoutes.delete("/teacher/courses/:courseId/tickets/:ticket/questions/:id", h(async (req, res) => {
+  const { courseId, ticket } = ticketParams(req);
+  success(res, await tickets.removeQuestion(requireUserId(req), courseId, ticket, uuid.parse(req.params.id)));
+}));
+questionRoutes.delete("/teacher/courses/:courseId/tickets/:ticket/questions", h(async (req, res) => {
+  const { courseId, ticket } = ticketParams(req);
+  success(res, await tickets.resetTicket(requireUserId(req), courseId, ticket));
+}));
+// The course's question bank: all its questions, add one (no fixed ticket), remove one. Editing is the PUT above.
+questionRoutes.get("/teacher/courses/:courseId/questions", h(async (req, res) => {
+  const q = z.object({ search: z.string().trim().max(100).optional(), page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(50).default(20) }).parse(req.query);
+  success(res, await tickets.listCourseQuestions(uuid.parse(req.params.courseId), q));
+}));
+questionRoutes.post("/teacher/courses/:courseId/questions", h(async (req, res) => {
+  success(res, await tickets.addCourseQuestion(requireUserId(req), uuid.parse(req.params.courseId), ticketQuestionSchema.parse(req.body)), 201);
+}));
+questionRoutes.delete("/teacher/courses/:courseId/questions/:id", h(async (req, res) => {
+  success(res, await tickets.removeCourseQuestion(requireUserId(req), uuid.parse(req.params.courseId), uuid.parse(req.params.id)));
+}));
+// A picture for a ticket question (same checks as every uploaded image).
+questionRoutes.put("/teacher/images", h(async (req, res) => {
+  const length = Number(req.headers["content-length"]);
+  success(res, await media.uploadImage({ userId: requireUserId(req), role: req.user!.role }, req, { contentLength: Number.isFinite(length) && length > 0 ? length : undefined }), 201);
+}));
+// A short video for a question (MP4/WebM, up to media.CLIP_MAX_MB).
+questionRoutes.put("/teacher/clips", h(async (req, res) => {
+  const length = Number(req.headers["content-length"]);
+  success(res, await media.uploadClip({ userId: requireUserId(req), role: req.user!.role }, req, { contentLength: Number.isFinite(length) && length > 0 ? length : undefined }), 201);
+}));
 
 // ───────────── admin: /api/admin/groups ─────────────
 export const adminGroupRoutes = Router();

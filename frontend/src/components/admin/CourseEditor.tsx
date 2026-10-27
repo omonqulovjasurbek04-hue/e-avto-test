@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ImagePlus } from "lucide-react";
+import { FolderTree, ImagePlus } from "lucide-react";
+import { CategoryInlineManager } from "@/components/admin/CategoryInlineManager";
+import { CourseMaterials } from "@/components/admin/CourseMaterials";
+import { CoursePackages } from "@/components/admin/CoursePackages";
+import { useAuthStore } from "@/store/auth.store";
+import { can } from "@/lib/permissions";
 import { toast } from "sonner";
 import { ImagePickerModal } from "@/components/admin/ImageLibrary";
 import { adminService } from "@/services/admin.service";
@@ -14,7 +19,7 @@ import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // The stored value stays Uzbek (existing data); only the label is translated.
-export const LEVELS: [string, string][] = [["Boshlang'ich", "levelBeginner"], ["O'rta", "levelMiddle"], ["Murakkab", "levelAdvanced"]];
+const LEVELS: [string, string][] = [["Boshlang'ich", "levelBeginner"], ["O'rta", "levelMiddle"], ["Murakkab", "levelAdvanced"]];
 
 const emptyForm: AdminCourseInput = {
   title: "",
@@ -43,8 +48,12 @@ export function useCourseEditor(onSaved: () => void) {
   // Price is typed in whole so'm; it is sent only when it actually changed.
   const [priceText, setPriceText] = useState("");
   const [picker, setPicker] = useState(false);
+  const [manageCategories, setManageCategories] = useState(false);
+  const mayUpload = can(useAuthStore((s) => s.user?.role), "media:manage");
 
   const openNew = (order = 1) => {
+    // Categories may have just changed on the same page.
+    void categories.reload();
     setForm({ ...emptyForm, order });
     setPriceText("");
     setFormError(null);
@@ -52,6 +61,7 @@ export function useCourseEditor(onSaved: () => void) {
   };
 
   const openEdit = (c: AdminCourse) => {
+    void categories.reload();
     setForm({
       title: c.title,
       description: c.description,
@@ -150,12 +160,33 @@ export function useCourseEditor(onSaved: () => void) {
             value={priceText}
             onChange={(e) => setPriceText(e.target.value)}
           />
-          <Select
-            label={t("admin.courses.category")}
-            options={[{ value: "", label: t("admin.courses.noCategory") }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.isActive ? c.name : `${c.name} (${t("admin.categories.inactive")})` }))]}
-            value={form.categoryId ?? ""}
-            onChange={(e) => setForm({ ...form, categoryId: e.target.value || null })}
-          />
+          {/* Category: pick one, or add, rename and delete categories right here. */}
+          <div className="space-y-2">
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <Select
+                  label={t("admin.courses.category")}
+                  options={[{ value: "", label: t("admin.courses.noCategory") }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.isActive ? c.name : `${c.name} (${t("admin.categories.inactive")})` }))]}
+                  value={form.categoryId ?? ""}
+                  onChange={(e) => setForm({ ...form, categoryId: e.target.value || null })}
+                />
+              </div>
+              <Button variant={manageCategories ? "primary" : "outline"} leftIcon={<FolderTree className="h-4 w-4" />} onClick={() => setManageCategories((v) => !v)} aria-expanded={manageCategories}>
+                {t("admin.courses.manageCategories")}
+              </Button>
+            </div>
+            {manageCategories && (
+              <CategoryInlineManager
+                categories={categories.data ?? []}
+                selectedId={form.categoryId ?? null}
+                onSelect={(id) => setForm((f) => ({ ...f, categoryId: id }))}
+                onChanged={() => {
+                  void categories.reload();
+                  onSaved();
+                }}
+              />
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label={t("admin.courses.section")}
@@ -192,8 +223,12 @@ export function useCourseEditor(onSaved: () => void) {
             />
             {t("admin.courses.publishedHint")}
           </label>
+          {/* Materials need the course to exist: shown when editing; a new course gets them after saving. */}
+          {/* Packages (what students buy) and materials need the course to exist: shown when editing. */}
+          {editing && editing !== "new" && <CoursePackages courseId={editing.id} onChanged={onSaved} />}
+          {mayUpload && editing && editing !== "new" && <CourseMaterials courseId={editing.id} />}
           {formError && (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {formError}
             </p>
           )}

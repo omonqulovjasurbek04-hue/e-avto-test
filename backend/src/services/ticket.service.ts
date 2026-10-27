@@ -137,3 +137,50 @@ export const resetTicket = async (actorId: string, courseId: string, ticket: num
   await writeAudit({ actorId, action: "ticket.reset", entity: "Course", entityId: courseId, after: { ticket, questions: count } });
   return { reset: count };
 };
+
+// ───────────── the course's question bank (all questions, in or out of tickets) ─────────────
+
+const BANK_SELECT = { id: true, text: true, imageUrl: true, options: true, correctIndex: true, explanation: true, lessonId: true, ticket: true } as const;
+
+/** Every published question of the course, newest first, with a text search; plus the lessons to file them under. */
+export const listCourseQuestions = async (courseId: string, query: { search?: string; page: number; limit: number }) => {
+  const course = await ensureCourse(courseId);
+  const where = {
+    courseId,
+    isPublished: true,
+    ...(query.search ? { text: { contains: query.search, mode: "insensitive" as const } } : {}),
+  };
+  const [rows, total, lessons] = await Promise.all([
+    prisma.question.findMany({ where, orderBy: { createdAt: "desc" }, skip: (query.page - 1) * query.limit, take: query.limit, select: BANK_SELECT }),
+    prisma.question.count({ where }),
+    prisma.lesson.findMany({ where: { courseId }, orderBy: { order: "asc" }, select: { id: true, title: true } }),
+  ]);
+  return { course, items: rows.map((q) => ({ ...q, options: q.options as string[] })), total, page: query.page, limit: query.limit, lessons };
+};
+
+/** A new bank question: no fixed ticket, so the automatic tickets draw it. */
+export const addCourseQuestion = async (actorId: string, courseId: string, input: TicketQuestionInput) => {
+  await ensureCourse(courseId);
+  const lessonId = await lessonOf(courseId, input.lessonId);
+  const q = await prisma.question.create({
+    data: {
+      courseId,
+      lessonId,
+      text: input.text,
+      imageUrl: input.imageUrl ?? null,
+      options: input.options,
+      correctIndex: input.correctIndex,
+      explanation: input.explanation ?? null,
+    },
+  });
+  await writeAudit({ actorId, action: "question.create", entity: "Question", entityId: q.id, after: q });
+  return q;
+};
+
+/** Out of the bank and every ticket; unpublished, not deleted, so students' past answers stay. */
+export const removeCourseQuestion = async (actorId: string, courseId: string, questionId: string) => {
+  const existing = await ownQuestion(courseId, questionId);
+  await prisma.question.update({ where: { id: questionId }, data: { isPublished: false, ticket: null } });
+  await writeAudit({ actorId, action: "question.remove", entity: "Question", entityId: questionId, before: existing });
+  return { removed: true };
+};

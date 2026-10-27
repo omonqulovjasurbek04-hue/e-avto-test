@@ -59,7 +59,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
 const MATRIX: Record<Role, readonly Permission[]> = {
   USER: [],
   TEACHER: ["teaching:access", "attendance:mark", "groups:own", "courses:open-all", "tickets:edit"],
-  MODERATOR: ["admin:access", "content:manage", "tests:manage"],
+  MODERATOR: ["admin:access", "content:manage", "tests:manage", "tickets:edit", "courses:open-all"],
   FINANCE: ["admin:access", "orders:read", "payments:manage", "reports:read"],
   // Front desk: enrols students into groups and plans classes; no prices, settings or audit.
   MANAGER: ["admin:access", "users:read", "groups:manage", "schedule:manage", "orders:read"],

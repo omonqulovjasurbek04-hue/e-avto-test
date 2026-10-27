@@ -364,6 +364,14 @@ export interface TicketDetail {
   lessons: { id: string; title: string }[];
 }
 export type TicketQuestionInput = Omit<TicketQuestion, "id">;
+export interface QuestionBankPage {
+  course: { id: string; title: string };
+  items: (TicketQuestion & { ticket: number | null })[];
+  total: number;
+  page: number;
+  limit: number;
+  lessons: { id: string; title: string }[];
+}
 
 export const teacherService = {
   overview: () => apiGet<TeacherOverview>("/teacher/overview"),
@@ -381,6 +389,20 @@ export const teacherService = {
   removeTicketQuestion: (courseId: string, ticket: number, id: string) =>
     apiDelete<unknown>(`/teacher/courses/${courseId}/tickets/${ticket}/questions/${id}`),
   resetTicket: (courseId: string, ticket: number) => apiDelete<{ reset: number }>(`/teacher/courses/${courseId}/tickets/${ticket}/questions`),
+  /** The course's question bank: every question (in or out of tickets), newest first. */
+  courseQuestions: (courseId: string, q: { search?: string; page?: number; limit?: number }) =>
+    apiGet<QuestionBankPage>(`/teacher/courses/${courseId}/questions`, { limit: 20, ...q, search: q.search || undefined }),
+  addCourseQuestion: (courseId: string, d: TicketQuestionInput) => apiPost<TicketQuestion>(`/teacher/courses/${courseId}/questions`, d),
+  removeCourseQuestion: (courseId: string, id: string) => apiDelete<unknown>(`/teacher/courses/${courseId}/questions/${id}`),
+  /** Uploads a short question video (MP4/WebM) as the raw request body; returns its public URL. */
+  async uploadClip(video: Blob, onProgress?: (pct: number) => void): Promise<string> {
+    const res = await apiClient.put<{ data: { url: string } }>("/teacher/clips", video, {
+      headers: { "Content-Type": video.type || "application/octet-stream" },
+      timeout: 300_000,
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+    });
+    return res.data.data.url;
+  },
   /** Uploads a question picture as the raw request body; returns its public URL. */
   async uploadImage(image: Blob): Promise<string> {
     const res = await apiClient.put<{ data: { url: string } }>("/teacher/images", image, {

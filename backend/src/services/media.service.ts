@@ -154,6 +154,68 @@ export const uploadImage = async (actor: Viewer, body: Readable, meta: { content
   }
 };
 
+// ───────────── public question clips (short MP4/WebM videos inside test questions) ─────────────
+
+const CLIP_EXT = /^([a-f0-9-]{36})\.(mp4|webm)$/;
+/** A clip is a few seconds of road; long films belong to lessons (private, signed links). */
+export const CLIP_MAX_MB = 30;
+
+/**
+ * A short public video for a test question (same checks as every upload: real type from the bytes,
+ * antivirus). Served by GET /api/clips/:id.:ext with Range support; public because questions are.
+ */
+export const uploadClip = async (actor: Viewer, body: Readable, meta: { contentLength: number | undefined }) => {
+  const maxBytes = Math.min(CLIP_MAX_MB, env.MAX_VIDEO_MB) * 1024 * 1024;
+  if (!meta.contentLength) throw new HttpError(411, "Content-Length is required");
+  if (meta.contentLength > maxBytes) throw new HttpError(413, "Video is too large");
+  let tmp;
+  try {
+    tmp = await storage.writeTemp(body, maxBytes);
+  } catch (err) {
+    if (err instanceof storage.UploadTooLargeError) throw new HttpError(413, "Video is too large");
+    throw badRequest("Upload failed");
+  }
+  const detected = detectType(await storage.readHead(tmp.tmpPath));
+  if (!detected || detected.kind !== "video") {
+    await storage.discard(tmp.tmpPath);
+    throw new HttpError(415, "Only MP4 or WebM video is accepted");
+  }
+  await scanOrReject(actor, tmp.tmpPath, "VIDEO");
+  const storageKey = await storage.commit(tmp.tmpPath, detected.ext, detected.mime);
+  try {
+    const asset = await prisma.fileAsset.create({
+      data: { storageKey, filename: `clip.${detected.ext}`, mimeType: detected.mime, sizeBytes: tmp.size, isPublic: true, createdById: actor.userId },
+    });
+    await writeAudit({ actorId: actor.userId, action: "media.clip_upload", entity: "FileAsset", entityId: asset.id, after: { mime: detected.mime, size: tmp.size } });
+    const path = `/api/clips/${asset.id}.${detected.ext}`;
+    return { id: asset.id, path, url: `${env.PUBLIC_API_ORIGIN}${path}` };
+  } catch (err) {
+    await storage.removeObject(storageKey);
+    throw err;
+  }
+};
+
+export const openPublicClip = async (name: string, rangeHeader: string | undefined): Promise<MediaPlan> => {
+  const m = CLIP_EXT.exec(name);
+  if (!m) throw notFound("Video not found");
+  const f = await prisma.fileAsset.findFirst({ where: { id: m[1], isPublic: true, mimeType: { startsWith: "video/" } } });
+  if (!f || !f.storageKey.endsWith(`.${m[2]}`)) throw notFound("Video not found");
+  const stat = await storage.statObject(f.storageKey);
+  if (!stat) throw notFound("Video not found");
+  const { start, end, status } = byteRange(rangeHeader, stat.size);
+  const headers: Record<string, string> = {
+    "Content-Type": f.mimeType,
+    "Content-Length": String(end - start + 1),
+    "Accept-Ranges": "bytes",
+    // A new upload gets a new id, so the bytes behind a link never change.
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+    "Cross-Origin-Resource-Policy": "cross-origin",
+  };
+  if (status === 206) headers["Content-Range"] = `bytes ${start}-${end}/${stat.size}`;
+  return { status, headers, stream: await storage.openRange(f.storageKey, start, end) };
+};
+
 export const listImages = async () => {
   const rows = await prisma.fileAsset.findMany({
     // Profile photos are stored the same way but are not CMS content.
@@ -275,6 +337,23 @@ export interface RedirectPlan {
 export type MediaPlan = StreamPlan | RedirectPlan;
 
 /** Seconds left on a media token (used as the lifetime of the bucket links handed out under it). */
+/** One "bytes=a-b" range of a file of `size` bytes (what players send to seek), or the whole file. */
+const byteRange = (rangeHeader: string | undefined, size: number): { start: number; end: number; status: 200 | 206 } => {
+  if (!rangeHeader) return { start: 0, end: size - 1, status: 200 };
+  const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+  if (!m || (m[1] === "" && m[2] === "")) throw new HttpError(416, "Invalid range");
+  let start: number;
+  let end = size - 1;
+  if (m[1] === "") {
+    start = Math.max(size - parseInt(m[2], 10), 0); // suffix range: last N bytes
+  } else {
+    start = parseInt(m[1], 10);
+    if (m[2] !== "") end = Math.min(parseInt(m[2], 10), end);
+  }
+  if (start > end || start >= size) throw new HttpError(416, "Range not satisfiable");
+  return { start, end, status: 206 };
+};
+
 const secondsLeft = (exp: number) => Math.max(60, exp - Math.floor(Date.now() / 1000));
 
 /**
@@ -297,21 +376,7 @@ export const openStream = async (token: string, rangeHeader: string | undefined)
   const stat = await storage.statObject(asset.storageKey);
   if (!stat) throw notFound("Media not found");
 
-  let start = 0;
-  let end = stat.size - 1;
-  let status: 200 | 206 = 200;
-  if (rangeHeader) {
-    const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
-    if (!m || (m[1] === "" && m[2] === "")) throw new HttpError(416, "Invalid range");
-    if (m[1] === "") {
-      start = Math.max(stat.size - parseInt(m[2], 10), 0); // suffix range: last N bytes
-    } else {
-      start = parseInt(m[1], 10);
-      if (m[2] !== "") end = Math.min(parseInt(m[2], 10), end);
-    }
-    if (start > end || start >= stat.size) throw new HttpError(416, "Range not satisfiable");
-    status = 206;
-  }
+  const { start, end, status } = byteRange(rangeHeader, stat.size);
 
   const headers: Record<string, string> = {
     "Content-Type": asset.mimeType,

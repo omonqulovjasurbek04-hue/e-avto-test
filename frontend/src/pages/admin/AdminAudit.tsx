@@ -36,7 +36,7 @@ export default function AdminAudit() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">{t("admin.audit.title")}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.audit.title")}</h1>
       <p className="text-xs text-slate-500">{t("admin.audit.hint")}</p>
       <div className="flex flex-wrap gap-3">
         <div className="min-w-56 flex-1"><Input aria-label={t("admin.audit.action")} placeholder={t("admin.audit.actionPlaceholder")} value={action} onChange={(ev) => { setAction(ev.target.value); setPage(1); }} /></div>
@@ -47,15 +47,15 @@ export default function AdminAudit() {
         <EmptyState title={t("admin.audit.empty")} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">{t("admin.audit.time")}</th><th className="px-4 py-3">{t("admin.audit.who")}</th><th className="px-4 py-3">{t("admin.audit.action")}</th><th className="px-4 py-3">{t("admin.audit.entity")}</th><th className="px-4 py-3 text-right">{t("admin.audit.details")}</th></tr></thead>
-              <tbody className="divide-y divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-950 text-xs uppercase text-slate-500 dark:text-slate-400"><tr><th className="px-4 py-3">{t("admin.audit.time")}</th><th className="px-4 py-3">{t("admin.audit.who")}</th><th className="px-4 py-3">{t("admin.audit.action")}</th><th className="px-4 py-3">{t("admin.audit.entity")}</th><th className="px-4 py-3 text-right">{t("admin.audit.details")}</th></tr></thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {list.data.items.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/40">
+                  <tr key={r.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
                     <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(r.createdAt)}</td>
                     <td className="px-4 py-3">{r.actor ? <>{r.actor.name} <span className="text-xs text-slate-500">({t(`roles.${r.actor.role}`, r.actor.role)})</span></> : <span className="text-slate-500">{t("admin.common.system")}</span>}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-white">{r.action}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-900 dark:text-white">{r.action}</td>
                     <td className="px-4 py-3">{r.entity}{r.entityId ? <span className="text-xs text-slate-500"> · {r.entityId.slice(0, 8)}</span> : null}</td>
                     <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => setDetail(r)}>{t("admin.common.view")}</Button></td>
                   </tr>
@@ -70,9 +70,9 @@ export default function AdminAudit() {
       <Modal isOpen={detail !== null} onClose={() => setDetail(null)} title={detail?.action ?? ""} maxWidth="lg">
         {detail && (
           <div className="space-y-3 text-sm">
-            {detail.reason && <p><span className="text-slate-400">{t("admin.common.reason")}:</span> {detail.reason}</p>}
-            <div><p className="mb-1 text-xs uppercase text-slate-500">{t("admin.audit.before")}</p><pre className="max-h-48 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{JSON.stringify(detail.before, null, 2) ?? "—"}</pre></div>
-            <div><p className="mb-1 text-xs uppercase text-slate-500">{t("admin.audit.after")}</p><pre className="max-h-48 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{JSON.stringify(detail.after, null, 2) ?? "—"}</pre></div>
+            {detail.reason && <p><span className="text-slate-500 dark:text-slate-400">{t("admin.common.reason")}:</span> {detail.reason}</p>}
+            <div><p className="mb-1 text-xs uppercase text-slate-500">{t("admin.audit.before")}</p><pre className="max-h-48 overflow-auto rounded-xl bg-slate-50 dark:bg-slate-950 p-3 text-xs text-slate-600 dark:text-slate-300">{JSON.stringify(detail.before, null, 2) ?? "—"}</pre></div>
+            <div><p className="mb-1 text-xs uppercase text-slate-500">{t("admin.audit.after")}</p><pre className="max-h-48 overflow-auto rounded-xl bg-slate-50 dark:bg-slate-950 p-3 text-xs text-slate-600 dark:text-slate-300">{JSON.stringify(detail.after, null, 2) ?? "—"}</pre></div>
           </div>
         )}
       </Modal>

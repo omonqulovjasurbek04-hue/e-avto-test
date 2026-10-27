@@ -4,6 +4,8 @@ import { AlertTriangle, ChevronRight, ClipboardList, GraduationCap, Target, User
 import { useTranslation } from "react-i18next";
 import { teacherService } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
+import { writeStored } from "@/hooks/useStoredState";
+import { useAuthStore } from "@/store/auth.store";
 import { formatAccountId } from "@/utils/studentId";
 import { cn } from "@/utils/cn";
 import StatCard from "@/components/common/StatCard";
@@ -31,19 +33,29 @@ export const shortDate = (iso: string) => {
  */
 export function GroupKnowledgePanel({
   teacherId,
-  studentPath,
   emptyTitle,
   emptyHint,
+  compact = false,
 }: {
   teacherId?: string;
-  studentPath: (id: string) => string;
   emptyTitle?: string;
   emptyHint?: string;
+  /** One slim strip of numbers instead of four cards (the admin page already shows big totals). */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const userId = useAuthStore((st) => st.user?.id);
   const [groupId, setGroupId] = useState<string | undefined>();
   const { data, loading, error, reload } = useLoad(() => teacherService.knowledge(groupId, teacherId), [groupId, teacherId]);
+  // Quick filters over the group: who took no test this week, who still has mistakes; and a name search.
+  const [show, setShow] = useState<"all" | "inactive" | "mistakes">("all");
+  const [query, setQuery] = useState("");
+  const students = (data?.students ?? []).filter(
+    (s) =>
+      (show === "all" || (show === "inactive" ? s.tests7d === 0 : s.mistakes > 0)) &&
+      (!query.trim() || s.name.toLowerCase().includes(query.trim().toLowerCase()))
+  );
 
   return (
     <>
@@ -71,24 +83,67 @@ export function GroupKnowledgePanel({
             />
           </div>
 
-          {data.summary && (
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard label={t("knowledge.students")} value={data.summary.students} icon={<Users className="h-6 w-6" />} color="brand" />
-              <StatCard label={t("knowledge.tests7d")} value={data.summary.tests7d} icon={<ClipboardList className="h-6 w-6" />} color="green" />
-              <StatCard
-                label={t("knowledge.average7d")}
-                value={data.summary.average7d === null ? "—" : `${data.summary.average7d}%`}
-                icon={<Target className="h-6 w-6" />}
-                color="amber"
+          {data.summary &&
+            (compact ? (
+              <div className="mt-4 grid grid-cols-2 divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white sm:grid-cols-4 sm:divide-x dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                {[
+                  [t("knowledge.students"), String(data.summary.students), "text-slate-900 dark:text-white"],
+                  [t("knowledge.tests7d"), String(data.summary.tests7d), "text-slate-900 dark:text-white"],
+                  [t("knowledge.average7d"), data.summary.average7d === null ? "—" : `${data.summary.average7d}%`, scoreTone(data.summary.average7d)],
+                  [t("knowledge.inactive7d"), String(data.summary.inactive7d), data.summary.inactive7d ? "text-red-600" : "text-emerald-600"],
+                ].map(([label, value, tone]) => (
+                  <div key={label} className="px-4 py-3">
+                    <p className={cn("text-xl font-bold", tone)}>{value}</p>
+                    <p className="text-xs text-slate-500">{label}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label={t("knowledge.students")} value={data.summary.students} icon={<Users className="h-6 w-6" />} color="brand" />
+                <StatCard label={t("knowledge.tests7d")} value={data.summary.tests7d} icon={<ClipboardList className="h-6 w-6" />} color="green" />
+                <StatCard
+                  label={t("knowledge.average7d")}
+                  value={data.summary.average7d === null ? "—" : `${data.summary.average7d}%`}
+                  icon={<Target className="h-6 w-6" />}
+                  color="amber"
+                />
+                <StatCard label={t("knowledge.inactive7d")} value={data.summary.inactive7d} icon={<AlertTriangle className="h-6 w-6" />} color="red" />
+              </div>
+            ))}
+
+          {data.students.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {(["all", "inactive", "mistakes"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setShow(k)}
+                  className={cn(
+                    "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+                    show === k ? "bg-brand-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-brand-400 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700"
+                  )}
+                >
+                  {t(`knowledge.filter.${k}`)}
+                </button>
+              ))}
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("knowledge.searchStudent")}
+                aria-label={t("knowledge.searchStudent")}
+                className="ml-auto w-full rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm outline-none focus:border-brand-500 sm:w-60 dark:border-slate-700 dark:bg-slate-900"
               />
-              <StatCard label={t("knowledge.inactive7d")} value={data.summary.inactive7d} icon={<AlertTriangle className="h-6 w-6" />} color="red" />
             </div>
           )}
 
-          <Card className="mt-6">
+          <Card className="mt-4">
             <CardContent className="p-0">
               {data.students.length === 0 ? (
                 <p className="px-6 py-10 text-center text-sm text-slate-500">{t("knowledge.noStudents")}</p>
+              ) : students.length === 0 ? (
+                <p className="px-6 py-10 text-center text-sm text-slate-500">{t("knowledge.noMatch")}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-sm">
@@ -103,10 +158,14 @@ export function GroupKnowledgePanel({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.students.map((s) => (
+                      {students.map((s) => (
                         <tr
                           key={s.id}
-                          onClick={() => navigate(studentPath(s.id))}
+                          onClick={() => {
+                            // The student id goes to the browser's storage, not the address bar.
+                            writeStored(userId, "knowledge.student", s.id);
+                            navigate("/mistakes/student");
+                          }}
                           className="cursor-pointer border-b border-slate-100 transition last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
                         >
                           <td className="px-6 py-3">

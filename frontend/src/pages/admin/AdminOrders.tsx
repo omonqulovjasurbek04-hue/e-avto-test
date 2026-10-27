@@ -89,7 +89,7 @@ export default function AdminOrders() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">{t("admin.orders.title")}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.orders.title")}</h1>
         <div className="w-48"><Select aria-label={t("admin.orders.period")} options={RANGES.map((value) => ({ value, label: t(`admin.orders.last${value}`) }))} value={days} onChange={(e) => setDays(e.target.value)} /></div>
       </div>
 
@@ -114,14 +114,14 @@ export default function AdminOrders() {
         <EmptyState title={t("admin.orders.empty")} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">{t("admin.common.date")}</th><th className="px-4 py-3">{t("admin.common.user")}</th><th className="px-4 py-3">{t("admin.orders.product")}</th><th className="px-4 py-3">{t("admin.orders.amount")}</th><th className="px-4 py-3">{t("admin.common.status")}</th>{canRefund && <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>}</tr></thead>
-              <tbody className="divide-y divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-950 text-xs uppercase text-slate-500 dark:text-slate-400"><tr><th className="px-4 py-3">{t("admin.common.date")}</th><th className="px-4 py-3">{t("admin.common.user")}</th><th className="px-4 py-3">{t("admin.orders.product")}</th><th className="px-4 py-3">{t("admin.orders.amount")}</th><th className="px-4 py-3">{t("admin.common.status")}</th>{canRefund && <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>}</tr></thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {orders.data.items.map((o) => (
-                  <tr key={o.id} className="hover:bg-slate-800/40">
+                  <tr key={o.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
                     <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(o.createdAt)}</td>
-                    <td className="px-4 py-3"><span className="font-medium text-white">{o.user.name}</span><br /><span className="text-xs text-slate-500">{o.user.email}</span></td>
+                    <td className="px-4 py-3"><span className="font-medium text-slate-900 dark:text-white">{o.user.name}</span><br /><span className="text-xs text-slate-500">{o.user.email}</span></td>
                     <td className="px-4 py-3">{o.items.map((i) => i.title).join(", ")}</td>
                     <td className="px-4 py-3 font-semibold">{formatMoney(o.total, o.currency)}</td>
                     <td className="px-4 py-3"><Badge variant={STATUS[o.status]}>{t(`admin.orders.status${o.status}`)}</Badge></td>
@@ -145,12 +145,12 @@ export default function AdminOrders() {
 
       {canRefund && pendingRefunds.data && pendingRefunds.data.some((r) => r.status === "PENDING") && (
         <section className="space-y-3 rounded-2xl border border-amber-700/40 p-4">
-          <h2 className="font-semibold text-white">{t("admin.orders.pendingRefunds")}</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-white">{t("admin.orders.pendingRefunds")}</h2>
           <p className="text-xs text-slate-500">{t("admin.orders.pendingHint")}</p>
           {pendingRefunds.data.filter((r) => r.status === "PENDING").map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-sm">
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white dark:bg-slate-900 p-3 text-sm">
               <div>
-                <p className="text-white">{r.payment.order.user.name} · {formatMoney(r.amount, r.payment.currency)}</p>
+                <p className="text-slate-900 dark:text-white">{r.payment.order.user.name} · {formatMoney(r.amount, r.payment.currency)}</p>
                 <p className="text-xs text-slate-500">{r.reason} · {formatDateTime(r.createdAt)}</p>
               </div>
               <div className="flex gap-2">
@@ -165,11 +165,11 @@ export default function AdminOrders() {
       <Modal isOpen={refunding !== null} onClose={() => setRefunding(null)} title={t("admin.orders.refundTitle")} maxWidth="md">
         {refunding && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-400">{refunding.user.name} · {refunding.items.map((i) => i.title).join(", ")}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{refunding.user.name} · {refunding.items.map((i) => i.title).join(", ")}</p>
             <Input label={t("admin.orders.refundAmount")} type="number" min={0} value={rf.som} onChange={(e) => setRf({ ...rf, som: e.target.value })} />
             <Input label={t("admin.common.reason")} value={rf.reason} onChange={(e) => setRf({ ...rf, reason: e.target.value })} />
             <p className="text-xs text-slate-500">{t("admin.orders.refundHint")}</p>
-            {rfErr && <p role="alert" className="text-sm text-red-400">{rfErr}</p>}
+            {rfErr && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{rfErr}</p>}
             <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setRefunding(null)}>{t("admin.common.cancel")}</Button><Button loading={rfBusy} onClick={submitRefund}>{t("admin.orders.refund")}</Button></div>
           </div>
         )}

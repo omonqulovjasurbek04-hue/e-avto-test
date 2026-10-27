@@ -46,6 +46,11 @@ mediaRoutes.get("/media/hls/:token/:file(*)", asyncHandler(async (req: Request, 
   await send(res, await media.openHls(req.params.token, req.params.file));
 }));
 
+/** Public question clips: GET /api/clips/<id>.mp4 (Range requests for seeking). */
+mediaRoutes.get("/clips/:name", asyncHandler(async (req: Request, res: Response) => {
+  await send(res, await media.openPublicClip(req.params.name, req.headers.range));
+}));
+
 /** Public CMS images: GET /api/images/<id>.<ext> */
 mediaRoutes.get("/images/:name", asyncHandler(async (req: Request, res: Response) => {
   const plan = await media.openPublicImage(req.params.name);

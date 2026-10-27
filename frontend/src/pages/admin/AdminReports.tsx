@@ -14,8 +14,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 const th = "px-4 py-3";
-const thead = "bg-slate-950 text-xs uppercase text-slate-400";
-const wrap = "overflow-x-auto rounded-2xl border border-slate-800";
+const thead = "bg-slate-50 dark:bg-slate-950 text-xs uppercase text-slate-500 dark:text-slate-400";
+const wrap = "overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800";
 const RANGES = ["7", "30", "90", "365"];
 const DAY = 86_400_000;
 
@@ -45,7 +45,7 @@ export default function AdminReports() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-white">{t("admin.reports.title")}</h1>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t("admin.reports.title")}</h2>
         <div className="w-48">
           <Select aria-label={t("admin.orders.period")} options={RANGES.map((value) => ({ value, label: t("admin.reports.lastDays", { count: Number(value) }) }))} value={days} onChange={(e) => setDays(e.target.value)} />
         </div>
@@ -94,10 +94,10 @@ function TestsReport({ days }: { days: number }) {
             <div className={wrap}>
               <table className="w-full text-left text-sm">
                 <thead className={thead}><tr><th className={th}>{t("admin.common.course")}</th><th className={th}>{t("admin.reports.attempts")}</th><th className={th}>{t("admin.reports.students")}</th><th className={th}>{t("admin.reports.passed")}</th><th className={th}>{t("admin.reports.passRate")}</th><th className={th}>{t("admin.reports.avgScore")}</th><th className={th}>{t("admin.reports.avgMinutes")}</th></tr></thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {r.rows.map((row) => (
                     <tr key={row.courseId ?? "none"}>
-                      <td className="px-4 py-3 font-medium text-white">{courseName(row.course)}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{courseName(row.course)}</td>
                       <td className="px-4 py-3">{row.attempts}</td>
                       <td className="px-4 py-3">{row.students}</td>
                       <td className="px-4 py-3">{row.passed}</td>
@@ -141,10 +141,10 @@ function TeachersReport({ days }: { days: number }) {
         <div className={wrap}>
           <table className="w-full text-left text-sm">
             <thead className={thead}><tr><th className={th}>{t("admin.groups.teacher")}</th><th className={th}>{t("admin.reports.groups")}</th><th className={th}>{t("admin.reports.students")}</th><th className={th}>{t("admin.reports.lessons")}</th><th className={th}>{t("admin.reports.done")}</th><th className={th}>{t("admin.reports.cancelled")}</th><th className={th}>{t("admin.reports.hours")}</th><th className={th}>{t("admin.reports.missing")}</th></tr></thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {rows.map((r) => (
                 <tr key={r.teacherId}>
-                  <td className="px-4 py-3 font-medium text-white">{r.name}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{r.name}</td>
                   <td className="px-4 py-3">{r.activeGroups}</td>
                   <td className="px-4 py-3">{r.students}</td>
                   <td className="px-4 py-3">{r.lessons}</td>

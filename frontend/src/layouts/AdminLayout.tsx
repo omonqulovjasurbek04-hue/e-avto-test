@@ -1,29 +1,13 @@
 import React, { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/auth.store";
 import {
   Shield,
-  BookOpen,
-  FolderTree,
-  HelpCircle,
-  PlayCircle,
-  Users,
-  LogOut,
   Menu,
   X,
   ArrowLeft,
-  BadgeDollarSign,
-  Receipt,
-  CalendarRange,
-  Newspaper,
   ClipboardList,
-  ScrollText,
-  Film,
-  BarChart3,
-  Activity,
-  ShieldCheck,
-  Brain,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { can, type Permission } from "../lib/permissions";
@@ -31,33 +15,13 @@ import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 export const AdminLayout: React.FC = () => {
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    void logout();
-    navigate("/login");
-  };
 
   const allItems: { to: string; label: string; icon: React.ReactNode; perm: Permission; end?: boolean }[] = [
-    { to: "/admin/courses", label: t("admin.nav.courses"), icon: <BookOpen className="h-5 w-5" />, perm: "catalog:manage" },
-    { to: "/admin/categories", label: t("admin.nav.categories"), icon: <FolderTree className="h-5 w-5" />, perm: "catalog:manage" },
-    { to: "/admin/lessons", label: t("admin.nav.lessons"), icon: <PlayCircle className="h-5 w-5" />, perm: "catalog:manage" },
-    { to: "/admin/questions", label: t("admin.nav.questions"), icon: <HelpCircle className="h-5 w-5" />, perm: "tests:manage" },
-    { to: "/admin/catalog", label: t("admin.nav.catalog"), icon: <BadgeDollarSign className="h-5 w-5" />, perm: "catalog:manage" },
-    { to: "/admin/orders", label: t("admin.nav.orders"), icon: <Receipt className="h-5 w-5" />, perm: "orders:read" },
-    { to: "/admin/groups", label: t("admin.nav.groups"), icon: <CalendarRange className="h-5 w-5" />, perm: "groups:manage" },
-    { to: "/admin/knowledge", label: t("admin.nav.knowledge"), icon: <Brain className="h-5 w-5" />, perm: "groups:manage" },
+    // Courses, categories, lessons, videos and materials are managed in the app (/my-courses, /lessons).
     { to: "/admin/exam", label: t("admin.nav.exam"), icon: <ClipboardList className="h-5 w-5" />, perm: "tests:manage" },
-    { to: "/admin/cms", label: t("admin.nav.cms"), icon: <Newspaper className="h-5 w-5" />, perm: "content:manage" },
-    { to: "/admin/users", label: t("admin.nav.users"), icon: <Users className="h-5 w-5" />, perm: "users:manage" },
-    { to: "/admin/media", label: t("admin.nav.media"), icon: <Film className="h-5 w-5" />, perm: "media:manage" },
-    { to: "/admin/reports", label: t("admin.nav.reports"), icon: <BarChart3 className="h-5 w-5" />, perm: "reports:read" },
-    { to: "/admin/audit", label: t("admin.nav.audit"), icon: <ScrollText className="h-5 w-5" />, perm: "audit:read" },
-    { to: "/admin/system", label: t("admin.nav.system"), icon: <Activity className="h-5 w-5" />, perm: "settings:manage" },
-    // Own account security (password, 2FA, sessions) lives on the shared settings page.
-    { to: "/settings?tab=security", label: t("admin.nav.security"), icon: <ShieldCheck className="h-5 w-5" />, perm: "admin:access" },
+    // Own account security (password, 2FA, sessions): Settings → Security in the app.
   ];
   // Only what this role can actually use; the API still refuses anything else.
   const navItems = allItems.filter((i) => can(user?.role, i.perm));
@@ -136,20 +100,9 @@ export const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
-        {/* Admin footer info */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          <LanguageSwitcher className="sm:hidden" />
-          <div className="flex items-center gap-3 px-2 py-1 text-xs text-slate-400">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{t("admin.layout.mode", { role: t(`roles.${user?.role ?? "ADMIN"}`) })}</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 transition"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>{t("admin.layout.logout")}</span>
-          </button>
+        {/* Phones: the language switch (it is in the top bar on larger screens). Signing out is in the main site's profile menu. */}
+        <div className="border-t border-slate-800 p-4 sm:hidden">
+          <LanguageSwitcher />
         </div>
       </aside>
 

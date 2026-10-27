@@ -111,8 +111,8 @@ export default function AdminUsers() {
   const ALL_ROLES = Object.keys(ROLE_LABEL) as UserRole[];
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-white">{t("admin.users.title")}</h1>
+    <div className="container-page py-8">
+      <h1 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">{t("admin.users.title")}</h1>
 
       <div className="mb-4 flex flex-wrap gap-3">
         <div className="w-full max-w-sm">
@@ -124,7 +124,7 @@ export default function AdminUsers() {
             aria-label={t("admin.common.search")}
           />
         </div>
-        <div className="w-48">
+        <div className="flex flex-wrap gap-3 [&>*]:w-48">
           <Select aria-label={t("admin.users.byRole")} options={[{ value: "", label: t("admin.users.allRoles") }, ...ALL_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} />
           <Select
             aria-label={t("admin.users.byKind")}
@@ -148,9 +148,9 @@ export default function AdminUsers() {
         <EmptyState title={t("admin.users.empty")} />
       ) : (
         <div className="space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950 text-xs uppercase text-slate-400">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-3">{t("admin.users.id")}</th>
                   <th className="px-4 py-3">{t("admin.users.name")}</th>
@@ -161,20 +161,20 @@ export default function AdminUsers() {
                   <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {items.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/40">
+                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     <td className="px-4 py-3 font-mono text-xs">
                       {/* The prefix tells: teacher#### teaches, student#### had a course, user#### only signed up. */}
                       <Badge variant={u.role === "TEACHER" && u.teacherNumber ? "primary" : u.studentNumber ? "success" : "neutral"}>{formatAccountId(u)}</Badge>
                     </td>
-                    <td className="px-4 py-3 font-medium text-white">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                       {u.name}
-                      {u.phone && <div className="text-xs font-normal text-slate-400">{u.phone}</div>}
+                      {u.phone && <div className="text-xs font-normal text-slate-500 dark:text-slate-400">{u.phone}</div>}
                     </td>
                     <td className="px-4 py-3">
                       {u.email ?? "Telegram"}
-                      {u.email && !u.emailVerifiedAt && <div className="text-xs text-amber-400">{t("admin.users.emailUnverified")}</div>}
+                      {u.email && !u.emailVerifiedAt && <div className="text-xs text-amber-600 dark:text-amber-400">{t("admin.users.emailUnverified")}</div>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1">
@@ -244,10 +244,10 @@ export default function AdminUsers() {
             />
             {/* What happens to the numbers: a teacher gets teacher#### and the user number is freed. */}
             {nextRole === "TEACHER" && changing.role !== "TEACHER" && (
-              <p className="rounded-lg bg-brand-500/10 px-3 py-2 text-xs text-brand-200">{t("admin.users.toTeacherHint", { id: formatUserId(changing.userNumber) })}</p>
+              <p className="rounded-lg bg-brand-500/10 px-3 py-2 text-xs text-brand-800 dark:text-brand-200">{t("admin.users.toTeacherHint", { id: formatUserId(changing.userNumber) })}</p>
             )}
             {changing.role === "TEACHER" && nextRole !== "TEACHER" && (
-              <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{t("admin.users.fromTeacherHint")}</p>
+              <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">{t("admin.users.fromTeacherHint")}</p>
             )}
             <Textarea label={t("admin.users.reasonLabel")} rows={2} value={roleReason} onChange={(e) => setRoleReason(e.target.value)} placeholder={t("admin.users.reasonPlaceholder")} />
             <p className="text-xs text-slate-500">{t("admin.users.roleHint")}</p>

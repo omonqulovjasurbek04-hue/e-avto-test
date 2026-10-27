@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useStoredState } from "@/hooks/useStoredState";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -12,14 +13,21 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { QuestionWizard } from "@/components/test/QuestionWizard";
+import { QuestionMedia } from "@/components/test/QuestionMedia";
 
 const TICKET_COUNT = 60;
 
-/** One exam ticket for the teacher: its questions in order, with add, edit and remove, and a step to the next ticket. */
+/** The course comes from the browser's storage (set by the Tests page); without one, back to the tickets. */
 export default function TicketEditor() {
+  const [courseId] = useStoredState("tests.course");
+  return courseId ? <TicketEditorPage courseId={courseId} /> : <Navigate to="/tests" replace />;
+}
+
+/** One exam ticket for the teacher: its questions in order, with add, edit and remove, and a step to the next ticket. */
+function TicketEditorPage({ courseId }: { courseId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { courseId = "", ticket: ticketParam = "1" } = useParams();
+  const { ticket: ticketParam = "1" } = useParams();
   const ticket = Number(ticketParam);
   const { data, loading, error, reload } = useLoad(() => teacherService.ticket(courseId, ticket), [courseId, ticket]);
 
@@ -29,8 +37,8 @@ export default function TicketEditor() {
   const [removing, setRemoving] = useState<TicketQuestion | null>(null);
   const [resetting, setResetting] = useState(false);
 
-  const back = `/tests?course=${courseId}&edit=1`;
-  const go = (n: number) => navigate(`/tests/manage/${courseId}/${n}`);
+  const back = "/tests";
+  const go = (n: number) => navigate(`/tests/manage/${n}`);
 
   const save = async (d: TicketQuestionInput) => {
     setSaving(true);
@@ -133,7 +141,7 @@ export default function TicketEditor() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         {i + 1}
                       </span>
-                      {q.imageUrl && <img src={q.imageUrl} alt="" className="hidden h-16 w-24 shrink-0 rounded-lg object-cover sm:block" />}
+                      {q.imageUrl && <QuestionMedia url={q.imageUrl} className="hidden h-16 w-24 shrink-0 rounded-lg object-cover sm:block" />}
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-slate-800 dark:text-slate-100">{q.text}</p>
                         <p className="mt-1 flex items-start gap-1.5 text-sm text-emerald-700 dark:text-emerald-300">

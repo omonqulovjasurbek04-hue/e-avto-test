@@ -71,7 +71,8 @@ export default function TeacherDashboard() {
                   {data.unmarked.map((s) => (
                     <li key={s.id}>
                       <Link
-                        to={`/teacher/groups/${s.group.id}?attendance=${s.id}`}
+                        to={`/teacher/groups/${s.group.id}`}
+                        state={{ attendance: s.id }}
                         className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10"
                       >
                         <span className="min-w-0">
@@ -112,7 +113,8 @@ export default function TeacherDashboard() {
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <Link
-                    to={`/teacher/groups/${data.next[0].group.id}?attendance=${data.next[0].id}`}
+                    to={`/teacher/groups/${data.next[0].group.id}`}
+                    state={{ attendance: data.next[0].id }}
                     className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
                   >
                     <ClipboardCheck className="h-4 w-4" aria-hidden /> {t("teacherDash.takeAttendance")}

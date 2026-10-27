@@ -3,6 +3,8 @@ import { PenLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { teacherService } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
+import { writeStored } from "@/hooks/useStoredState";
+import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/utils/cn";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -12,6 +14,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 export function TicketEditGrid({ courseId }: { courseId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.user?.id);
   const { data, loading, error, reload } = useLoad(() => teacherService.tickets(courseId), [courseId]);
 
   if (loading && !data) return <Skeleton className="h-72 w-full rounded-2xl" />;
@@ -28,7 +31,11 @@ export function TicketEditGrid({ courseId }: { courseId: string }) {
             <button
               key={tk.ticket}
               type="button"
-              onClick={() => navigate(`/tests/manage/${courseId}/${tk.ticket}`)}
+              onClick={() => {
+                // The course goes to the browser's storage, the address shows only the ticket number.
+                writeStored(userId, "tests.course", courseId);
+                navigate(`/tests/manage/${tk.ticket}`);
+              }}
               aria-label={t("tests.tickets.ticketLabel", { n: tk.ticket })}
               className={cn(
                 "relative flex h-14 flex-col items-center justify-center rounded-lg border-2 border-dashed text-sm font-bold transition",

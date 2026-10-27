@@ -1,4 +1,5 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useStoredState } from "@/hooks/useStoredState";
 import { ArrowLeft, Check, ClipboardList, Phone, Target, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { teacherService } from "@/services/platform.service";
@@ -14,18 +15,20 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { scoreTone, shortDate } from "@/components/knowledge/GroupKnowledgePanel";
 
-/** One student for the teacher: recent tests, weakest topics and every question still answered wrong. */
+/** The student comes from the browser's storage (set by the knowledge list); without one, back to the list. */
 export default function StudentKnowledge() {
+  const [studentId] = useStoredState("knowledge.student");
+  return studentId ? <StudentKnowledgePage studentId={studentId} /> : <Navigate to="/mistakes" replace />;
+}
+
+/** One student for the teacher: recent tests, weakest topics and every question still answered wrong. */
+function StudentKnowledgePage({ studentId }: { studentId: string }) {
   const { t } = useTranslation();
-  const { studentId = "" } = useParams();
-  // Opened from the admin panel or from the teacher's own page: go back to where it came from.
-  const location = useLocation();
-  const fromAdmin = location.pathname.startsWith("/admin");
   const { data, loading, error, reload } = useLoad(() => teacherService.studentKnowledge(studentId), [studentId]);
 
   return (
     <div className="container-page py-8">
-      <Link to={fromAdmin ? `/admin/knowledge${location.search}` : "/mistakes"} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+      <Link to="/mistakes" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
         <ArrowLeft className="h-4 w-4" aria-hidden /> {t("knowledge.title")}
       </Link>
 

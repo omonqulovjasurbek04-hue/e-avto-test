@@ -25,6 +25,11 @@ import {
   Library,
   Settings as SettingsIcon,
   Lock,
+  Users,
+  Newspaper,
+  ScrollText,
+  Activity,
+  Receipt,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { assetUrl } from "../utils/assetUrl";
@@ -104,17 +109,24 @@ export const StudentLayout: React.FC = () => {
 
   const navItems = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
-    // Teaching staff: their groups right after the dashboard.
-    ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
-      ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
+    // Teaching staff: their groups right after the dashboard; group managers run every group there.
+    ...(["TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
+      ? [{ to: "/teacher", label: user?.role === "TEACHER" ? t("nav.teacher") : t("admin.nav.groups"), icon: <GraduationCap className="h-5 w-5" /> }]
       : []),
+    // Admins manage the accounts here, next to their teaching page.
+    ...(can(user?.role, "users:manage") ? [{ to: "/users", label: t("admin.nav.users"), icon: <Users className="h-5 w-5" /> }] : []),
     { to: "/my-courses", label: t("nav.courses"), icon: <Library className="h-5 w-5" /> },
     { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
     { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
     // Teachers: the same place shows their students' knowledge instead of their own mistakes.
-    { to: "/mistakes", label: user?.role === "TEACHER" ? t("nav.knowledge") : t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
+    { to: "/mistakes", label: user?.role === "TEACHER" || can(user?.role, "groups:manage") ? t("nav.knowledge") : t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
     ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
+    // Staff tools, each for whoever holds its right.
+    ...(can(user?.role, "content:manage") ? [{ to: "/site-content", label: t("admin.nav.cms"), icon: <Newspaper className="h-5 w-5" /> }] : []),
+    ...(can(user?.role, "audit:read") ? [{ to: "/audit", label: t("admin.nav.audit"), icon: <ScrollText className="h-5 w-5" /> }] : []),
+    ...(can(user?.role, "settings:manage") ? [{ to: "/system", label: t("admin.nav.system"), icon: <Activity className="h-5 w-5" /> }] : []),
+    ...(can(user?.role, "orders:read") ? [{ to: "/revenue", label: t("admin.nav.orders"), icon: <Receipt className="h-5 w-5" /> }] : []),
   ];
 
   return (
