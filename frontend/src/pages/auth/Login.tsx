@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import TelegramLogin from "@/components/auth/TelegramLogin";
+import GoogleButton from "@/components/auth/GoogleButton";
 import TwoFactorStep from "@/components/auth/TwoFactorStep";
 import { useAuthStore } from "@/store/auth.store";
 import { normalizeUzPhone } from "@/utils/phone";
@@ -39,7 +40,11 @@ export default function Login() {
   const from = (useLocation().state as { from?: { pathname?: string } } | null)?.from?.pathname;
   const { login } = useAuth();
   const twoFactorPending = useAuthStore((s) => Boolean(s.twoFactorChallenge));
-  const [serverError, setServerError] = useState<string | null>(null);
+  // Back from Google without a session: say why (cancelled, failed, account disabled, not configured).
+  const googleError = useSearchParams()[0].get("google");
+  const [serverError, setServerError] = useState<string | null>(
+    googleError ? t(`auth.google.errors.${googleError}`, { defaultValue: t("auth.google.errors.failed") }) : null
+  );
 
   const {
     register,
@@ -121,6 +126,7 @@ export default function Login() {
       </form>
 
       <TelegramLogin />
+      <GoogleButton next={from || ROUTES.dashboard} />
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
         {t("auth.login.noAccount")}{" "}

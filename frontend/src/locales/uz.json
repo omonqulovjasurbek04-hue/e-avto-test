@@ -387,6 +387,15 @@
       "missing": "Havolada tasdiqlash kodi yo'q",
       "toDashboard": "Kabinetga o'tish",
       "toLogin": "Kirish sahifasiga"
+    },
+    "google": {
+      "continue": "Google bilan davom etish",
+      "errors": {
+        "failed": "Google orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
+        "cancelled": "Google orqali kirish bekor qilindi.",
+        "disabled": "Bu hisob o'chirilgan. Administratorga murojaat qiling.",
+        "unavailable": "Google orqali kirish hozircha sozlanmagan."
+      }
     }
   },
   "validation": {

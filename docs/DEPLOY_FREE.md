@@ -67,6 +67,19 @@ havola berilmaydi; havola 4 soatda eskiradi (`MEDIA_HLS_TTL_SECONDS`).
 4. **Apply** → birinchi build 5–8 daqiqa. Logda `Catalogue ...` va `Administrator ready: +99890***67` chiqishi kerak.
 5. "name already taken" bo'lsa: `render.yaml`dagi `eavto-test-uz` prefiksini (hamma joyda, CORS'da ham) almashtiring.
 
+## 4a. Google orqali kirish (ixtiyoriy, bepul)
+
+1. <https://console.cloud.google.com> → yangi loyiha → **APIs & Services → OAuth consent screen**: External, ilova nomi
+   "E-Avto Test", support email — o'zingizniki. Scopes: `email`, `profile`, `openid` (qo'shimcha tekshiruv talab qilmaydi).
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+   **Authorized redirect URIs**: `https://eavto-test-uz-ocux.onrender.com/api/auth/google/callback`.
+3. Client ID va Client secret'ni Render → `eavto-test-uz-api` → Environment → `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+   ga **o'zingiz** kiriting (chatga yozmang) → Save, rebuild, and deploy. Qiymatlar bo'sh bo'lsa, tugma ko'rinmaydi.
+4. Consent screen "Testing" holatida faqat siz qo'shgan test foydalanuvchilar kira oladi — hamma uchun **Publish app**.
+
+Lokal sinov: redirect URI `http://localhost:5000/api/auth/google/callback` ni ham qo'shing va `backend/.env` da
+`GOOGLE_REDIRECT_URI` ni shu manzilga qo'ying.
+
 ## 4. Telegram bot — tokenni yangilang
 
 Eski token avval terminal chiqishida ko'rinib qolgan, shuning uchun uni **bekor qiling**:

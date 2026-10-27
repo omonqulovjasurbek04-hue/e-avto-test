@@ -16,6 +16,7 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import TelegramLogin from "@/components/auth/TelegramLogin";
+import GoogleButton from "@/components/auth/GoogleButton";
 import { normalizeUzPhone } from "@/utils/phone";
 import { cn } from "@/utils/cn";
 
@@ -135,6 +136,8 @@ export default function Register() {
       )}
 
       {step === 1 && telegramUnavailable && <ProfileForm submitLabel={t("auth.register.submit")} defaultName="" onSubmit={plainRegister} />}
+
+      {step === 1 && <GoogleButton next={from || ROUTES.dashboard} />}
 
       {step === 1 && (
         <p className="text-center text-sm text-slate-600 dark:text-slate-400">

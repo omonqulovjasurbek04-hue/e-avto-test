@@ -97,6 +97,9 @@ keyin 15 daqiqaga bloklanadi. Redis bo'lmasa — xotirada (bitta server uchun ye
 | POST | `/refresh` | cookie + XHR | — | yangi `token` (refresh aylantiriladi) |
 | POST | `/logout` | cookie + XHR | — | sessiya tugatiladi |
 | POST | `/logout-all` | 🔑 | — | barcha qurilmalardan chiqish |
+| GET | `/google/config` | — | — | `enabled` — Google tugmasini ko'rsatish kerakmi |
+| GET | `/google/start?next=` | — | — | Google'ga yo'naltiradi (302), `state` cookie |
+| GET | `/google/callback` | — | Google: `code`, `state` | sessiya cookie → `/auth/google?next=`; 2FA bo'lsa `#challenge=`; xato → `/login?google=` |
 | GET | `/devices` | 🔑 + cookie | — | ulangan qurilmalar: `id`, `browser`, `os`, `type`, `ip`, `signedInAt`, `lastActiveAt`, `current` (joriy birinchi) |
 | DELETE | `/devices/:id` | 🔑 + XHR | — | bitta qurilmani chiqarish; `current` — joriy qurilma edimi |
 | POST | `/devices/sign-out-others` | 🔑 + XHR + cookie | — | joriydan boshqa hamma qurilmalarni darhol chiqarish; yangi `token` |

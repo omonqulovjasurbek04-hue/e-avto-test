@@ -26,6 +26,8 @@ model User {
   phone              String?   @unique
   passwordHash       String?
   telegramId         String?   @unique
+  // Google account id ("sub") once the user signed in with Google.
+  googleId           String?   @unique
   role               Role      @default(USER)
   // Permanent sequential account number given at sign-up, shown as "user0001". Never reused.
   userNumber         Int       @unique @default(autoincrement())

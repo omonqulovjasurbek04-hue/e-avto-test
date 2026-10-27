@@ -17,6 +17,8 @@ const PUBLIC: { method: string; path: RegExp }[] = [
   { method: "POST", path: /^\/api\/auth\/(register|login|forgot-password|reset-password|verify-email|2fa\/login|telegram\/(start|verify))$/ },
   // Authenticated by the httpOnly refresh cookie instead of an access token (and gated by X-Requested-With).
   { method: "POST", path: /^\/api\/auth\/(refresh|logout)$/ },
+  // Sign-in with Google: the browser is not signed in yet; the callback is bound to the start by a state cookie.
+  { method: "GET", path: /^\/api\/auth\/google\/(config|start|callback)$/ },
   { method: "GET", path: /^\/api\/(courses|courses\/:id|courses\/:id\/lessons|lessons|lessons\/:id|leaderboard|packages|faq|site-settings|public-stats|pages\/:slug|news|news\/:slug|categories|images\/:name)$/ },
   { method: "POST", path: /^\/api\/(quote|contact)$/ },
   // Authenticated by something other than a user session: provider signature / signed media token / bot secret.

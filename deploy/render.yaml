@@ -54,6 +54,12 @@ services:
         sync: false
       - key: TELEGRAM_BOT_USERNAME
         sync: false
+      # "Continue with Google" (optional): OAuth Web client from Google Cloud Console, redirect URI
+      # https://eavto-test-uz-ocux.onrender.com/api/auth/google/callback. Empty = the button is hidden.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
       # First administrator, created on the first deploy (phone +998..., password 10+ characters).
       - key: BOOTSTRAP_ADMIN_PHONE
         sync: false
@@ -97,8 +103,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # The site's own /api (rewritten to the API below): the browser treats it as the same site, so the
+      # SameSite session cookie is sent (onrender.com subdomains are different sites to a browser).
       - key: VITE_API_URL
-        value: https://eavto-test-uz-api-rgw9.onrender.com/api
+        value: https://eavto-test-uz-ocux.onrender.com/api
     routes:
       - type: rewrite
         source: /api/*

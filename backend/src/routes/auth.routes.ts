@@ -8,6 +8,7 @@ import {
   verificationRateLimiter,
 } from "../middleware/rateLimit.middleware";
 import * as telegramController from "../controllers/telegram.controller";
+import * as googleController from "../controllers/google.controller";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { error } from "../utils/apiResponse";
 
@@ -39,6 +40,10 @@ router.post("/logout-all", asyncHandler(authMiddleware), asyncHandler(authContro
 router.get("/devices", asyncHandler(authMiddleware), asyncHandler(authController.listDevices));
 router.post("/devices/sign-out-others", asyncHandler(authMiddleware), requireXhr, asyncHandler(authController.revokeOtherDevices));
 router.delete("/devices/:id", asyncHandler(authMiddleware), requireXhr, asyncHandler(authController.revokeDevice));
+// Continue with Google: start -> Google -> callback -> the site's /auth/google page.
+router.get("/google/config", googleController.config);
+router.get("/google/start", authRateLimiter, googleController.start);
+router.get("/google/callback", authRateLimiter, asyncHandler(googleController.callback));
 router.post("/forgot-password", passwordResetRateLimiter, asyncHandler(authController.forgotPassword));
 router.post("/reset-password", passwordResetRateLimiter, asyncHandler(authController.resetPassword));
 

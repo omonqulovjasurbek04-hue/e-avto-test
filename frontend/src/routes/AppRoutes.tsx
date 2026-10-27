@@ -28,6 +28,7 @@ const Faq = lazy(() => import("@/pages/public/Faq"));
 
 const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
+const GoogleCallback = lazy(() => import("@/pages/auth/GoogleCallback"));
 const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 
@@ -154,6 +155,8 @@ export default function AppRoutes() {
           <Route path="/admin/system" element={<RequirePerm perm="settings:manage"><AdminSystem /></RequirePerm>} />
         </Route>
 
+        {/* Google sign-in returns here (signed in or with a 2FA challenge), outside the guest/protected guards. */}
+        <Route path="/auth/google" element={<GoogleCallback />} />
         <Route path="/403" element={<Forbidden />} />
         <Route path="/500" element={<ServerError />} />
         <Route path="*" element={<NotFound />} />

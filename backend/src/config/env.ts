@@ -91,6 +91,11 @@ export const env = {
   // Telegram login bot (optional). Create the bot with @BotFather.
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
   TELEGRAM_BOT_USERNAME: botUsername,
+  // "Continue with Google" (optional): OAuth client from Google Cloud Console. Both empty = button hidden.
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
+  // Default: <first CLIENT_URL>/api/auth/google/callback. Must be listed in the Google client's redirect URIs.
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "",
   // If set, updates are received on POST /api/telegram/webhook/<secret> instead of long polling.
   TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || "",
   // Payments. Only "mock" exists (no real gateway is integrated). Empty = payments disabled.
