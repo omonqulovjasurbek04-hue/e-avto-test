@@ -5,7 +5,7 @@ import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { useLoad } from "@/hooks/useLoad";
 import { userService, type Readiness } from "@/services/user.service";
-import { formatAccountId } from "@/utils/studentId";
+import { accountLabel } from "@/utils/studentId";
 import { cn } from "@/utils/cn";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
@@ -110,7 +110,7 @@ export default function Profile() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="truncate text-2xl font-bold text-slate-900 dark:text-white">{user.name}</h2>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                  {formatAccountId(user)}
+                  {accountLabel(user, t)}
                 </span>
               </div>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">

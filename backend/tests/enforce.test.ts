@@ -18,7 +18,7 @@ describe.skipIf(!enabled)("tests respect course access", () => {
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
   const start = (k: string, body: object) => request(app).post("/api/tests/start").set(bearer(k)).send(body);
 
-  const signup = async (k: string, role?: "ADMIN") => {
+  const signup = async (k: string, role?: "ADMIN" | "TEACHER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     uid[k] = res.body.data.user.id;
@@ -34,6 +34,7 @@ describe.skipIf(!enabled)("tests respect course access", () => {
     await signup("ownsB");
     await signup("expired");
     await signup("admin", "ADMIN");
+    await signup("teacher", "TEACHER");
 
     courseA = (await prisma.course.create({ data: { title: `A ${run}`, description: "d" } })).id;
     courseB = (await prisma.course.create({ data: { title: `B ${run}`, description: "d" } })).id;
@@ -54,6 +55,17 @@ describe.skipIf(!enabled)("tests respect course access", () => {
     await prisma.course.deleteMany({ where: { id: { in: [courseA, courseB] } } });
     await prisma.user.deleteMany({ where: { id: { in: ids } } });
     await prisma.$disconnect();
+  });
+
+  it("opens every course, lesson and test to a teacher without buying", async () => {
+    // The token was issued before the role change: sign in again so it carries TEACHER.
+    const login = await request(app).post("/api/auth/login").send({ email: `${run}-teacher@example.com`, password: "Passw0rdOK" });
+    tok.teacher = login.body.data.token;
+    expect((await start("teacher", { courseId: courseA })).status).toBe(201);
+    expect((await start("teacher", { courseId: courseB })).status).toBe(201);
+    expect((await start("teacher", { courseId: courseA, lessonId: lessonA })).status).toBe(201);
+    const access = await request(app).get("/api/me/course-access").set(bearer("teacher"));
+    expect(access.body.data.all).toBe(true);
   });
 
   it("refuses a course test (and a lesson test) without access", async () => {

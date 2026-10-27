@@ -17,8 +17,15 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import GuideList from "@/components/guide/GuideList";
 import WeeklyActivityChart, { formatStudyMinutes } from "@/components/common/WeeklyActivityChart";
 import UpcomingSchedule from "@/components/common/UpcomingSchedule";
+import TeacherDashboard from "@/pages/teacher/TeacherDashboard";
 
+/** Teachers get their own start page; everyone else the student one. */
 export default function Dashboard() {
+  const { user } = useAuth();
+  return user?.role === "TEACHER" ? <TeacherDashboard /> : <StudentDashboard />;
+}
+
+function StudentDashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);

@@ -17,6 +17,8 @@ export type Permission =
   | "groups:manage"
   // Open groups for oneself and manage their members and lessons (teachers); groups:manage covers every group.
   | "groups:own"
+  // Every course, lesson and test is open without buying (teachers prepare and run the lessons).
+  | "courses:open-all"
   | "schedule:manage"
   | "teaching:access"
   | "attendance:mark"
@@ -36,6 +38,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   "orders:read",
   "groups:manage",
   "groups:own",
+  "courses:open-all",
   "schedule:manage",
   "teaching:access",
   "attendance:mark",
@@ -49,7 +52,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
 
 const MATRIX: Record<Role, readonly Permission[]> = {
   USER: [],
-  TEACHER: ["teaching:access", "attendance:mark", "groups:own"],
+  TEACHER: ["teaching:access", "attendance:mark", "groups:own", "courses:open-all"],
   MODERATOR: ["admin:access", "content:manage", "tests:manage"],
   FINANCE: ["admin:access", "orders:read", "payments:manage", "reports:read"],
   // Front desk: enrols students into groups and plans classes; no prices, settings or audit.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CalendarDays, Plus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -19,7 +19,8 @@ export default function TeacherGroups() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, loading, error, reload } = useLoad(() => teacherService.groups(), []);
-  const [opening, setOpening] = useState(false);
+  // "Open a group" from the dashboard arrives as ?new=1 and opens the form right away.
+  const [opening, setOpening] = useState(useSearchParams()[0].get("new") === "1");
   const [busy, setBusy] = useState(false);
   // Published courses: a teacher opens groups for the courses the school sells.
   const courses = useLoad(() => (opening ? courseService.getCourses() : Promise.resolve([])), [opening]);

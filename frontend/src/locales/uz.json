@@ -1650,5 +1650,28 @@
       "svgExternal": "SVG rasm boshqa saytdan ma'lumot yuklaydi. Bu orqali sizni kuzatish mumkin.",
       "hiddenFile": "Rasm oxiriga boshqa fayl (dastur yoki arxiv) yashirincha qo'shilgan."
     }
+  },
+  "teacherDash": {
+    "subtitle": "Guruhlaringiz, darslaringiz va davomat bir joyda.",
+    "groups": "Faol guruhlar",
+    "students": "O'quvchilar",
+    "today": "Bugungi darslar",
+    "week": "Shu haftadagi darslar",
+    "attendance": "Davomat (30 kun)",
+    "nextTitle": "Keyingi darslar",
+    "allGroups": "Guruhlarim",
+    "noNext": "Rejalashtirilgan dars yo'q.",
+    "studentsCount": "{{count}} o'quvchi",
+    "unmarkedTitle": "Davomat belgilanmagan darslar",
+    "allMarked": "Barcha o'tgan darslar davomati belgilangan",
+    "mark": "Belgilash",
+    "weekdays": "Ya,Du,Se,Ch,Pa,Ju,Sh",
+    "nextLesson": "Keyingi dars",
+    "takeAttendance": "Davomat",
+    "openGroup": "Guruhni ochish",
+    "noNextHint": "Rejalashtirilgan dars yo'q. Guruh oching yoki guruhingizga dars jadvalini qo'shing.",
+    "inMinutes": "{{count}} daqiqadan keyin",
+    "todayAt": "Bugun, {{time}}",
+    "tomorrowAt": "Ertaga, {{time}}"
   }
 }

@@ -56,6 +56,8 @@ staffRoutes.get("/teacher/students", groupWriters, h(async (req, res) => {
   success(res, await groups.searchStudents(search));
 }));
 
+// The teacher's dashboard numbers and lists (own groups only).
+staffRoutes.get("/teacher/overview", h(async (req, res) => success(res, await groups.teacherOverview(actorOf(req)))));
 staffRoutes.get("/teacher/schedule", h(async (req, res) => {
   const { from, to } = rangeSchema.parse(req.query);
   success(res, await groups.mySchedule(actorOf(req), from, to));

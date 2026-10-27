@@ -288,7 +288,20 @@ export const studentService = {
 
 /* ───────── teacher ───────── */
 
+/** The teacher's dashboard (own groups only). */
+export interface TeacherOverview {
+  groups: number;
+  students: number;
+  lessonsToday: number;
+  lessonsThisWeek: number;
+  /** Share of marked students who came, last 30 days; null before any attendance was marked. */
+  attendanceRate: number | null;
+  unmarked: { id: string; startsAt: string; topic: string | null; group: { id: string; name: string } }[];
+  next: { id: string; startsAt: string; endsAt: string; topic: string | null; room: string | null; group: { id: string; name: string; students: number } }[];
+}
+
 export const teacherService = {
+  overview: () => apiGet<TeacherOverview>("/teacher/overview"),
   groups: () => apiGet<Group[]>("/groups"),
   /** A teacher opens a group for themselves; the lessons follow from days + startTime. */
   createGroup: (d: GroupInput) => apiPost<Group & { lessonsCreated: number }>("/groups", d),

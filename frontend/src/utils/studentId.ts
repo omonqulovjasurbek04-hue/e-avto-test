@@ -12,3 +12,12 @@ export const formatUserId = (n?: number | null): string => (valid(n) ? `user${pa
  */
 export const formatAccountId = (u?: { userNumber?: number | null; studentNumber?: number | null } | null): string =>
   formatStudentId(u?.studentNumber) || formatUserId(u?.userNumber);
+
+/**
+ * What the account badge shows: staff are known by their role ("O'qituvchi", "Admin", …), not by the
+ * sign-up number they had as a user; students keep "user0002" / "student0002".
+ */
+export const accountLabel = (
+  u: { role?: string; userNumber?: number | null; studentNumber?: number | null } | null | undefined,
+  t: (key: string, fallback: string) => string
+): string => (u?.role && u.role !== "USER" ? t(`roles.${u.role}`, u.role) : formatAccountId(u));

@@ -2,6 +2,9 @@ import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { hasPermission } from "../lib/permissions";
 
+/** Staff who see every course without buying it: catalog managers and teachers. */
+const opensEverything = (role: string) => hasPermission(role, "catalog:manage") || hasPermission(role, "courses:open-all");
+
 export interface EnrollmentLike {
   status: "ACTIVE" | "EXPIRED" | "REVOKED";
   startsAt: Date;
@@ -14,13 +17,13 @@ export const isEnrollmentActive = (e: EnrollmentLike, now: Date = new Date()): b
 
 /**
  * Can this viewer open the course content (video, lesson text)?
- * - Default: staff with catalog rights, or a user with an active enrollment (a purchased course).
+ * - Default: catalog managers and teachers, or a user with an active enrollment (a purchased course).
  * - ENFORCE_ENROLLMENT=false (demo mode only): everything published is open.
  */
 export const canAccessCourse = async (viewer: { userId: string; role: string } | undefined, courseId: string): Promise<boolean> => {
   if (!env.ENFORCE_ENROLLMENT) return true;
   if (!viewer) return false;
-  if (hasPermission(viewer.role, "catalog:manage")) return true;
+  if (opensEverything(viewer.role)) return true;
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId: viewer.userId, courseId } },
     select: { status: true, startsAt: true, expiresAt: true },
@@ -32,7 +35,7 @@ export const canAccessCourse = async (viewer: { userId: string; role: string } |
 export const accessibleCourseIds = async (viewer: { userId: string; role: string } | undefined): Promise<"all" | Set<string>> => {
   if (!env.ENFORCE_ENROLLMENT) return "all";
   if (!viewer) return new Set();
-  if (hasPermission(viewer.role, "catalog:manage")) return "all";
+  if (opensEverything(viewer.role)) return "all";
   const rows = await prisma.enrollment.findMany({
     where: { userId: viewer.userId },
     select: { courseId: true, status: true, startsAt: true, expiresAt: true },
@@ -75,7 +78,7 @@ type Gate = { kind: "all" } | { kind: "none" } | { kind: "attendance"; open: num
 const gateFor = async (viewer: { userId: string; role: string } | undefined, courseId: string, now: Date): Promise<Gate> => {
   if (!env.ENFORCE_ENROLLMENT) return { kind: "all" };
   if (!viewer) return { kind: "none" };
-  if (hasPermission(viewer.role, "catalog:manage")) return { kind: "all" };
+  if (opensEverything(viewer.role)) return { kind: "all" };
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId: viewer.userId, courseId } },
     select: { status: true, startsAt: true, expiresAt: true },

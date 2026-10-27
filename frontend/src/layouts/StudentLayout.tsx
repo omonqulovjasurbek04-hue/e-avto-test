@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { assetUrl } from "../utils/assetUrl";
-import { formatAccountId } from "../utils/studentId";
+import { accountLabel } from "../utils/studentId";
 import { useCourseAccess } from "../hooks/useCourseAccess";
 import { can } from "../lib/permissions";
 import { env } from "../config/env";
@@ -104,14 +104,15 @@ export const StudentLayout: React.FC = () => {
 
   const navItems = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
+    // Teaching staff: their groups right after the dashboard.
+    ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
+      ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
+      : []),
     { to: "/my-courses", label: t("nav.courses"), icon: <Library className="h-5 w-5" /> },
     { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
     { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
     { to: "/mistakes", label: t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
-    ...(["TEACHER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
-      ? [{ to: "/teacher", label: t("nav.teacher"), icon: <GraduationCap className="h-5 w-5" /> }]
-      : []),
     ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
   ];
 
@@ -152,7 +153,7 @@ export const StudentLayout: React.FC = () => {
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
               }`}
             >
-              {formatAccountId(user) || t("nav.dashboard")}
+              {accountLabel(user, t) || t("nav.dashboard")}
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -329,8 +330,8 @@ function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: nu
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name}</span>
-              {formatAccountId(user) && (
-                <span className="block truncate font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">{formatAccountId(user)}</span>
+              {accountLabel(user, t) && (
+                <span className="block truncate font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">{accountLabel(user, t)}</span>
               )}
               {user?.phone && <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{user.phone}</span>}
             </span>

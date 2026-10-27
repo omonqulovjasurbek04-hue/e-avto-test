@@ -326,6 +326,60 @@ export const mySchedule = async (actor: Actor, from: Date, to: Date) =>
     include: { group: { select: { id: true, name: true } } },
   });
 
+/**
+ * The teacher's dashboard: their active groups and students, today's and this week's lessons, the
+ * attendance rate of the last 30 days, lessons that took place but still need attendance, and the next
+ * lessons. Only the teacher's own groups count.
+ */
+const DAY_MS = 86_400_000;
+
+export const teacherOverview = async (actor: Actor, now: Date = new Date()) => {
+  const mine = { teacherId: actor.userId, status: "ACTIVE" as const };
+  // Tashkent calendar day and the week from it.
+  const localMidnight = new Date(Math.floor((now.getTime() + TZ_OFFSET_MS) / DAY_MS) * DAY_MS - TZ_OFFSET_MS);
+  const dayEnd = new Date(localMidnight.getTime() + DAY_MS);
+  const weekEnd = new Date(localMidnight.getTime() + 7 * DAY_MS);
+  const monthAgo = new Date(now.getTime() - 30 * DAY_MS);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * DAY_MS);
+
+  const [groups, students, today, week, records, unmarked, next] = await Promise.all([
+    prisma.teacherGroup.count({ where: mine }),
+    prisma.groupMembership.findMany({ where: { leftAt: null, group: mine }, distinct: ["studentId"], select: { studentId: true } }),
+    prisma.scheduleSlot.count({ where: { startsAt: { gte: localMidnight, lt: dayEnd }, status: { not: "CANCELLED" }, group: mine } }),
+    prisma.scheduleSlot.count({ where: { startsAt: { gte: localMidnight, lt: weekEnd }, status: { not: "CANCELLED" }, group: mine } }),
+    prisma.attendanceRecord.groupBy({
+      by: ["status"],
+      where: { session: { slot: { startsAt: { gte: monthAgo, lt: now }, group: { teacherId: actor.userId } } } },
+      _count: true,
+    }),
+    prisma.scheduleSlot.findMany({
+      where: { startsAt: { gte: twoWeeksAgo, lt: now }, status: { not: "CANCELLED" }, group: mine, OR: [{ session: null }, { session: { finalizedAt: null } }] },
+      orderBy: { startsAt: "desc" },
+      take: 5,
+      select: { id: true, startsAt: true, topic: true, group: { select: { id: true, name: true } } },
+    }),
+    prisma.scheduleSlot.findMany({
+      where: { startsAt: { gte: now }, status: { not: "CANCELLED" }, group: mine },
+      orderBy: { startsAt: "asc" },
+      take: 5,
+      select: { id: true, startsAt: true, endsAt: true, topic: true, room: true, group: { select: { id: true, name: true, _count: { select: { members: { where: { leftAt: null } } } } } } },
+    }),
+  ]);
+
+  const marked = records.reduce((sum, r) => sum + r._count, 0);
+  const present = records.filter((r) => ["PRESENT", "LATE", "ONLINE"].includes(r.status)).reduce((sum, r) => sum + r._count, 0);
+  return {
+    groups,
+    students: students.length,
+    lessonsToday: today,
+    lessonsThisWeek: week,
+    // null until attendance was marked at least once in the last 30 days.
+    attendanceRate: marked ? Math.round((present / marked) * 100) : null,
+    unmarked,
+    next: next.map(({ group, ...slot }) => ({ ...slot, group: { id: group.id, name: group.name, students: group._count.members } })),
+  };
+};
+
 const TZ_OFFSET_MS = 5 * 60 * 60 * 1000; // Asia/Tashkent, no DST
 const hhmm = (d: Date) => new Date(d.getTime() + TZ_OFFSET_MS).toISOString().slice(11, 16);
 

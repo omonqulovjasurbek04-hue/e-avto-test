@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, ClipboardCheck, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { teacherService, type AttendanceStatus, type GroupInput, type Roster, type Slot } from "@/services/platform.service";
@@ -53,6 +53,19 @@ export default function TeacherGroupDetail() {
       toast.error(e instanceof Error ? e.message : t("teacher.group.loadError"));
     }
   };
+
+  // ?attendance=<lesson id> (from the dashboard) opens that lesson's attendance right away.
+  const [params, setParams] = useSearchParams();
+  const linkedSlot = params.get("attendance");
+  useEffect(() => {
+    if (!linkedSlot) return;
+    const next = new URLSearchParams(params);
+    next.delete("attendance");
+    setParams(next, { replace: true });
+    void openRoster({ id: linkedSlot } as Slot);
+    // Runs once per link: the parameter is removed above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedSlot]);
 
   const hasSaved = roster?.students.some((s) => s.status !== null) ?? false;
 
