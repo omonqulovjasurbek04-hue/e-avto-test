@@ -17,6 +17,12 @@ export interface User {
   twoFactorEnabled?: boolean;
   /** false: created through Telegram, sign-up not finished yet (no phone/password). */
   hasPassword?: boolean;
+  /** Sign-in methods linked to the account (Settings -> linked accounts). */
+  googleLinked?: boolean;
+  /** The linked Google address / Telegram "@username" (or first name). */
+  googleEmail?: string;
+  telegramLinked?: boolean;
+  telegramName?: string;
   createdAt: string;
   updatedAt: string;
 }

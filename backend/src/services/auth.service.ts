@@ -40,6 +40,11 @@ export const toPublicUser = (user: User) => ({
   twoFactorEnabled: Boolean(user.totpEnabledAt),
   // false = the account came from Telegram and still has to finish sign-up (name, phone, password).
   hasPassword: Boolean(user.passwordHash),
+  // Sign-in methods linked to the account (Settings -> linked accounts).
+  googleLinked: Boolean(user.googleId),
+  googleEmail: user.googleId ? user.googleEmail ?? undefined : undefined,
+  telegramLinked: Boolean(user.telegramId),
+  telegramName: user.telegramId ? user.telegramName ?? undefined : undefined,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -255,4 +260,23 @@ export default {
   changePassword,
   requestPasswordReset,
   resetPassword,
+};
+
+/**
+ * Unlinking must leave the user a way back in: a password, or the other linked sign-in method.
+ */
+export const unlinkSignIn = async (userId: string, method: "google" | "telegram") => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw notFound("User not found");
+  const other = method === "google" ? user.telegramId : user.googleId;
+  if (!user.passwordHash && !other) throw conflict("Set a password before unlinking your only sign-in method");
+  if (method === "google" ? !user.googleId : !user.telegramId) return toPublicUser(user);
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data:
+      method === "google"
+        ? { googleId: null, googleEmail: null, googleUnlinkedAt: new Date() }
+        : { telegramId: null, telegramName: null, unlinkedTelegramId: user.telegramId },
+  });
+  return toPublicUser(updated);
 };

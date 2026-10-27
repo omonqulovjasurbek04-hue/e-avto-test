@@ -24,6 +24,12 @@ const MESSAGES: Record<string, Tr> = {
   "Invalid code": { uz: "Kod noto'g'ri.", uz_cyrl: "Код нотўғри.", ru: "Неверный код." },
   // Telegram
   "Code is invalid or expired": { uz: "Kod noto'g'ri yoki muddati o'tgan. Botda /start bosib yangi kod oling.", uz_cyrl: "Код нотўғри ёки муддати ўтган. Ботда /start босиб янги код олинг.", ru: "Код неверный или истёк. Нажмите /start в боте, чтобы получить новый." },
+  "This Telegram account is linked to another user": { uz: "Bu Telegram hisobi boshqa foydalanuvchiga ulangan.", uz_cyrl: "Бу Telegram ҳисоби бошқа фойдаланувчига уланган.", ru: "Этот Telegram уже привязан к другому пользователю." },
+  "This Telegram account was unlinked from your account; sign in with your password and link it again": { uz: "Bu Telegram hisobingizdan uzilgan. Parol bilan kiring va Sozlamalarda qayta ulang.", uz_cyrl: "Бу Telegram ҳисобингиздан узилган. Парол билан киринг ва Созламаларда қайта уланг.", ru: "Этот Telegram отключён от вашего аккаунта. Войдите с паролем и подключите его снова в настройках." },
+  "Set a password before unlinking your only sign-in method": { uz: "Bu yagona kirish usuli. Uzishdan oldin parol o'rnating yoki boshqa usulni ulang.", uz_cyrl: "Бу ягона кириш усули. Узишдан олдин парол ўрнатинг ёки бошқа усулни уланг.", ru: "Это единственный способ входа. Сначала задайте пароль или подключите другой способ." },
+  "The image contains hidden code": { uz: "Bu rasmni yuklab bo'lmaydi: ichida yashirin kod topildi.", uz_cyrl: "Бу расмни юклаб бўлмайди: ичида яширин код топилди.", ru: "Это изображение нельзя загрузить: внутри найден скрытый код." },
+  "Image is too large": { uz: "Rasm juda katta.", uz_cyrl: "Расм жуда катта.", ru: "Изображение слишком большое." },
+  "Only PNG, JPEG or WebP images are accepted": { uz: "Faqat PNG, JPG yoki WebP rasm qabul qilinadi.", uz_cyrl: "Фақат PNG, JPG ёки WebP расм қабул қилинади.", ru: "Принимаются только изображения PNG, JPG или WebP." },
   "Telegram login is not configured": { uz: "Telegram orqali kirish hozircha ishlamayapti.", uz_cyrl: "Telegram орқали кириш ҳозирча ишламаяпти.", ru: "Вход через Telegram сейчас недоступен." },
   // Courses, lessons, tests
   "You need an active course to take tests": { uz: "Test topshirish uchun avval kurs sotib oling.", uz_cyrl: "Тест топшириш учун аввал курс сотиб олинг.", ru: "Чтобы проходить тесты, сначала купите курс." },

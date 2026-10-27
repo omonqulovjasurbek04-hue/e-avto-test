@@ -28,6 +28,13 @@ model User {
   telegramId         String?   @unique
   // Google account id ("sub") once the user signed in with Google.
   googleId           String?   @unique
+  // The linked Google address and Telegram name, shown in Settings -> linked accounts.
+  googleEmail        String?
+  telegramName       String?
+  // Unlinking is respected: Google sign-in no longer re-links this account through its e-mail, and the
+  // unlinked Telegram account cannot sign in (it would otherwise open a second, empty account).
+  googleUnlinkedAt   DateTime?
+  unlinkedTelegramId String?
   role               Role      @default(USER)
   // Permanent sequential account number given at sign-up, shown as "user0001". Never reused.
   userNumber         Int       @unique @default(autoincrement())

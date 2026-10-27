@@ -42,7 +42,7 @@ router.post("/devices/sign-out-others", asyncHandler(authMiddleware), requireXhr
 router.delete("/devices/:id", asyncHandler(authMiddleware), requireXhr, asyncHandler(authController.revokeDevice));
 // Continue with Google: start -> Google -> callback -> the site's /auth/google page.
 router.get("/google/config", googleController.config);
-router.get("/google/start", authRateLimiter, googleController.start);
+router.get("/google/start", authRateLimiter, asyncHandler(googleController.start));
 router.get("/google/callback", authRateLimiter, asyncHandler(googleController.callback));
 router.post("/forgot-password", passwordResetRateLimiter, asyncHandler(authController.forgotPassword));
 router.post("/reset-password", passwordResetRateLimiter, asyncHandler(authController.resetPassword));
@@ -58,5 +58,9 @@ router.post("/2fa/recovery-codes", asyncHandler(authMiddleware), authRateLimiter
 
 router.post("/telegram/start", authRateLimiter, asyncHandler(telegramController.start));
 router.post("/telegram/verify", authRateLimiter, telegramCodeRateLimiter, asyncHandler(telegramController.verify));
+// Linked accounts in Settings: link Telegram with a bot code; unlink Google or Telegram.
+router.post("/telegram/link", asyncHandler(authMiddleware), telegramCodeRateLimiter, asyncHandler(telegramController.link));
+router.delete("/telegram", asyncHandler(authMiddleware), asyncHandler(telegramController.unlink));
+router.delete("/google", asyncHandler(authMiddleware), asyncHandler(googleController.unlink));
 
 export default router;

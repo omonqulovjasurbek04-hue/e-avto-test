@@ -85,6 +85,19 @@ export const authService = {
     await apiPost<unknown>("/auth/logout-all");
   },
 
+  /** Links Telegram with the code the bot sent; returns the updated profile. */
+  async linkTelegram(code: string): Promise<User> {
+    return apiPost<User>("/auth/telegram/link", { code });
+  },
+
+  async unlinkTelegram(): Promise<User> {
+    return apiDelete<User>("/auth/telegram");
+  },
+
+  async unlinkGoogle(): Promise<User> {
+    return apiDelete<User>("/auth/google");
+  },
+
   /** Signed-in devices of this account, this one first. */
   async devices(): Promise<ConnectedDevice[]> {
     if (env.useMock) return [];

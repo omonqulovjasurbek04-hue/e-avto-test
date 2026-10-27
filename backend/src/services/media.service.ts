@@ -1,10 +1,12 @@
 import crypto from "crypto";
+import { readFile } from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
 import { prisma } from "../config/database";
 import { env } from "../config/env";
 import { signMediaToken, verifyMediaToken, MediaKind } from "../lib/media/signing";
 import { detectType } from "../lib/media/sniff";
+import { inspectImageBytes } from "../lib/media/imageSafety";
 import * as storage from "../lib/media/storage";
 import { hlsContentType, hlsFile } from "../lib/media/keys";
 import { listFiles, transcodeToHls } from "../lib/media/hls";
@@ -104,14 +106,16 @@ const scanOrReject = async (actor: Viewer, tmpPath: string, kind: MediaKind | "I
 // ───────────── public images (CMS covers, page pictures, question images) ─────────────
 
 const IMAGE_EXT = /^([a-f0-9-]{36})\.(png|jpg|webp)$/;
+/** Filename prefix of profile photos (kept out of the CMS image library). */
+export const AVATAR_PREFIX = "avatar-";
 
 /**
  * Small public images for CMS content. Stored like private files (same drivers, scanned), flagged
  * isPublic, and served by GET /api/images/:id.:ext with a long cache. Not gated by MEDIA_UPLOAD_ENABLED:
  * that switch is about large private video files.
  */
-export const uploadImage = async (actor: Viewer, body: Readable, meta: { contentLength: number | undefined; filename?: string }) => {
-  const maxBytes = env.MAX_IMAGE_MB * 1024 * 1024;
+export const uploadImage = async (actor: Viewer, body: Readable, meta: { contentLength: number | undefined; filename?: string; maxBytes?: number }) => {
+  const maxBytes = meta.maxBytes ?? env.MAX_IMAGE_MB * 1024 * 1024;
   if (!meta.contentLength) throw new HttpError(411, "Content-Length is required");
   if (meta.contentLength > maxBytes) throw new HttpError(413, "Image is too large");
 
@@ -126,6 +130,13 @@ export const uploadImage = async (actor: Viewer, body: Readable, meta: { content
   if (!detected || detected.kind !== "image") {
     await storage.discard(tmp.tmpPath);
     throw new HttpError(415, "Only PNG, JPEG or WebP images are accepted");
+  }
+  // Code or a file hidden inside the picture (PHP, <script>, an appended EXE/ZIP, …) is refused outright.
+  const threats = inspectImageBytes(await readFile(tmp.tmpPath));
+  if (threats.length) {
+    await storage.discard(tmp.tmpPath);
+    await writeAudit({ actorId: actor.userId, action: "media.rejected_hidden_code", entity: "FileAsset", after: { threats } });
+    throw new HttpError(422, "The image contains hidden code");
   }
   await scanOrReject(actor, tmp.tmpPath, "IMAGE");
 
@@ -145,7 +156,8 @@ export const uploadImage = async (actor: Viewer, body: Readable, meta: { content
 
 export const listImages = async () => {
   const rows = await prisma.fileAsset.findMany({
-    where: { isPublic: true, mimeType: { startsWith: "image/" } },
+    // Profile photos are stored the same way but are not CMS content.
+    where: { isPublic: true, mimeType: { startsWith: "image/" }, NOT: { filename: { startsWith: AVATAR_PREFIX } } },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: { id: true, filename: true, mimeType: true, sizeBytes: true, createdAt: true, storageKey: true },

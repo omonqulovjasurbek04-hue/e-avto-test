@@ -1,8 +1,8 @@
 import crypto from "crypto";
 import { prisma } from "../config/database";
 import { env } from "../config/env";
-import { badRequest, HttpError } from "../utils/errors";
-import { completeLogin } from "./auth.service";
+import { badRequest, conflict, HttpError } from "../utils/errors";
+import { completeLogin, toPublicUser } from "./auth.service";
 import type { ClientInfo } from "./session.service";
 import { handleAdminCallback, handleAdminMessage } from "./telegramAdmin.service";
 import { sendMessage, tgCall, type TgUpdate, type TgUser } from "../lib/telegramApi";
@@ -64,7 +64,12 @@ export const startLogin = async () => {
  * issued to; it works once and only within 5 minutes. (Guessing is held back by a strict rate limit
  * on this route: a few active 6-digit codes out of a million.)
  */
-export const verifyLogin = async (code: string, client?: ClientInfo) => {
+/** "@username", else the first name, of the Telegram account behind a code (shown in Settings). */
+const displayName = (login: { username: string | null; firstName: string | null }) =>
+  login.username ? `@${login.username}` : login.firstName ?? null;
+
+/** Uses up a bot code (once, within 5 minutes) and returns the Telegram account it was issued to. */
+const claimCode = async (code: string) => {
   if (!isTelegramConfigured()) throw new HttpError(503, "Telegram login is not configured");
   const invalid = () => badRequest("Code is invalid or expired");
   const codeHash = hashCode(code);
@@ -77,13 +82,25 @@ export const verifyLogin = async (code: string, client?: ClientInfo) => {
   if (claimed.count === 0) throw invalid();
   const login = await prisma.telegramLogin.findFirst({ where: { codeHash, usedAt: { not: null } }, orderBy: { usedAt: "desc" } });
   if (!login?.telegramId) throw invalid();
+  return login as typeof login & { telegramId: string };
+};
+
+export const verifyLogin = async (code: string, client?: ClientInfo) => {
+  const login = await claimCode(code);
 
   const telegramId = login.telegramId;
+  const telegramName = displayName(login);
+  // An account that unlinked this Telegram: refuse instead of quietly opening a second, empty account.
+  if (!(await prisma.user.findUnique({ where: { telegramId }, select: { id: true } }))) {
+    const unlinked = await prisma.user.findFirst({ where: { unlinkedTelegramId: telegramId }, select: { id: true } });
+    if (unlinked) throw conflict("This Telegram account was unlinked from your account; sign in with your password and link it again");
+  }
   const user = await prisma.user.upsert({
     where: { telegramId },
-    update: {},
+    update: { telegramName },
     create: {
       telegramId,
+      telegramName,
       // Full name from Telegram as a starting point; the sign-up form asks for the real first and last name.
       name: login.firstName || login.username || "Telegram foydalanuvchi",
       role: "USER", // never elevated through Telegram
@@ -93,6 +110,19 @@ export const verifyLogin = async (code: string, client?: ClientInfo) => {
   if (!user.isActive) throw new HttpError(403, "Account is disabled");
 
   return completeLogin(user, client);
+};
+
+/** Links the Telegram account behind a bot code to the signed-in user (Settings -> linked accounts). */
+export const linkTelegram = async (userId: string, code: string) => {
+  const login = await claimCode(code);
+  const owner = await prisma.user.findUnique({ where: { telegramId: login.telegramId }, select: { id: true } });
+  if (owner && owner.id !== userId) throw conflict("This Telegram account is linked to another user");
+  const user = await prisma.$transaction(async (tx) => {
+    // Linked again (here or elsewhere): it is no longer an "unlinked" Telegram anywhere.
+    await tx.user.updateMany({ where: { unlinkedTelegramId: login.telegramId }, data: { unlinkedTelegramId: null } });
+    return tx.user.update({ where: { id: userId }, data: { telegramId: login.telegramId, telegramName: displayName(login) } });
+  });
+  return toPublicUser(user);
 };
 
 // ---------------------------------------------------------------------------

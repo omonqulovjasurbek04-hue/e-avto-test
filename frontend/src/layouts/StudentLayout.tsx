@@ -27,6 +27,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "../utils/cn";
+import { assetUrl } from "../utils/assetUrl";
 import { formatAccountId } from "../utils/studentId";
 import { useCourseAccess } from "../hooks/useCourseAccess";
 import { can } from "../lib/permissions";
@@ -304,7 +305,7 @@ function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: nu
         )}
       >
         <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
-          {initial}
+          {user?.avatarUrl ? <img src={assetUrl(user.avatarUrl)} alt="" className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" /> : initial}
           {unread > 0 && (
             <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 dark:border-slate-900" />
           )}
@@ -323,7 +324,9 @@ function ProfileMenu({ user, unread, onLogout }: { user: User | null; unread: nu
           className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10 animate-fade-in dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40"
         >
           <div className="mb-1 flex items-center gap-3 border-b border-slate-100 px-3 pb-3 pt-2 dark:border-slate-800">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 font-bold text-white">{initial}</span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-600 font-bold text-white">
+              {user?.avatarUrl ? <img src={assetUrl(user.avatarUrl)} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initial}
+            </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name}</span>
               {formatAccountId(user) && (

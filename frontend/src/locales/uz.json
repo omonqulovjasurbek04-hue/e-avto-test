@@ -394,7 +394,8 @@
         "failed": "Google orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
         "cancelled": "Google orqali kirish bekor qilindi.",
         "disabled": "Bu hisob o'chirilgan. Administratorga murojaat qiling.",
-        "unavailable": "Google orqali kirish hozircha sozlanmagan."
+        "unavailable": "Google orqali kirish hozircha sozlanmagan.",
+        "unlinked": "Bu hisobda Google orqali kirish o'chirilgan. Parol bilan kiring va Sozlamalarda Google'ni qayta ulang."
       }
     }
   },
@@ -595,7 +596,9 @@
     "account": "Hisob",
     "deleteAccount": "Hisobni o'chirish",
     "deleteAccountDesc": "Ushbu qurilmadagi sessiyani yakunlaydi",
-    "subtitle": "Xavfsizlik, ko'rinish va bildirishnomalar"
+    "subtitle": "Shaxsiy ma'lumotlar, xavfsizlik, ko'rinish va bildirishnomalar",
+    "personal": "Shaxsiy ma'lumotlar",
+    "securityPassword": "Xavfsizlik va Parol"
   },
   "errors": {
     "notFound": {
@@ -1553,5 +1556,99 @@
     "signOutOthers": "Boshqa barcha qurilmalardan chiqish",
     "signOutOthersConfirm": "Shu qurilmadan tashqari barcha qurilmalar hisobdan darhol chiqariladi. Davom etasizmi?",
     "othersSignedOut": "Boshqa qurilmalar hisobdan chiqarildi"
+  },
+  "linked": {
+    "title": "Ulangan hisoblar",
+    "description": "Hisobingizga Google yoki Telegram orqali ham kirish mumkin. Ulang yoki uzib qo'ying.",
+    "on": "Ulangan",
+    "off": "Ulanmagan",
+    "link": "Ulash",
+    "unlink": "Uzish",
+    "googleHint": "Google hisobingiz bilan bir bosishda kirish",
+    "telegramHint": "Telegram bot kodi bilan kirish va eslatmalar",
+    "codeLabel": "Botdan kelgan 6 xonali kod",
+    "confirm": "Tasdiqlash",
+    "googleLinked": "Google hisobi ulandi",
+    "telegramLinked": "Telegram ulandi",
+    "unlinked": "Hisob uzildi",
+    "errors": {
+      "failed": "Ulab bo'lmadi. Qaytadan urinib ko'ring.",
+      "cancelled": "Google'ga ulash bekor qilindi.",
+      "taken": "Bu Google hisobi boshqa foydalanuvchiga ulangan.",
+      "unavailable": "Google orqali kirish hozircha sozlanmagan.",
+      "unlinked": "Bu hisobda Google orqali kirish o'chirilgan. Parol bilan kiring va Sozlamalarda Google'ni qayta ulang."
+    },
+    "lastMethod": "Yagona kirish usuli: uzishdan oldin parol o'rnating yoki boshqa usulni ulang.",
+    "confirmUnlink": {
+      "google": "Google hisobi uziladi. Keyin Google bilan kirish ishlamaydi, qayta ulamaguningizcha. Davom etasizmi?",
+      "telegram": "Telegram uziladi: Telegram orqali kirish va eslatmalar to'xtaydi, qayta ulamaguningizcha. Davom etasizmi?"
+    }
+  },
+  "account": {
+    "phone": "Telefon",
+    "nameShort": "Ism juda qisqa",
+    "phoneInvalid": "Noto'g'ri telefon raqam",
+    "saved": "Profil yangilandi",
+    "saveError": "Profilni yangilab bo'lmadi"
+  },
+  "profilePage": {
+    "tests": "Testlar soni",
+    "average": "O'rtacha ball",
+    "streak": "Faollik seriyasi",
+    "days": "{{count}} kun",
+    "lessons": "Tamomlangan dars",
+    "candidate": "{{course}} talabgori",
+    "readiness": "Tayyorgarlik",
+    "readinessTitle": "Davlat imtihoniga tayyorgarlik",
+    "level": {
+      "ready": "Davlat testiga tayyor",
+      "almost": "Tayyorlanmoqda",
+      "notYet": "Ko'proq mashq kerak"
+    },
+    "advice": {
+      "ready": "Natijalaringiz barqaror. Imtihon oldidan biletlarni takrorlab turing.",
+      "almost": "Yaxshi yo'ldasiz. Qolgan darslarni tugating va biletlarda 90%+ natijaga intiling.",
+      "notYet": "Darslarni ketma-ket o'qing va har kuni biletlarni yeching: foiz shu uch narsadan hisoblanadi."
+    },
+    "factorLessons": "Tugallangan darslar",
+    "factorLessonsDetail": "{{done}} / {{total}} dars tugallangan",
+    "factorScore": "Oxirgi testlar o'rtachasi",
+    "factorScoreDetail": "Oxirgi {{count}} ta imtihon va bilet natijasi",
+    "factorPassed": "O'tilgan testlar ulushi",
+    "factorPassedDetail": "Shu testlardan nechtasidan o'tilgani",
+    "noExams": "Hali imtihon yoki bilet yechilmagan",
+    "practise": "Biletlarni yechish"
+  },
+  "photo": {
+    "title": "Profil rasmi",
+    "hint": "100 MB gacha rasmlar qabul qilinadi.",
+    "choose": "Profil rasmini tanlash",
+    "upload": "Rasm yuklash",
+    "change": "Rasmni almashtirish",
+    "remove": "O'chirish",
+    "saved": "Profil rasmi saqlandi",
+    "removed": "Profil rasmi o'chirildi",
+    "failed": "Rasmni saqlab bo'lmadi. Qaytadan urinib ko'ring.",
+    "wrongType": "Bu fayl rasm emas. Rasm tanlang.",
+    "tooLarge": "Rasm juda katta ({{mb}} MB dan oshmasin).",
+    "unreadable": "Bu rasm formatini brauzer ocha olmadi. Boshqa rasm yoki JPG/PNG tanlang.",
+    "blocked": "Bu rasmni yuklab bo'lmaydi.",
+    "reason": "Sabab",
+    "threats": {
+      "executable": "Fayl ichida Windows dasturi (EXE) bor. U rasm qilib yashirilgan va kompyuterga zarar yetkazishi mumkin.",
+      "linuxProgram": "Fayl rasm emas, Linux dasturi. U rasm nomi bilan yashirilgan.",
+      "archive": "Fayl rasm emas, arxiv (ZIP/RAR/7z). Ichida boshqa fayllar yashiringan bo'lishi mumkin.",
+      "pdf": "Fayl rasm emas, PDF hujjat.",
+      "html": "Fayl ichida veb-sahifa kodi (HTML/iframe) bor. U saytga begona sahifa qo'shishi mumkin.",
+      "shellScript": "Fayl rasm emas, buyruqlar skripti (shell). U kompyuterda buyruq bajarishi mumkin.",
+      "php": "Rasm ichiga server buyrug'i (PHP kodi) yashirilgan. Bu serverni buzishga urinish.",
+      "script": "Rasm ichiga JavaScript kodi (<script>) yashirilgan. U boshqa foydalanuvchilarning ma'lumotlarini o'g'irlashi mumkin.",
+      "svgEvents": "SVG rasmda ochilganda yoki bosilganda ishga tushadigan kod (onload, onclick…) bor.",
+      "svgJsLink": "SVG rasm ichida JavaScript havolasi (javascript:) bor.",
+      "svgForeign": "SVG rasm ichiga boshqa sahifa elementlari (foreignObject) joylangan.",
+      "svgEntity": "SVG rasm ichida XML ENTITY bor. Bu serverdan maxfiy fayllarni o'qishga urinish (XXE hujumi).",
+      "svgExternal": "SVG rasm boshqa saytdan ma'lumot yuklaydi. Bu orqali sizni kuzatish mumkin.",
+      "hiddenFile": "Rasm oxiriga boshqa fayl (dastur yoki arxiv) yashirincha qo'shilgan."
+    }
   }
 }

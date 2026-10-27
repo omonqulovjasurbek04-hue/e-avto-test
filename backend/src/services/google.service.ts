@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "../config/database";
 import { env } from "../config/env";
-import { HttpError, badRequest } from "../utils/errors";
+import { HttpError, badRequest, conflict } from "../utils/errors";
 import { completeLogin } from "./auth.service";
 import type { ClientInfo } from "./session.service";
 
@@ -90,16 +90,22 @@ export const exchangeCode = async (code: string): Promise<GoogleProfile> => {
  */
 export const googleLogin = async (profile: GoogleProfile, client?: ClientInfo) => {
   let user = await prisma.user.findUnique({ where: { googleId: profile.sub } });
-  if (!user) {
+  if (user) {
+    // Keep the shown address current (the user may have renamed the Google account).
+    if (user.googleEmail !== profile.email) user = await prisma.user.update({ where: { id: user.id }, data: { googleEmail: profile.email } });
+  } else {
     const byEmail = await prisma.user.findUnique({ where: { email: profile.email } });
+    // The owner turned Google sign-in off: it does not come back through the e-mail; they link again in Settings.
+    if (byEmail?.googleUnlinkedAt) throw conflict("Google sign-in is turned off for this account");
     user = byEmail
       ? await prisma.user.update({
           where: { id: byEmail.id },
-          data: { googleId: profile.sub, emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date(), avatarUrl: byEmail.avatarUrl ?? profile.picture },
+          data: { googleId: profile.sub, googleEmail: profile.email, emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date(), avatarUrl: byEmail.avatarUrl ?? profile.picture },
         })
       : await prisma.user.create({
           data: {
             googleId: profile.sub,
+            googleEmail: profile.email,
             email: profile.email,
             emailVerifiedAt: new Date(),
             name: profile.name.slice(0, 100),
@@ -110,4 +116,22 @@ export const googleLogin = async (profile: GoogleProfile, client?: ClientInfo) =
   }
   if (!user.isActive) throw new HttpError(403, "Account is disabled");
   return completeLogin(user, client);
+};
+
+/** Links this Google account to a user who is already signed in (Settings -> linked accounts). */
+export const linkGoogle = async (userId: string, profile: GoogleProfile) => {
+  const owner = await prisma.user.findUnique({ where: { googleId: profile.sub }, select: { id: true } });
+  if (owner && owner.id !== userId) throw conflict("This Google account is linked to another user");
+  await prisma.user.update({ where: { id: userId }, data: { googleId: profile.sub, googleEmail: profile.email, googleUnlinkedAt: null } });
+};
+
+/** Ties a link request to the browser's sign-in trip: the user id plus an HMAC over it and the state. */
+export const signLink = (userId: string, state: string) =>
+  `${userId}.${crypto.createHmac("sha256", env.JWT_SECRET).update(`google-link:${state}:${userId}`).digest("base64url")}`;
+
+export const readLink = (value: string | undefined, state: string): string | null => {
+  const userId = value?.split(".")[0];
+  if (!userId || !value) return null;
+  const expected = signLink(userId, state);
+  return value.length === expected.length && crypto.timingSafeEqual(Buffer.from(value), Buffer.from(expected)) ? userId : null;
 };

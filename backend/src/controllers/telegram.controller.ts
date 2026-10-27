@@ -6,6 +6,8 @@ import { success, error } from "../utils/apiResponse";
 import { env } from "../config/env";
 import { sendLoginOutcome } from "./auth.controller";
 import { clientInfo } from "../utils/clientInfo";
+import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
+import * as authService from "../services/auth.service";
 
 const verifySchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/, "Code must be 6 digits"),
@@ -30,4 +32,14 @@ export const webhook = async (req: Request, res: Response): Promise<void> => {
   }
   await telegramService.handleUpdate(req.body);
   res.json({ ok: true });
+};
+
+/** Settings -> linked accounts: the bot code links Telegram to the signed-in user. */
+export const link = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { code } = verifySchema.parse(req.body);
+  success(res, await telegramService.linkTelegram(requireUserId(req), code));
+};
+
+export const unlink = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await authService.unlinkSignIn(requireUserId(req), "telegram"));
 };

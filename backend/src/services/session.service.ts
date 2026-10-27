@@ -196,3 +196,10 @@ export const revokeOtherDevices = async (userId: string, presented: string | und
   });
   return { token: issueAccessToken(user) };
 };
+
+/** The user a live refresh cookie belongs to (no rotation); null for a missing, revoked or expired one. */
+export const userIdFromRefresh = async (presented: string | undefined): Promise<string | null> => {
+  if (!presented) return null;
+  const record = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(presented) }, select: { userId: true, revokedAt: true, expiresAt: true } });
+  return record && !record.revokedAt && record.expiresAt > new Date() ? record.userId : null;
+};
