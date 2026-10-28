@@ -107,6 +107,8 @@ export const StudentLayout: React.FC = () => {
     navigate("/login");
   };
 
+  const knowledgeView = user?.role === "TEACHER" || can(user?.role, "groups:manage");
+  const backOffice = Boolean(user) && !["USER", "TEACHER"].includes(user?.role ?? "") && !can(user?.role, "courses:open-all");
   const navItems = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
     // Teaching staff: their groups right after the dashboard; group managers run every group there.
@@ -116,11 +118,20 @@ export const StudentLayout: React.FC = () => {
     // Admins manage the accounts here, next to their teaching page.
     ...(can(user?.role, "users:manage") ? [{ to: "/users", label: t("admin.nav.users"), icon: <Users className="h-5 w-5" /> }] : []),
     { to: "/my-courses", label: t("nav.courses"), icon: <Library className="h-5 w-5" /> },
-    { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
-    { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
+    // Back-office staff (front desk, finance) do not study: no lessons, tests or mistakes for them.
+    ...(backOffice
+      ? []
+      : [
+          { to: "/lessons", label: t("nav.lessons"), icon: <BookOpen className="h-5 w-5" />, needsCourse: true },
+          { to: "/tests", label: t("nav.tests"), icon: <CheckSquare className="h-5 w-5" />, needsCourse: true },
+        ]),
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
-    // Teachers: the same place shows their students' knowledge instead of their own mistakes.
-    { to: "/mistakes", label: user?.role === "TEACHER" || can(user?.role, "groups:manage") ? t("nav.knowledge") : t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
+    // Teachers and group managers: the same place shows the students' knowledge instead of own mistakes.
+    ...(knowledgeView
+      ? [{ to: "/mistakes", label: t("nav.knowledge"), icon: <Repeat className="h-5 w-5" /> }]
+      : backOffice
+        ? []
+        : [{ to: "/mistakes", label: t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true }]),
     // Staff tools, each for whoever holds its right.
     ...(can(user?.role, "content:manage") ? [{ to: "/site-content", label: t("admin.nav.cms"), icon: <Newspaper className="h-5 w-5" /> }] : []),
     ...(can(user?.role, "audit:read") ? [{ to: "/audit", label: t("admin.nav.audit"), icon: <ScrollText className="h-5 w-5" /> }] : []),

@@ -36,6 +36,7 @@ export const toPublicUser = (user: User) => ({
   userNumber: user.userNumber ?? undefined,
   studentNumber: user.studentNumber ?? undefined,
   teacherNumber: user.teacherNumber ?? undefined,
+  staffNumber: user.staffNumber ?? undefined,
   // Telegram-only accounts have no e-mail, so there is nothing to verify.
   emailVerified: user.email ? Boolean(user.emailVerifiedAt) : undefined,
   twoFactorEnabled: Boolean(user.totpEnabledAt),

@@ -13,6 +13,8 @@ export interface User {
   studentNumber?: number;
   /** Once the account was made a teacher: shown as "teacher0001". */
   teacherNumber?: number;
+  /** Staff roles: shown as "admin0001", "manager0001", … (own sequence per role). */
+  staffNumber?: number;
   avatarUrl?: string;
   /** undefined for accounts without an e-mail (Telegram). */
   emailVerified?: boolean;

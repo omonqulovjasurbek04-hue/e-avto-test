@@ -23,7 +23,7 @@ interface Page<T> {
 export const adminService = {
   getStatistics: () => apiGet<AdminStats>("/admin/statistics"),
 
-  listUsers: (params: { page?: number; search?: string; role?: string; kind?: "student" | "user" | "teacher"; limit?: number }): Promise<Page<AdminUser>> =>
+  listUsers: (params: { page?: number; search?: string; role?: string; kind?: "student" | "user" | "teacher" | "staff"; limit?: number }): Promise<Page<AdminUser>> =>
     apiGetPage<AdminUser>("/admin/users", { limit: 10, ...params }),
   /** The reason goes to the audit log. */
   setUserActive: (id: string, isActive: boolean, reason?: string) =>

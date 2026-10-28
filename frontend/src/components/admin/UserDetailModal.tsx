@@ -6,7 +6,7 @@ import { useLoad } from "@/hooks/useLoad";
 import { useAuthStore } from "@/store/auth.store";
 import { can } from "@/lib/permissions";
 import type { AdminUser, UserIdentifierRow } from "@/types/admin";
-import { formatAccountId, formatStudentId, formatTeacherId, formatUserId } from "@/utils/studentId";
+import { formatAccountId, formatStaffId, formatStudentId, formatTeacherId, formatUserId } from "@/utils/studentId";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,11 @@ const FORMAT: Record<UserIdentifierRow["kind"], (n: number) => string> = {
   USER: formatUserId,
   STUDENT: formatStudentId,
   TEACHER: formatTeacherId,
+  MODERATOR: (n) => formatStaffId("MODERATOR", n),
+  FINANCE: (n) => formatStaffId("FINANCE", n),
+  MANAGER: (n) => formatStaffId("MANAGER", n),
+  ADMIN: (n) => formatStaffId("ADMIN", n),
+  SUPERADMIN: (n) => formatStaffId("SUPERADMIN", n),
 };
 const day = (iso: string) => new Date(iso).toLocaleDateString();
 

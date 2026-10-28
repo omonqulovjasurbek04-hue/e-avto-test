@@ -285,7 +285,7 @@ async function studentsOverview(): Promise<string> {
       where: { ...students, telegramId: { not: null } },
       orderBy: { createdAt: "desc" },
       take: 10,
-      select: { name: true, userNumber: true, studentNumber: true, teacherNumber: true, role: true, phone: true, createdAt: true },
+      select: { name: true, userNumber: true, studentNumber: true, teacherNumber: true, staffNumber: true, role: true, phone: true, createdAt: true },
     }),
   ]);
   const lines = [

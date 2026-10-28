@@ -114,7 +114,7 @@ export default function AppRoutes() {
             <Route path="/lessons/:lessonId" element={<RequireCourse><LessonDetails /></RequireCourse>} />
             <Route path="/lessons/:lessonId/video" element={<RequireCourse><VideoLesson /></RequireCourse>} />
             <Route path={ROUTES.tests} element={<RequireCourse><Tests /></RequireCourse>} />
-            <Route path="/mistakes" element={<RequireCourse><Mistakes /></RequireCourse>} />
+            <Route path="/mistakes" element={<RequireCourse staffPerm="groups:manage"><Mistakes /></RequireCourse>} />
             <Route path="/tests/:testId" element={<TestPage />} />
             <Route path="/tests/:testId/result" element={<TestResult />} />
             <Route path="/tests/:testId/review" element={<TestReview />} />

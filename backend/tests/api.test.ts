@@ -141,7 +141,12 @@ describe.skipIf(!enabled)("E-Avto API", () => {
       expect((await api().get("/api/admin/statistics").set(auth(a.token))).status).toBe(403);
       await c.prisma.user.update({ where: { id: a.id }, data: { role: "ADMIN" } });
       admin = a;
-      expect((await api().get("/api/admin/statistics").set(auth(a.token))).status).toBe(200);
+      const stats = await api().get("/api/admin/statistics").set(auth(a.token));
+      expect(stats.status).toBe(200);
+      // Accounts per role: every role present, and together they are all the accounts.
+      const byRole = stats.body.data.byRole as Record<string, number>;
+      expect(Object.keys(byRole).sort()).toEqual(["ADMIN", "FINANCE", "MANAGER", "MODERATOR", "SUPERADMIN", "TEACHER", "USER"]);
+      expect(Object.values(byRole).reduce((n, c) => n + c, 0)).toBe(stats.body.data.totalUsers);
       expect((await api().get("/api/admin/statistics")).status).toBe(401);
     });
 

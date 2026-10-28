@@ -22,8 +22,13 @@ describe("account numbers", () => {
     expect(accountIdFilter("USER0042")).toEqual({ userNumber: 42 });
     expect(accountIdFilter("user10000")).toEqual({ userNumber: 10000 });
     expect(accountIdFilter("student123456")).toEqual({ studentNumber: 123456 });
-    expect(accountIdFilter("#42")).toEqual({ OR: [{ userNumber: 42 }, { studentNumber: 42 }, { teacherNumber: 42 }] });
+    expect(accountIdFilter("#42")).toEqual({ OR: [{ userNumber: 42 }, { studentNumber: 42 }, { teacherNumber: 42 }, { staffNumber: 42 }] });
     expect(accountIdFilter("teacher0003")).toEqual({ teacherNumber: 3 });
+    expect(accountIdFilter("admin02")).toEqual({ role: "ADMIN", staffNumber: 2 });
+    expect(accountIdFilter("admin0002")).toEqual({ role: "ADMIN", staffNumber: 2 });
+    expect(accountIdFilter("superadmin01")).toEqual({ role: "SUPERADMIN", staffNumber: 1 });
+    expect(formatAccountId({ userNumber: null, studentNumber: null, staffNumber: 7, role: "MANAGER" })).toBe("manager07");
+    expect(formatAccountId({ userNumber: null, studentNumber: null, staffNumber: 123, role: "ADMIN" })).toBe("admin123");
     expect(accountIdFilter("Ali")).toBeNull();
     // 7+ digits without a prefix are a phone number, not an id.
     expect(accountIdFilter("901234567")).toBeNull();

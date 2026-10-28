@@ -11,6 +11,8 @@ export interface AdminStats {
   totalTests: number;
   averageScore: number;
   passRate: number;
+  /** Accounts per role (every role, 0 when nobody has it). */
+  byRole?: Record<UserRole, number>;
 }
 
 export interface AdminUser {
@@ -24,6 +26,8 @@ export interface AdminUser {
   studentNumber: number | null;
   /** Set once the account was made a teacher; kept as history afterwards. */
   teacherNumber: number | null;
+  /** Staff roles: admin0001, manager0001, … (null for students and teachers). */
+  staffNumber: number | null;
   role: UserRole;
   isActive: boolean;
   createdAt: string;
@@ -33,7 +37,7 @@ export interface AdminUser {
 
 export interface UserIdentifierRow {
   id: string;
-  kind: "USER" | "STUDENT" | "TEACHER";
+  kind: "USER" | "STUDENT" | "TEACHER" | "MODERATOR" | "FINANCE" | "MANAGER" | "ADMIN" | "SUPERADMIN";
   number: number;
   assignedAt: string;
   releasedAt: string | null;

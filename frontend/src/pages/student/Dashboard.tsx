@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, CheckCircle, ClipboardList, Trophy, PlayCircle, Clock } from "lucide-react";
+import { Activity, BookOpen, CalendarRange, CheckCircle, ClipboardList, Library, Newspaper, Receipt, Repeat, ScrollText, Trophy, PlayCircle, Clock, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { lessonService } from "@/services/lesson.service";
@@ -20,16 +20,30 @@ import UpcomingSchedule from "@/components/common/UpcomingSchedule";
 import TeacherDashboard from "@/pages/teacher/TeacherDashboard";
 import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
 import AdminReports from "@/pages/admin/AdminReports";
-import { can } from "@/lib/permissions";
+import { can, type Permission } from "@/lib/permissions";
 
-/** Teachers and admins get their own start page; everyone else the student one. */
+/** Teachers and every staff role get their own start page; students the study one. */
 export default function Dashboard() {
   const { user } = useAuth();
   if (user?.role === "TEACHER") return <TeacherDashboard />;
-  // Whoever may read the platform statistics sees them here instead of a student's progress.
-  if (can(user?.role, "users:manage") || can(user?.role, "reports:read")) return <AdminStart />;
+  // Staff (admins, front desk, finance, moderators) see their work here, not a student's progress.
+  if (user && user.role !== "USER") return <AdminStart />;
   return <StudentDashboard />;
 }
+
+/** The staff sections, each shown to whoever holds its right (the same rights as the side menu). */
+const STAFF_LINKS: { perm: Permission; to: string; label: string; icon: ReactNode }[] = [
+  { perm: "groups:manage", to: "/teacher", label: "admin.nav.groups", icon: <CalendarRange className="h-5 w-5" /> },
+  { perm: "groups:manage", to: "/mistakes", label: "nav.knowledge", icon: <Repeat className="h-5 w-5" /> },
+  { perm: "users:manage", to: "/users", label: "admin.nav.users", icon: <Users className="h-5 w-5" /> },
+  { perm: "catalog:manage", to: "/my-courses", label: "nav.courses", icon: <Library className="h-5 w-5" /> },
+  { perm: "tickets:edit", to: "/tests", label: "nav.tests", icon: <CheckCircle className="h-5 w-5" /> },
+  { perm: "orders:read", to: "/revenue", label: "admin.nav.orders", icon: <Receipt className="h-5 w-5" /> },
+  { perm: "content:manage", to: "/site-content", label: "admin.nav.cms", icon: <Newspaper className="h-5 w-5" /> },
+  { perm: "tests:manage", to: "/exam-settings", label: "admin.nav.exam", icon: <ClipboardList className="h-5 w-5" /> },
+  { perm: "audit:read", to: "/audit", label: "admin.nav.audit", icon: <ScrollText className="h-5 w-5" /> },
+  { perm: "settings:manage", to: "/system", label: "admin.nav.system", icon: <Activity className="h-5 w-5" /> },
+];
 
 function AdminStart() {
   const { t } = useTranslation();
@@ -42,10 +56,23 @@ function AdminStart() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.role ? t(`roles.${user.role}`, user.role) : user?.name ?? "" })}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {user?.name ? `${user.name} · ` : ""}
-            {t("dashboard.adminSubtitle")}
+            {can(user?.role, "users:manage") ? t("dashboard.adminSubtitle") : t("dashboard.staffSubtitle")}
           </p>
         </div>
       </motion.div>
+      {/* One click to each section this role works in. */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {STAFF_LINKS.filter((l) => can(user?.role, l.perm)).map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-400 hover:text-brand-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">{l.icon}</span>
+            {t(l.label)}
+          </Link>
+        ))}
+      </div>
       {can(user?.role, "users:manage") && (
         <div className="mt-6">
           <AdminStatsGrid />

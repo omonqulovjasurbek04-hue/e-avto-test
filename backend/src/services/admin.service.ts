@@ -3,7 +3,7 @@ import { prisma } from "../config/database";
 import { ListQuery } from "../validators/course";
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { canAssignRole } from "../lib/permissions";
-import { accountIdFilter, assignStudentNumber, becomeTeacher, leaveTeacher } from "../lib/accountNumbers";
+import { accountIdFilter, assignStudentNumber, STAFF_ROLES } from "../lib/accountNumbers";
 import { writeAudit } from "./audit.service";
 import { revokeAllSessions } from "./session.service";
 import { getPagination } from "../utils/pagination";
@@ -13,14 +13,16 @@ export const listUsers = async (query: ListQuery) => {
   const digits = query.search?.replace(/\D/g, "") ?? "";
   const where: Prisma.UserWhereInput = {
     ...(query.role ? { role: query.role } : {}),
-    // student = had a course; user = only signed up; teacher = teaches now (role TEACHER).
+    // student = had a course; user = only signed up; teacher = teaches now; staff = moderator … superadmin.
     ...(query.kind === "student"
-      ? { studentNumber: { not: null } }
+      ? { studentNumber: { not: null }, role: "USER" as const }
       : query.kind === "user"
-        ? { studentNumber: null, NOT: { role: "TEACHER" as const } }
+        ? { studentNumber: null, role: "USER" as const }
         : query.kind === "teacher"
           ? { role: "TEACHER" as const }
-          : {}),
+          : query.kind === "staff"
+            ? { role: { in: [...STAFF_ROLES] } }
+            : {}),
     ...(query.search
       ? {
           // "student0007" / "user0042" → that account; otherwise name, e-mail or phone.
@@ -50,6 +52,7 @@ export const listUsers = async (query: ListQuery) => {
         userNumber: true,
         studentNumber: true,
         teacherNumber: true,
+        staffNumber: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -64,8 +67,9 @@ export const listUsers = async (query: ListQuery) => {
 
 /**
  * Role changes are admin-only (enforced by the route) and an admin cannot change their own role.
- * Becoming a teacher gives a teacher number (teacher0001) and frees the user number for a new sign-up;
- * no longer being one gives a user number back. The account id never changes, so courses, payments,
+ * The database gives the numbers that go with the role: teacher0001 for a teacher, admin0001 /
+ * manager0001 / … for staff (the user number is then freed for a new sign-up); back to a student role,
+ * the account gets a user number again. The account id never changes, so courses, payments,
  * results, groups and attendance stay with the person. A teacher with active groups keeps the role until
  * the groups are handed to another teacher.
  */
@@ -92,11 +96,9 @@ export const updateUserRole = async (actorId: string, actorRole: string, userId:
     if (role === "TEACHER") {
       // The teacher profile (bio, photo on the site) at once; an older one is reactivated.
       await tx.teacherProfile.upsert({ where: { userId }, create: { userId }, update: { isActive: true } });
-      await becomeTeacher(tx, userId);
     } else if (leavingTeacher) {
       // Kept for history (lessons, attendance); the teacher number stays on the account.
       await tx.teacherProfile.updateMany({ where: { userId }, data: { isActive: false } });
-      await leaveTeacher(tx, userId);
     }
     const updated = await tx.user.findUniqueOrThrow({ where: { id: userId } });
     await writeAudit(
@@ -105,8 +107,8 @@ export const updateUserRole = async (actorId: string, actorRole: string, userId:
         action: "user.role.change",
         entity: "User",
         entityId: userId,
-        before: { role: existing.role, userNumber: existing.userNumber, teacherNumber: existing.teacherNumber },
-        after: { role, userNumber: updated.userNumber, teacherNumber: updated.teacherNumber },
+        before: { role: existing.role, userNumber: existing.userNumber, teacherNumber: existing.teacherNumber, staffNumber: existing.staffNumber },
+        after: { role, userNumber: updated.userNumber, teacherNumber: updated.teacherNumber, staffNumber: updated.staffNumber },
         reason: reason || undefined,
       },
       tx
@@ -125,6 +127,7 @@ type RoleRow = {
   userNumber: number | null;
   studentNumber: number | null;
   teacherNumber: number | null;
+  staffNumber: number | null;
 };
 const publicRole = (u: RoleRow) => ({
   id: u.id,
@@ -135,6 +138,7 @@ const publicRole = (u: RoleRow) => ({
   userNumber: u.userNumber,
   studentNumber: u.studentNumber,
   teacherNumber: u.teacherNumber,
+  staffNumber: u.staffNumber,
 });
 
 /** Deactivating revokes all existing sessions; admins cannot deactivate themselves. Audited, with the reason. */
@@ -249,7 +253,7 @@ export const resetTwoFactor = async (actorId: string, actorRole: string, userId:
 
 export const getStatistics = async () => {
   const finished = { finishedAt: { not: null }, mode: "EXAM" } satisfies Prisma.TestWhereInput;
-  const [totalUsers, totalStudents, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg] =
+  const [totalUsers, totalStudents, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg, roleGroups] =
     await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { studentNumber: { not: null } } }),
@@ -259,7 +263,10 @@ export const getStatistics = async () => {
       prisma.test.count({ where: finished }),
       prisma.test.count({ where: { ...finished, passed: true } }),
       prisma.test.aggregate({ where: finished, _avg: { score: true } }),
+      prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
     ]);
+  // Accounts per role, every role listed (0 when nobody has it), in the order the roles are shown.
+  const byRole = Object.fromEntries(Object.values(Role).map((r) => [r, roleGroups.find((g) => g.role === r)?._count._all ?? 0])) as Record<Role, number>;
 
   return {
     totalUsers,
@@ -271,6 +278,7 @@ export const getStatistics = async () => {
     totalTests,
     averageScore: Math.round(scoreAgg._avg.score ?? 0),
     passRate: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
+    byRole,
   };
 };
 

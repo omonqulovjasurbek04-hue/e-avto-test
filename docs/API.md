@@ -65,8 +65,9 @@ Ko'rinadigan raqamlar alohida:
 | `userNumber` | Ro'yxatdan o'tishda (telefon, Telegram, Google — hammasida baza o'zi beradi) | `user0001`, … `user9999`, `user10000` … | **Ha**: hisob o'qituvchi bo'lganda raqam bo'shaydi va keyingi yangi foydalanuvchiga beriladi (eng kichik bo'sh raqam) |
 | `studentNumber` | Birinchi kurs ochilganda (to'lov provayder tomonidan tasdiqlanganda yoki admin sabab bilan ochganda) — **o'z ketma-ketligi** | `student0001`, `student0002`, … | Yo'q |
 | `teacherNumber` | Hisob birinchi marta o'qituvchi qilinganda — o'z ketma-ketligi | `teacher0001`, … | Yo'q (rol olib tashlansa ham tarixda qoladi) |
+| `staffNumber` | Xodim roli (Moderator, Moliya, Administrator, Admin, Superadmin) berilganda — har bir rolning o'z ketma-ketligi; user raqami bo'shaydi | `moderator01`, `finance01`, `manager01`, `admin01`, `superadmin01` (kamida 2 xona) | Yo'q (boshqa rolga o'tsa yangi raqam beriladi, eskisi tarixda) |
 
-- Saytda ko'rinadigan ID: o'qituvchi bo'lsa `teacher####`, aks holda `student####`, aks holda `user####`.
+- Saytda ko'rinadigan ID: xodim bo'lsa `admin01` kabi, o'qituvchi bo'lsa `teacher####`, aks holda `student####`, aks holda `user####`. Raqamlarni rol o'zgarganda baza o'zi beradi (trigger), qaysi yo'l bilan o'zgarishidan qat'i nazar.
 - Ikkinchi kurs yangi student raqami yoki yangi hisob ochmaydi; har bir kurs — alohida buyurtma va `Enrollment`.
 - O'qituvchilik olib tashlansa hisobga yana `userNumber` beriladi (bo'sh raqam yoki yangisi); faol guruhlari bo'lsa rol o'zgarmaydi (409) — avval guruhlar boshqa o'qituvchiga beriladi.
 - Raqamlar tarixi — `user_identifiers` jadvali (kim, qaysi raqam, qachon berilgan/bo'shatilgan, sababi). Uni bazadagi triggerlar yozadi, shuning uchun hech bir yo'l chetlab o'tolmaydi.

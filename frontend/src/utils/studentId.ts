@@ -10,13 +10,19 @@ export const formatUserId = (n?: number | null): string => (valid(n) ? `user${pa
 /** 1 → "teacher0001". Empty when there is no number. */
 export const formatTeacherId = (n?: number | null): string => (valid(n) ? `teacher${pad(n)}` : "");
 
-type Numbers = { role?: string; userNumber?: number | null; studentNumber?: number | null; teacherNumber?: number | null };
+type Numbers = { role?: string; userNumber?: number | null; studentNumber?: number | null; teacherNumber?: number | null; staffNumber?: number | null };
+
+const STAFF = ["MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"];
+
+/** ("ADMIN", 1) → "admin01" (two digits at least: staff are few). Empty when there is no number. */
+export const formatStaffId = (role: string, n?: number | null): string => (valid(n) ? `${role.toLowerCase()}${String(n).padStart(2, "0")}` : "");
 
 /**
  * The id shown for an account: "teacher0001" for a teacher, else "student0007" once a course was opened,
  * else "user0005". Same rule as the server (backend/src/lib/accountNumbers.ts).
  */
 export const formatAccountId = (u?: Numbers | null): string => {
+  if (u?.staffNumber && u.role && STAFF.includes(u.role)) return formatStaffId(u.role, u.staffNumber);
   if (u?.teacherNumber && (u.role === undefined || u.role === "TEACHER")) return formatTeacherId(u.teacherNumber);
   return formatStudentId(u?.studentNumber) || formatUserId(u?.userNumber) || formatTeacherId(u?.teacherNumber);
 };

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { canAssignRole, ROLE_LABEL } from "@/lib/permissions";
 import { formatAccountId, formatUserId } from "@/utils/studentId";
 import { UserDetailModal } from "@/components/admin/UserDetailModal";
+import { RolesInfo } from "@/components/admin/RolesInfo";
 import type { UserRole } from "@/types/user";
 
 export default function AdminUsers() {
@@ -34,9 +36,11 @@ export default function AdminUsers() {
   const [changing, setChanging] = useState<AdminUser | null>(null);
   const [nextRole, setNextRole] = useState<UserRole>("USER");
   const [roleBusy, setRoleBusy] = useState(false);
-  const [roleFilter, setRoleFilter] = useState("");
+  // The dashboard's per-role counts open this page already filtered to that role.
+  const linkedRole = (useLocation().state as { role?: string } | null)?.role ?? "";
+  const [roleFilter, setRoleFilter] = useState(linkedRole);
   // "student" = had a course, "user" = only signed up, "teacher" = teaches now.
-  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher">("");
+  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher" | "staff">("");
   const [resetting, setResetting] = useState<AdminUser | null>(null);
   // Role changes and blocking ask for a reason; it goes to the audit log.
   const [roleReason, setRoleReason] = useState("");
@@ -112,7 +116,10 @@ export default function AdminUsers() {
 
   return (
     <div className="container-page py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">{t("admin.users.title")}</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.users.title")}</h1>
+        <RolesInfo />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
         <div className="w-full max-w-sm">
@@ -133,9 +140,10 @@ export default function AdminUsers() {
               { value: "student", label: t("admin.users.kindStudent") },
               { value: "user", label: t("admin.users.kindUser") },
               { value: "teacher", label: t("admin.users.kindTeacher") },
+              { value: "staff", label: t("admin.users.kindStaff") },
             ]}
             value={kindFilter}
-            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user" | "teacher")}
+            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user" | "teacher" | "staff")}
           />
         </div>
       </div>
@@ -166,7 +174,7 @@ export default function AdminUsers() {
                   <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     <td className="px-4 py-3 font-mono text-xs">
                       {/* The prefix tells: teacher#### teaches, student#### had a course, user#### only signed up. */}
-                      <Badge variant={u.role === "TEACHER" && u.teacherNumber ? "primary" : u.studentNumber ? "success" : "neutral"}>{formatAccountId(u)}</Badge>
+                      <Badge variant={u.staffNumber ? "warning" : u.role === "TEACHER" && u.teacherNumber ? "primary" : u.studentNumber ? "success" : "neutral"}>{formatAccountId(u)}</Badge>
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                       {u.name}
@@ -245,6 +253,11 @@ export default function AdminUsers() {
             {/* What happens to the numbers: a teacher gets teacher#### and the user number is freed. */}
             {nextRole === "TEACHER" && changing.role !== "TEACHER" && (
               <p className="rounded-lg bg-brand-500/10 px-3 py-2 text-xs text-brand-800 dark:text-brand-200">{t("admin.users.toTeacherHint", { id: formatUserId(changing.userNumber) })}</p>
+            )}
+            {!["USER", "TEACHER"].includes(nextRole) && nextRole !== changing.role && (
+              <p className="rounded-lg bg-brand-500/10 px-3 py-2 text-xs text-brand-800 dark:text-brand-200">
+                {t("admin.users.toStaffHint", { id: `${nextRole.toLowerCase()}01…` })}
+              </p>
             )}
             {changing.role === "TEACHER" && nextRole !== "TEACHER" && (
               <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">{t("admin.users.fromTeacherHint")}</p>

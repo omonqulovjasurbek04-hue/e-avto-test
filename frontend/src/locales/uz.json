@@ -426,7 +426,8 @@
       "emptyDesc": "Tez orada yangi darslar qo'shiladi."
     },
     "adminSubtitle": "Platformaning umumiy statistikasi.",
-    "openAdmin": "Admin panelga o'tish"
+    "openAdmin": "Admin panelga o'tish",
+    "staffSubtitle": "Ish bo'limlaringiz."
   },
   "lessons": {
     "title": "Darslar",
@@ -863,7 +864,8 @@
       "tests": "Yakunlangan testlar",
       "avgScore": "O'rtacha ball",
       "passRate": "O'tish foizi",
-      "students": "O'quvchilar (kurs olgan)"
+      "students": "O'quvchilar (kurs olgan)",
+      "byRole": "Rollar bo'yicha"
     },
     "audit": {
       "title": "Audit jurnali",
@@ -980,7 +982,9 @@
         "grant": "Kursni ochish",
         "granted": "Kurs ochildi",
         "grantError": "Kursni ochib bo'lmadi"
-      }
+      },
+      "kindStaff": "Xodimlar (admin, moliya, moderator…)",
+      "toStaffHint": "Xodimga shu rolning alohida raqami beriladi ({{id}}); oldingi user raqami bo'shab, yangi foydalanuvchiga o'tadi. Kurslari va natijalari o'zida qoladi."
     },
     "exam": {
       "title": "Imtihon sozlamalari va savollar importi",
@@ -1861,5 +1865,50 @@
     "noRoom": "Xonasiz",
     "room": "{{room}}-xona",
     "count": "{{count}} ta guruh"
+  },
+  "rolesInfo": {
+    "button": "Rollar haqida",
+    "title": "Rollar: kim nima qila oladi",
+    "intro": "Har bir rol o'z bo'limlarini ko'radi; ruxsat serverda ham tekshiriladi. Rol berishdan oldin shu yerdan qarang.",
+    "menu": "Menyusida",
+    "USER": {
+      "who": "O'quvchi — ro'yxatdan o'tgan har kim",
+      "can": "Kurs sotib oladi, darslarni o'qiydi, biletlar va test yechadi, xatolari ustida ishlaydi, guruh jadvali va davomatini ko'radi. Kurs olmaguncha darslar va testlar yopiq.",
+      "menu": "Dashboard, Kurslar, Darslar, Testlar, Reyting, Xatolar ustida ishlash"
+    },
+    "TEACHER": {
+      "who": "O'qituvchi",
+      "can": "O'z guruhlarini ochadi (toq/juft kunlar, vaqt, xona), o'quvchi qo'shadi, davomat belgilaydi; o'z o'quvchilarining natijasi va xatolarini ko'radi; biletlarga savol qo'shadi va tahrirlaydi. Barcha kurslar unga ochiq. Boshqa o'qituvchining guruhini ko'rmaydi.",
+      "menu": "Dashboard, O'qituvchi, Kurslar, Darslar, Testlar (biletlar va savollar banki), Reyting, Bilim nazorati"
+    },
+    "MODERATOR": {
+      "who": "Kontent muharriri",
+      "can": "Test savollari va biletlar (rasm, video bilan), imtihon sozlamalari, savollar importi, sayt sahifalari, yangiliklar, FAQ va e'lonlar. Pul va foydalanuvchilarga kirmaydi.",
+      "menu": "Testlar, Sayt kontenti, Imtihon sozlamalari (+ o'quvchi bo'limlari)"
+    },
+    "FINANCE": {
+      "who": "Moliya xodimi (buxgalter, kassir)",
+      "can": "Buyurtmalar va tushumni ko'radi, pulni qaytaradi (refund), hisobotlarni (test natijalari, o'qituvchi yuklamasi) ko'radi va CSV oladi.",
+      "menu": "Dashboard (hisobotlar), Buyurtmalar & Tushum"
+    },
+    "MANAGER": {
+      "who": "Administrator — qabulxona",
+      "can": "Istalgan o'qituvchi uchun guruh ochadi, o'quvchilarni guruhga yozadi, dars jadvalini tuzadi (xonalar bo'yicha), barcha guruhlarning bilim nazoratini va buyurtmalarni ko'radi. Narx, kurs va rollarni o'zgartira olmaydi.",
+      "menu": "Guruhlar & Jadval, Bilim nazorati, Buyurtmalar & Tushum"
+    },
+    "ADMIN": {
+      "who": "Admin — markaz boshqaruvchisi",
+      "can": "Deyarli hammasi: foydalanuvchilar va rollar (Admin/Superadmin'dan tashqari), kurslar, kategoriyalar, paketlar va narxlar, darslar va videolar, guruhlar, savollar, sayt kontenti, audit, tizim holati, to'lovsiz kurs ochish.",
+      "menu": "Barcha bo'limlar"
+    },
+    "SUPERADMIN": {
+      "who": "Superadmin — egasi",
+      "can": "Admin qila oladigan hamma narsa + Admin va Superadmin rollarini berish/olish va pulni qaytarish. Kundalik ishda Admin akkauntidan foydalanish tavsiya etiladi.",
+      "menu": "Barcha bo'limlar"
+    },
+    "rule1": "Hech kim o'z rolini o'zgartira olmaydi; Admin o'zida yo'q huquqni (masalan, Moliya xodimi rolini) bera olmaydi.",
+    "rule2": "Rol o'zgarsa, akkauntning barcha sessiyalari darhol yopiladi va sabab audit jurnaliga yoziladi.",
+    "rule3": "O'qituvchi qilinganda teacher0001… raqami beriladi, user raqami bo'shab yangi foydalanuvchiga o'tadi; kurslar va natijalar o'zida qoladi.",
+    "rule4": "Faol guruhi bor o'qituvchidan rol olinmaydi — avval guruhlarni boshqa o'qituvchiga bering."
   }
 }
