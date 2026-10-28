@@ -13,6 +13,8 @@ export interface AdminStats {
   passRate: number;
   /** Accounts per role (every role, 0 when nobody has it). */
   byRole?: Record<UserRole, number>;
+  /** Student-role accounts that have a course (student####); the rest of byRole.USER only signed up. */
+  studentUsers?: number;
 }
 
 export interface AdminUser {

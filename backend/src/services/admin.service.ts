@@ -253,7 +253,7 @@ export const resetTwoFactor = async (actorId: string, actorRole: string, userId:
 
 export const getStatistics = async () => {
   const finished = { finishedAt: { not: null }, mode: "EXAM" } satisfies Prisma.TestWhereInput;
-  const [totalUsers, totalStudents, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg, roleGroups] =
+  const [totalUsers, totalStudents, totalCourses, totalLessons, totalQuestions, totalTests, passedTests, scoreAgg, roleGroups, studentUsers] =
     await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { studentNumber: { not: null } } }),
@@ -264,6 +264,8 @@ export const getStatistics = async () => {
       prisma.test.count({ where: { ...finished, passed: true } }),
       prisma.test.aggregate({ where: finished, _avg: { score: true } }),
       prisma.user.groupBy({ by: ["role"], _count: { _all: true } }),
+      // Of the student-role accounts: those with a course (student####); the rest only signed up (user####).
+      prisma.user.count({ where: { role: "USER", studentNumber: { not: null } } }),
     ]);
   // Accounts per role, every role listed (0 when nobody has it), in the order the roles are shown.
   const byRole = Object.fromEntries(Object.values(Role).map((r) => [r, roleGroups.find((g) => g.role === r)?._count._all ?? 0])) as Record<Role, number>;
@@ -279,6 +281,7 @@ export const getStatistics = async () => {
     averageScore: Math.round(scoreAgg._avg.score ?? 0),
     passRate: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
     byRole,
+    studentUsers,
   };
 };
 

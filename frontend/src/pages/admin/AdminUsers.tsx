@@ -37,10 +37,11 @@ export default function AdminUsers() {
   const [nextRole, setNextRole] = useState<UserRole>("USER");
   const [roleBusy, setRoleBusy] = useState(false);
   // The dashboard's per-role counts open this page already filtered to that role.
-  const linkedRole = (useLocation().state as { role?: string } | null)?.role ?? "";
+  const linked = (useLocation().state as { role?: string; kind?: "student" | "user" } | null) ?? {};
+  const linkedRole = linked.role ?? "";
   const [roleFilter, setRoleFilter] = useState(linkedRole);
   // "student" = had a course, "user" = only signed up, "teacher" = teaches now.
-  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher" | "staff">("");
+  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher" | "staff">(linked.kind ?? "");
   const [resetting, setResetting] = useState<AdminUser | null>(null);
   // Role changes and blocking ask for a reason; it goes to the audit log.
   const [roleReason, setRoleReason] = useState("");

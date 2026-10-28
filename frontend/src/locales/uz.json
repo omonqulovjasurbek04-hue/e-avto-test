@@ -865,7 +865,17 @@
       "avgScore": "O'rtacha ball",
       "passRate": "O'tish foizi",
       "students": "O'quvchilar (kurs olgan)",
-      "byRole": "Rollar bo'yicha"
+      "byRole": "Rollar bo'yicha",
+      "cards": {
+        "students": "Studentlar (kurs olgan)",
+        "users": "Userlar (kurs olmagan)",
+        "TEACHER": "O'qituvchilar",
+        "MODERATOR": "Moderatorlar",
+        "FINANCE": "Moliya xodimlari",
+        "MANAGER": "Administratorlar",
+        "ADMIN": "Adminlar",
+        "SUPERADMIN": "Superadminlar"
+      }
     },
     "audit": {
       "title": "Audit jurnali",

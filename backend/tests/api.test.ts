@@ -147,6 +147,7 @@ describe.skipIf(!enabled)("E-Avto API", () => {
       const byRole = stats.body.data.byRole as Record<string, number>;
       expect(Object.keys(byRole).sort()).toEqual(["ADMIN", "FINANCE", "MANAGER", "MODERATOR", "SUPERADMIN", "TEACHER", "USER"]);
       expect(Object.values(byRole).reduce((n, c) => n + c, 0)).toBe(stats.body.data.totalUsers);
+      expect(stats.body.data.studentUsers).toBeLessThanOrEqual(byRole.USER);
       expect((await api().get("/api/admin/statistics")).status).toBe(401);
     });
 
