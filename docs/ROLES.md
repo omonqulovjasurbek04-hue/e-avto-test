@@ -2,6 +2,12 @@
 
 > Manba: `backend/src/lib/permissions.ts` (ruxsatlar jadvali), `backend/src/routes/*.ts` (2026-10-21 holati).
 > Har bir endpointning to'liq parametrlari: [API.md](API.md). Ruxsat **serverda** tekshiriladi; menyuni yashirish faqat qulaylik uchun.
+>
+> **2026-10-28 dan alohida `/admin` paneli yo'q.** Har bir xodim sahifasi ilovaning yon menyusida, faqat tegishli ruxsati borlarga ko'rinadi:
+> Foydalanuvchilar `/users` · Kurslar (kategoriya, paket, material shu oynada) `/my-courses` · Darslar (video shu oynada) `/lessons` ·
+> Testlar (biletlar va savollar banki) `/tests` · Guruhlar & Jadval (xonalar bo'yicha) `/teacher` · Bilim nazorati `/mistakes` ·
+> Sayt kontenti `/site-content` · Audit `/audit` · Tizim holati `/system` · Buyurtmalar & Tushum `/revenue` · Imtihon sozlamalari `/exam-settings` ·
+> statistika va hisobotlar — `/dashboard`. Eski `/admin/...` manzillar yangi joyga yo'naltiriladi. Quyidagi jadvaldagi "Panel" ustuni eski holatni ko'rsatadi.
 
 ## 1. Qisqacha
 

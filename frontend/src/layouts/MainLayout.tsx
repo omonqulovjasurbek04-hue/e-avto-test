@@ -6,7 +6,6 @@ import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
 import { Button } from "../components/ui";
 import { useSiteSettings } from "../hooks/useSiteSettings";
-import { can } from "../lib/permissions";
 import { DEFAULT_CONTACT } from "../constants/config";
 import {
   Car,
@@ -16,7 +15,6 @@ import {
   X,
   LogOut,
   LayoutDashboard,
-  Shield,
 } from "lucide-react";
 
 export const MainLayout: React.FC = () => {
@@ -98,11 +96,6 @@ export const MainLayout: React.FC = () => {
                     {t("nav.dashboard")}
                   </Button>
                 </Link>
-                {can(user.role, "admin:access") && (
-                  <Link to="/admin" className="hidden sm:block">
-                    <Button size="sm" variant="outline" leftIcon={<Shield className="h-4 w-4" />}>Admin</Button>
-                  </Link>
-                )}
                 <button onClick={handleLogout} className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition" title={t("nav.logout")}>
                   <LogOut className="h-4 w-4" />
                 </button>

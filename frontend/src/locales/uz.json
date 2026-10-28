@@ -1101,14 +1101,15 @@
       "studyPeriod": "O'qish muddati",
       "price": "Narx",
       "priceSom": "Narx (so'm)",
-      "priceHint": "Asosiy paket narxi. Bo'sh qoldirilsa, narx olib tashlanadi. Boshqa paketlar \"Paketlar va narxlar\" bo'limida.",
+      "priceHint": "Asosiy paket narxi. Bo'sh qoldirilsa, narx olib tashlanadi. Boshqa paketlar shu oynaning pastida (kurs saqlangandan keyin).",
       "priceInvalid": "Narxni faqat raqam bilan kiriting (masalan, 5 900 000)",
       "sample": "namuna",
       "manageCategories": "Kategoriyalar",
       "materials": "Kurs materiallari",
       "uploadMaterial": "Material yuklash",
       "materialHint": "PDF, PNG yoki JPEG, {{limit}} MB gacha.",
-      "packages": "Paketlar va narxlar"
+      "packages": "Paketlar va narxlar",
+      "uploadDisabled": "Serverda fayl yuklash o'chirilgan (MEDIA_UPLOAD_ENABLED)."
     },
     "cms": {
       "title": "Sayt kontenti",

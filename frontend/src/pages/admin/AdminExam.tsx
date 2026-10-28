@@ -98,11 +98,11 @@ export default function AdminExam() {
 
   return (
     <div className="max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-white">{t("admin.exam.title")}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.exam.title")}</h1>
       {msg && <Alert variant={msg.type}>{msg.text}</Alert>}
 
-      <section className="space-y-4 rounded-2xl border border-slate-800 p-5">
-        <h2 className="font-semibold text-white">{t("admin.exam.rulesTitle")}</h2>
+      <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+        <h2 className="font-semibold text-slate-900 dark:text-white">{t("admin.exam.rulesTitle")}</h2>
         {courses.loading && !courses.data ? <Skeleton className="h-10" /> : courses.error ? <ErrorState message={courses.error} onRetry={courses.reload} /> : (
           <Select label={t("admin.common.course")} options={[{ value: "", label: t("admin.common.choose") }, ...(courses.data ?? []).map((c) => ({ value: c.id, label: c.title }))]} value={courseId} onChange={(e) => setCourseId(e.target.value)} />
         )}
@@ -121,17 +121,17 @@ export default function AdminExam() {
         )}
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-slate-800 p-5">
-        <h2 className="font-semibold text-white">{t("admin.exam.bankTitle")}</h2>
-        <p className="text-sm text-slate-400">{t("admin.exam.bankHint")}</p>
-        <pre className="overflow-x-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{sample(t)}</pre>
+      <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+        <h2 className="font-semibold text-slate-900 dark:text-white">{t("admin.exam.bankTitle")}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("admin.exam.bankHint")}</p>
+        <pre className="overflow-x-auto rounded-xl bg-slate-50 dark:bg-slate-950 p-3 text-xs text-slate-600 dark:text-slate-300">{sample(t)}</pre>
         <div className="flex flex-wrap gap-3">
           <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && doImport(e.target.files[0])} />
           <Button leftIcon={<Upload className="h-4 w-4" />} onClick={() => fileRef.current?.click()}>{t("admin.exam.import")}</Button>
           <Button variant="outline" leftIcon={<Download className="h-4 w-4" />} onClick={doExport}>{courseId ? t("admin.exam.exportCourse") : t("admin.exam.exportAll")}</Button>
         </div>
         {importErrors.length > 0 && (
-          <ul className="space-y-1 text-sm text-red-400">
+          <ul className="space-y-1 text-sm text-red-700 dark:text-red-400">
             {importErrors.map((e) => <li key={e.row}>{t("admin.exam.row", { row: e.row, message: e.message })}</li>)}
           </ul>
         )}

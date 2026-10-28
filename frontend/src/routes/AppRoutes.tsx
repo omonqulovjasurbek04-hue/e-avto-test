@@ -3,12 +3,12 @@ import { Navigate, Routes, Route } from "react-router-dom";
 import { PanelRedirect, SiteLayout } from "./SiteLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { StudentLayout } from "@/layouts/StudentLayout";
-import { AdminLayout } from "@/layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 import RequireCourse from "./RequireCourse";
 import CourseLinkRoute from "./CourseLinkRoute";
-import { AdminRoute, RequirePerm } from "./AdminRoute";
+import { RequirePerm } from "./RequirePerm";
+import OldAdminRedirect from "./OldAdminRedirect";
 import { TeacherRoute } from "./TeacherRoute";
 import { FullSpinner } from "@/components/ui/Spinner";
 import { ROUTES } from "@/constants/routes";
@@ -56,7 +56,6 @@ const AdminCms = lazy(() => import("@/pages/admin/AdminCms"));
 const AdminExam = lazy(() => import("@/pages/admin/AdminExam"));
 const AdminAudit = lazy(() => import("@/pages/admin/AdminAudit"));
 const AdminSystem = lazy(() => import("@/pages/admin/AdminSystem"));
-const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 
 const NotFound = lazy(() => import("@/pages/errors/NotFound"));
@@ -136,35 +135,14 @@ export default function AppRoutes() {
             <Route path="/site-content" element={<RequirePerm perm="content:manage"><div className="container-page py-8"><AdminCms /></div></RequirePerm>} />
             <Route path="/revenue" element={<RequirePerm perm="orders:read"><div className="container-page py-8"><AdminOrders /></div></RequirePerm>} />
             <Route path="/audit" element={<RequirePerm perm="audit:read"><div className="container-page py-8"><AdminAudit /></div></RequirePerm>} />
+            <Route path="/exam-settings" element={<RequirePerm perm="tests:manage"><div className="container-page py-8"><AdminExam /></div></RequirePerm>} />
             <Route path="/system" element={<RequirePerm perm="settings:manage"><div className="container-page py-8"><AdminSystem /></div></RequirePerm>} />
             <Route path="/mistakes/student" element={<TeacherRoute><StudentKnowledge /></TeacherRoute>} />
           </Route>
         </Route>
 
-        <Route
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          <Route path="/admin" element={<AdminHome />} />
-          <Route path="/admin/courses" element={<Navigate to="/my-courses" replace />} />
-          <Route path="/admin/categories" element={<Navigate to="/my-courses" replace />} />
-          <Route path="/admin/lessons" element={<Navigate to="/lessons" replace />} />
-          <Route path="/admin/questions" element={<Navigate to="/tests" replace />} />
-          <Route path="/admin/catalog" element={<Navigate to="/my-courses" replace />} />
-          <Route path="/admin/orders" element={<Navigate to="/revenue" replace />} />
-          <Route path="/admin/groups" element={<Navigate to="/teacher" replace />} />
-          <Route path="/admin/knowledge/*" element={<Navigate to="/mistakes" replace />} />
-          <Route path="/admin/exam" element={<RequirePerm perm="tests:manage"><AdminExam /></RequirePerm>} />
-          <Route path="/admin/cms" element={<Navigate to="/site-content" replace />} />
-          <Route path="/admin/users" element={<Navigate to="/users" replace />} />
-          <Route path="/admin/media" element={<Navigate to="/lessons" replace />} />
-          <Route path="/admin/audit" element={<Navigate to="/audit" replace />} />
-          <Route path="/admin/reports" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/admin/system" element={<Navigate to="/system" replace />} />
-        </Route>
+        {/* The old admin panel: its pages live in the app now; old addresses forward there. */}
+        <Route path="/admin/*" element={<OldAdminRedirect />} />
 
         {/* Google sign-in returns here (signed in or with a 2FA challenge), outside the guest/protected guards. */}
         <Route path="/auth/google" element={<GoogleCallback />} />

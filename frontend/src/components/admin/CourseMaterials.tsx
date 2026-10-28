@@ -63,7 +63,7 @@ export function CourseMaterials({ courseId }: { courseId: string }) {
           {progress !== null && <Progress value={progress} />}
         </>
       ) : (
-        config.data && <p className="text-xs text-amber-700 dark:text-amber-300">{t("admin.lessons.uploadDisabled")}</p>
+        config.data && <p className="text-xs text-amber-700 dark:text-amber-300">{t("admin.courses.uploadDisabled")}</p>
       )}
     </div>
   );

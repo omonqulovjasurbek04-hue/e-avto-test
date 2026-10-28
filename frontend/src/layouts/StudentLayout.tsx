@@ -15,7 +15,6 @@ import {
   ShoppingBag,
   Bell,
   GraduationCap,
-  Shield,
   LogOut,
   Moon,
   Sun,
@@ -30,6 +29,7 @@ import {
   ScrollText,
   Activity,
   Receipt,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { assetUrl } from "../utils/assetUrl";
@@ -121,12 +121,12 @@ export const StudentLayout: React.FC = () => {
     { to: "/my-rating", label: t("nav.leaderboard"), icon: <Trophy className="h-5 w-5" /> },
     // Teachers: the same place shows their students' knowledge instead of their own mistakes.
     { to: "/mistakes", label: user?.role === "TEACHER" || can(user?.role, "groups:manage") ? t("nav.knowledge") : t("nav.mistakes"), icon: <Repeat className="h-5 w-5" />, needsCourse: true },
-    ...(can(user?.role, "admin:access") ? [{ to: "/admin", label: "Admin panel", icon: <Shield className="h-5 w-5" /> }] : []),
     // Staff tools, each for whoever holds its right.
     ...(can(user?.role, "content:manage") ? [{ to: "/site-content", label: t("admin.nav.cms"), icon: <Newspaper className="h-5 w-5" /> }] : []),
     ...(can(user?.role, "audit:read") ? [{ to: "/audit", label: t("admin.nav.audit"), icon: <ScrollText className="h-5 w-5" /> }] : []),
     ...(can(user?.role, "settings:manage") ? [{ to: "/system", label: t("admin.nav.system"), icon: <Activity className="h-5 w-5" /> }] : []),
     ...(can(user?.role, "orders:read") ? [{ to: "/revenue", label: t("admin.nav.orders"), icon: <Receipt className="h-5 w-5" /> }] : []),
+    ...(can(user?.role, "tests:manage") ? [{ to: "/exam-settings", label: t("admin.nav.exam"), icon: <ClipboardList className="h-5 w-5" /> }] : []),
   ];
 
   return (
