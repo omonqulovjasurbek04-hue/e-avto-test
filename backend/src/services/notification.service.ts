@@ -202,9 +202,10 @@ export const processTelegramReminders = async (now: Date = new Date(), batch = 1
     }
     // Claim the reminder first, so two runs at the same moment (after-mark dispatch + the 5-minute job)
     // cannot both send it. If the send then fails, it becomes due again in 5 minutes.
+    const claimedUntil = new Date(now.getTime() + 5 * 60 * 1000);
     const claimed = await prisma.notification.updateMany({
       where: { id: n.id, telegramSends: n.telegramSends, telegramNextAt: { lte: now } },
-      data: { telegramNextAt: new Date(now.getTime() + 5 * 60 * 1000) },
+      data: { telegramNextAt: claimedUntil },
     });
     if (claimed.count === 0) continue;
     const nr = n.telegramSends + 1;
@@ -214,10 +215,13 @@ export const processTelegramReminders = async (now: Date = new Date(), batch = 1
     if (!ok) continue; // claimed for 5 minutes: tried again after that
     sent += 1;
     const next = TELEGRAM_REMINDERS_MS[nr];
-    await prisma.notification.update({
-      where: { id: n.id },
+    // Schedule the next one only if our claim still stands: if the reminders were cancelled while this
+    // one was being sent (absence corrected to "present"), they stay cancelled.
+    const scheduled = await prisma.notification.updateMany({
+      where: { id: n.id, telegramNextAt: claimedUntil },
       data: { telegramSends: nr, telegramNextAt: next === undefined ? null : new Date(n.createdAt.getTime() + next) },
     });
+    if (scheduled.count === 0) await prisma.notification.update({ where: { id: n.id }, data: { telegramSends: nr } });
   }
   return sent;
 };
