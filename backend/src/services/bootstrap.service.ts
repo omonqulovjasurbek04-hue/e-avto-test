@@ -24,7 +24,7 @@ const bootstrapSchema = z.object({
  * created through the normal, audited role-change endpoint by a superadmin.
  */
 export const createFirstSuperadmin = async (input: { name?: string; email: string; password: string }) => {
-  const data = bootstrapSchema.parse({ name: input.name ?? "Administrator", email: input.email, password: input.password });
+  const data = bootstrapSchema.parse({ name: input.name ?? "Superadmin", email: input.email, password: input.password });
 
   if ((await prisma.user.count({ where: { role: "SUPERADMIN" } })) > 0) {
     throw conflict("A superadmin already exists; use the admin panel to manage roles");

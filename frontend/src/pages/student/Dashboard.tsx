@@ -38,8 +38,12 @@ function AdminStart() {
     <div className="container-page py-8">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.name ?? "" })}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t("dashboard.adminSubtitle")}</p>
+          {/* Staff are greeted by their role, the same word as the badge in the top bar; the name is underneath. */}
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("dashboard.greeting", { name: user?.role ? t(`roles.${user.role}`, user.role) : user?.name ?? "" })}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {user?.name ? `${user.name} · ` : ""}
+            {t("dashboard.adminSubtitle")}
+          </p>
         </div>
       </motion.div>
       {can(user?.role, "users:manage") && (

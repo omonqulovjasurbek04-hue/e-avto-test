@@ -61,7 +61,7 @@ async function main() {
     // The owner registered on the site with their own password: that account becomes the administrator.
     await prisma.user.update({ where: { id: existing.id }, data: { role: "SUPERADMIN", isActive: true } });
   } else if (password.length >= 10) {
-    await prisma.user.create({ data: { name: "Administrator", phone, passwordHash: await bcrypt.hash(password, 12), role: "SUPERADMIN" } });
+    await prisma.user.create({ data: { name: "Superadmin", phone, passwordHash: await bcrypt.hash(password, 12), role: "SUPERADMIN" } });
   } else {
     console.warn(`No account with ${phone.slice(0, 6)}***${phone.slice(-2)} yet: register on the site with this phone, then redeploy (or set BOOTSTRAP_ADMIN_PASSWORD, 10+ characters).`);
     return;
