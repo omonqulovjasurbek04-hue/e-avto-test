@@ -135,8 +135,9 @@ export const StudentLayout: React.FC = () => {
       <header className="sticky top-0 z-40 flex h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
         <div
           className={cn(
-            "hidden shrink-0 items-center border-r border-slate-200 transition-[width] duration-200 lg:flex dark:border-slate-800",
-            collapsed ? "w-20 justify-center" : "w-72 px-6"
+            "hidden shrink-0 items-center overflow-hidden border-r border-slate-200 transition-[width,padding] duration-300 ease-in-out lg:flex dark:border-slate-800",
+            // Collapsed: the 36px logo mark sits in the middle of the 80px column.
+            collapsed ? "w-20 px-[1.375rem]" : "w-72 px-6"
           )}
         >
           <Logo compact={collapsed} />
@@ -184,9 +185,15 @@ export const StudentLayout: React.FC = () => {
       </header>
 
       <div className="flex">
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden animate-fade-in" onClick={() => setSidebarOpen(false)} />
-        )}
+        {/* Phone backdrop: fades in and out with the drawer instead of vanishing at once. */}
+        <div
+          aria-hidden="true"
+          onClick={() => setSidebarOpen(false)}
+          className={cn(
+            "fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
+            sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          )}
+        />
 
         {/*
           Phones: a drawer over the page. Desktop: stays in place under the top bar while the page scrolls
@@ -195,7 +202,7 @@ export const StudentLayout: React.FC = () => {
         <aside
           id="student-sidebar"
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-[transform,width] duration-200 ease-in-out dark:border-slate-800 dark:bg-slate-900",
+            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-x-hidden border-r border-slate-200 bg-white transition-[transform,width] duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900",
             "lg:sticky lg:top-16 lg:z-30 lg:h-[calc(100vh-4rem)] lg:translate-x-0",
             collapsed && "lg:w-20",
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -219,8 +226,9 @@ export const StudentLayout: React.FC = () => {
                 onClick={() => setSidebarOpen(false)}
                 title={locked ? t("access.buyFirst") : collapsed ? item.label : undefined}
                 className={({ isActive }) => cn(
-                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
-                  collapsed && "lg:justify-center lg:px-0",
+                  "flex items-center rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out",
+                  // Collapsed: the icon slides to the middle of the narrow column (padding animates, no jump).
+                  collapsed && "lg:px-[1.125rem]",
                   // A locked item points at the catalogue, but only "Kurslar" itself is the current page.
                   isActive && !locked
                     ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
@@ -231,7 +239,15 @@ export const StudentLayout: React.FC = () => {
                   {item.icon}
                   {locked && collapsed && <Lock aria-hidden="true" className="absolute -bottom-1 -right-1.5 hidden h-3 w-3 lg:block" />}
                 </span>
-                <span className={cn(collapsed && "lg:sr-only")}>{item.label}</span>
+                {/* The label fades and folds away with the column (still read by screen readers). */}
+                <span
+                  className={cn(
+                    "ml-3 overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out",
+                    collapsed ? "max-w-[12rem] opacity-100 lg:ml-0 lg:max-w-0 lg:opacity-0" : "max-w-[12rem] opacity-100"
+                  )}
+                >
+                  {item.label}
+                </span>
                 {locked && (
                   <Lock aria-label={t("access.locked")} className={cn("ml-auto h-4 w-4 opacity-70", collapsed && "lg:hidden")} />
                 )}
@@ -253,11 +269,18 @@ const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min
 
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="E-AVTO TEST">
+    <Link to="/dashboard" className="flex items-center" aria-label="E-AVTO TEST">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm shadow-brand-500/30">
         <Car className="h-5 w-5" />
       </span>
-      {!compact && <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">E-AVTO TEST</span>}
+      <span
+        className={cn(
+          "overflow-hidden whitespace-nowrap font-extrabold tracking-tight text-slate-900 transition-[max-width,opacity,margin] duration-300 ease-in-out dark:text-white",
+          compact ? "ml-0 max-w-0 opacity-0" : "ml-2.5 max-w-[10rem] opacity-100"
+        )}
+      >
+        E-AVTO TEST
+      </span>
     </Link>
   );
 }
