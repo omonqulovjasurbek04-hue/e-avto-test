@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import * as telegramService from "../services/telegram.service";
 import { success, error } from "../utils/apiResponse";
-import { env } from "../config/env";
+import { telegramWebhookSecret } from "../lib/telegramApi";
 import { sendLoginOutcome } from "./auth.controller";
 import { clientInfo } from "../utils/clientInfo";
 import { AuthRequest, requireUserId } from "../middleware/auth.middleware";
@@ -22,10 +22,10 @@ export const verify = async (req: Request, res: Response): Promise<void> => {
   sendLoginOutcome(res, await telegramService.verifyLogin(code, clientInfo(req)));
 };
 
-/** Webhook mode: Telegram posts updates here; the secret in the URL authenticates the caller. */
+/** Webhook mode: Telegram authenticates updates with its secret-token header. */
 export const webhook = async (req: Request, res: Response): Promise<void> => {
-  const given = Buffer.from(String(req.params.secret));
-  const wanted = Buffer.from(env.TELEGRAM_WEBHOOK_SECRET);
+  const given = Buffer.from(req.get("X-Telegram-Bot-Api-Secret-Token") ?? "");
+  const wanted = Buffer.from(telegramWebhookSecret());
   if (!wanted.length || given.length !== wanted.length || !crypto.timingSafeEqual(given, wanted)) {
     error(res, "Not found", 404);
     return;

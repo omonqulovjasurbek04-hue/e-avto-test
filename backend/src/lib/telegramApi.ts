@@ -30,6 +30,11 @@ export interface TgUpdate {
   callback_query?: TgCallbackQuery;
 }
 
+/** Telegram accepts only URL-safe characters for its webhook secret header. Render's generated
+ * value is base64-like, so convert it to the equivalent unpadded base64url representation. */
+export const telegramWebhookSecret = () =>
+  env.TELEGRAM_WEBHOOK_SECRET.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
 export type InlineKeyboard = { text: string; callback_data?: string; url?: string; copy_text?: { text: string } }[][];
 
 export interface SendOptions {

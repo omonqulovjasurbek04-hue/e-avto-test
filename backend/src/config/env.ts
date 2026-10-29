@@ -96,7 +96,7 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
   // Default: <first CLIENT_URL>/api/auth/google/callback. Must be listed in the Google client's redirect URIs.
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "",
-  // If set, updates are received on POST /api/telegram/webhook/<secret> instead of long polling.
+  // If set, updates are received on POST /api/telegram/webhook and authenticated by Telegram's secret-token header.
   TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || "",
   // Payments. Only "mock" exists (no real gateway is integrated). Empty = payments disabled.
   PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || "",

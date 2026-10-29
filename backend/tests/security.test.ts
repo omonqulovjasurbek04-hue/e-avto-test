@@ -22,7 +22,7 @@ const PUBLIC: { method: string; path: RegExp }[] = [
   { method: "GET", path: /^\/api\/(courses|courses\/:id|courses\/:id\/lessons|lessons|lessons\/:id|leaderboard|packages|faq|site-settings|public-stats|pages\/:slug|news|news\/:slug|categories|images\/:name|clips\/:name)$/ },
   { method: "POST", path: /^\/api\/(quote|contact)$/ },
   // Authenticated by something other than a user session: provider signature / signed media token / bot secret.
-  { method: "POST", path: /^\/api\/(payments\/webhook\/:provider|telegram\/webhook\/:secret)$/ },
+  { method: "POST", path: /^\/api\/(payments\/webhook\/:provider|telegram\/webhook)$/ },
   { method: "GET", path: /^\/api\/media\/stream\/:token$/ },
   // Prometheus scrape: its own bearer token (METRICS_TOKEN); without it the endpoint pretends not to exist (404).
   { method: "GET", path: /^\/api\/metrics$/ },
@@ -183,7 +183,6 @@ import { redactUrl } from "../src/utils/redact";
 describe("log redaction", () => {
   it("hides tokens and secrets that appear in URLs", () => {
     expect(redactUrl("/api/media/stream/abc.def")).toBe("/api/media/stream/[redacted]");
-    expect(redactUrl("/api/telegram/webhook/s3cret")).toBe("/api/telegram/webhook/[redacted]");
     expect(redactUrl("/reset?token=abc123&x=1")).toBe("/reset?token=[redacted]&x=1");
     expect(redactUrl("/api/courses?page=2")).toBe("/api/courses?page=2");
   });

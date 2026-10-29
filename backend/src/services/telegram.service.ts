@@ -5,7 +5,7 @@ import { badRequest, conflict, HttpError } from "../utils/errors";
 import { completeLogin, toPublicUser } from "./auth.service";
 import type { ClientInfo } from "./session.service";
 import { handleAdminCallback, handleAdminMessage } from "./telegramAdmin.service";
-import { sendMessage, tgCall, type TgUpdate, type TgUser } from "../lib/telegramApi";
+import { sendMessage, tgCall, telegramWebhookSecret, type TgUpdate, type TgUser } from "../lib/telegramApi";
 
 const CODE_TTL_MS = 5 * 60 * 1000; // time to type the code on the site
 
@@ -192,7 +192,8 @@ export function startBot(): void {
     // Register the webhook on every start, so a new address (or a token that polled before) just works.
     const base = env.TELEGRAM_WEBHOOK_BASE || env.PUBLIC_API_ORIGIN;
     void tgCall("setWebhook", {
-      url: `${base}/api/telegram/webhook/${env.TELEGRAM_WEBHOOK_SECRET}`,
+      url: `${base}/api/telegram/webhook`,
+      secret_token: telegramWebhookSecret(),
       allowed_updates: ["message", "callback_query"],
       drop_pending_updates: false,
     })

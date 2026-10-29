@@ -98,7 +98,7 @@ app.use(
     credentials: true,
   })
 );
-// Credentials that live in the URL (signed media token, Telegram webhook secret, password-reset links) must not reach the logs.
+// Credentials that live in the URL (signed media token, password-reset links) must not reach the logs.
 morgan.token("safe-url", (req: Request) => redactUrl(req.originalUrl ?? req.url ?? ""));
 const LOG_FORMAT =
   env.NODE_ENV === "production"
@@ -151,7 +151,7 @@ app.get(
 );
 app.get("/api/health", asyncHandler(health));
 
-app.post("/api/telegram/webhook/:secret", asyncHandler(telegramController.webhook));
+app.post("/api/telegram/webhook", asyncHandler(telegramController.webhook));
 app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", courseRoutes);
