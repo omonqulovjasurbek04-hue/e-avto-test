@@ -29,3 +29,6 @@ deploy/.previous_tag
 
 # Google OAuth client downloads (contain the client secret)
 client_secret*.json
+
+# Claude Code local files (dev-server config, local test accounts, worktrees)
+.claude/
