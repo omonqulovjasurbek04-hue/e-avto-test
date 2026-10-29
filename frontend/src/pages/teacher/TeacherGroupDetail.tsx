@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, ClipboardCheck, Download, Pencil } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { teacherService, type AttendanceStatus, type GroupInput, type Roster, type Slot } from "@/services/platform.service";
 import { useLoad } from "@/hooks/useLoad";
@@ -29,7 +29,6 @@ export default function TeacherGroupDetail() {
   const myId = useAuthStore((s) => s.user?.id);
   const [editing, setEditing] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
-  const canExport = role === "ADMIN" || role === "SUPERADMIN";
   const [tab, setTab] = useState("slots");
 
   const group = useLoad(() => teacherService.group(groupId), [groupId]);
@@ -137,9 +136,9 @@ export default function TeacherGroupDetail() {
         activeTab={tab}
         onChange={setTab}
         tabs={[
-          { id: "slots", label: t("teacher.group.tabSlots") },
           { id: "students", label: t("teacher.group.tabStudents"), count: g.members.length },
           { id: "report", label: t("teacher.group.tabReport") },
+          { id: "slots", label: t("teacher.group.tabSlots") },
         ]}
       />
 
@@ -177,11 +176,6 @@ export default function TeacherGroupDetail() {
 
       {tab === "report" && (
         <div className="space-y-3">
-          {canExport && (
-            <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={() => teacherService.downloadCsv(groupId).catch((e: Error) => toast.error(e.message))}>
-              {t("teacher.group.csv")}
-            </Button>
-          )}
           {report.loading && !report.data ? <Skeleton className="h-32 rounded-2xl" /> : report.error ? <ErrorState message={report.error} onRetry={report.reload} /> : (
             <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left text-sm">

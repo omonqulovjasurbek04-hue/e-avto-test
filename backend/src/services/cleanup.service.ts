@@ -2,6 +2,7 @@ import { prisma } from "../config/database";
 import { expireStaleOrders } from "./payment.service";
 import { processEmailQueue, processTelegramReminders } from "./notification.service";
 import { pruneRefreshTokens } from "./session.service";
+import { archiveFinishedGroups } from "./group.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -16,7 +17,9 @@ export const runCleanup = async () => {
     pruneRefreshTokens(),
     prisma.emailVerification.deleteMany({ where: { expiresAt: { lt: new Date(now - DAY_MS) } } }),
   ]);
-  return { abandonedTests: abandonedTests.count, resets: resets.count, telegram: telegram.count, refreshTokens, verifications: verifications.count };
+  // Groups past their end date go to the archive.
+  const finishedGroups = await archiveFinishedGroups(new Date(now));
+  return { abandonedTests: abandonedTests.count, resets: resets.count, telegram: telegram.count, refreshTokens, verifications: verifications.count, finishedGroups };
 };
 
 export const startCleanupJob = (): NodeJS.Timeout => {

@@ -141,7 +141,12 @@ export const updateGroup = async (actor: Actor, id: string, data: Partial<GroupI
   const updated = await prisma.$transaction(async (tx) => {
     const g = await tx.teacherGroup.update({
       where: { id },
-      data: { ...data, ...(next.lessonMinutes !== before.lessonMinutes ? { lessonMinutes: next.lessonMinutes } : {}) },
+      data: {
+        ...data,
+        ...(next.lessonMinutes !== before.lessonMinutes ? { lessonMinutes: next.lessonMinutes } : {}),
+        // A finished (archived) group whose end date is moved into the future runs again.
+        ...(before.status === "ARCHIVED" && data.endDate !== undefined && (!next.endDate || next.endDate > new Date()) ? { status: "ACTIVE" as const } : {}),
+      },
     });
     let replaced = 0;
     if (rhythmChanged && next.days && next.startTime) {
@@ -169,7 +174,58 @@ export const archiveGroup = async (actor: Actor, id: string) => {
   });
 };
 
-export const listGroups = (actor: Actor) =>
+/** Brings an archived group back. One whose end date has passed would be archived again at once: extend the date first (edit). */
+export const restoreGroup = async (actor: Actor, id: string) => {
+  const before = await loadManageableGroup(actor, id);
+  if (before.status !== "ARCHIVED") return before;
+  if (before.endDate && before.endDate < new Date()) throw conflict("The group's end date has passed; extend it first");
+  return prisma.$transaction(async (tx) => {
+    const g = await tx.teacherGroup.update({ where: { id }, data: { status: "ACTIVE" } });
+    await writeAudit({ actorId: actor.userId, action: "group.restore", entity: "TeacherGroup", entityId: id, before, after: g }, tx);
+    return g;
+  });
+};
+
+/**
+ * Deletes a group for good: its members, lessons and attendance go with it (database cascade). The
+ * snapshot and the counts stay in the audit log. Archiving is the way to keep the history instead.
+ */
+export const deleteGroup = async (actor: Actor, id: string) => {
+  const before = await loadManageableGroup(actor, id);
+  const [members, slots, records] = await Promise.all([
+    prisma.groupMembership.count({ where: { groupId: id } }),
+    prisma.scheduleSlot.count({ where: { groupId: id } }),
+    prisma.attendanceRecord.count({ where: { session: { slot: { groupId: id } } } }),
+  ]);
+  return prisma.$transaction(async (tx) => {
+    await tx.teacherGroup.delete({ where: { id } });
+    await writeAudit({ actorId: actor.userId, action: "group.delete", entity: "TeacherGroup", entityId: id, before: { ...before, members, slots, attendanceRecords: records } }, tx);
+    return { deleted: true };
+  });
+};
+
+/**
+ * A group whose end date has passed is finished: it moves to the archive by itself (history kept). Runs in
+ * the periodic job and before the group list is read, so the list is right even between job runs.
+ */
+export const archiveFinishedGroups = async (now = new Date()) => {
+  const finished = await prisma.teacherGroup.findMany({ where: { status: "ACTIVE", endDate: { lt: now } }, select: { id: true, name: true, endDate: true } });
+  if (finished.length === 0) return 0;
+  await prisma.$transaction(async (tx) => {
+    await tx.teacherGroup.updateMany({ where: { id: { in: finished.map((g) => g.id) }, status: "ACTIVE" }, data: { status: "ARCHIVED" } });
+    for (const g of finished) {
+      await writeAudit({ actorId: null, action: "group.archive.finished", entity: "TeacherGroup", entityId: g.id, after: { name: g.name, endDate: g.endDate } }, tx);
+    }
+  });
+  return finished.length;
+};
+
+export const listGroups = async (actor: Actor) => {
+  await archiveFinishedGroups();
+  return listGroupRows(actor);
+};
+
+const listGroupRows = (actor: Actor) =>
   prisma.teacherGroup.findMany({
     where: isAdmin(actor) ? {} : { teacherId: actor.userId },
     orderBy: { createdAt: "desc" },

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import SiteFooter from "@/components/common/SiteFooter";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
@@ -268,9 +269,13 @@ export const StudentLayout: React.FC = () => {
           </nav>
         </aside>
 
-        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
-          <Outlet />
-        </main>
+        {/* Page; the dashboard also ends with the site footer (kept at the bottom on a short page). */}
+        <div className="flex min-h-[calc(100vh-4rem)] min-w-0 flex-1 flex-col">
+          <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
+            <Outlet />
+          </main>
+          {pathname === "/dashboard" && <SiteFooter />}
+        </div>
       </div>
     </div>
   );

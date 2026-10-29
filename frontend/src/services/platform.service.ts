@@ -417,6 +417,10 @@ export const teacherService = {
   updateGroup: (id: string, d: Partial<GroupInput>) => apiPut<Group & { lessonsCreated: number }>(`/groups/${id}`, d),
   addMember: (id: string, studentId: string) => apiPost<unknown>(`/groups/${id}/members`, { studentId }),
   removeMember: (id: string, studentId: string) => apiDelete<unknown>(`/groups/${id}/members/${studentId}`),
+  /** Archive: out of the list, history kept. Delete: gone for good with members, lessons and attendance. */
+  archiveGroup: (id: string) => apiDelete<unknown>(`/groups/${id}`),
+  deleteGroup: (id: string) => apiDelete<unknown>(`/groups/${id}/permanent`),
+  restoreGroup: (id: string) => apiPost<unknown>(`/groups/${id}/restore`, {}),
   searchStudents: (search: string) => apiGet<StudentHit[]>("/teacher/students", { search }),
   group: (id: string) => apiGet<GroupDetail>(`/groups/${id}`),
   slots: (id: string) => apiGet<Slot[]>(`/groups/${id}/slots`),

@@ -52,6 +52,9 @@ staffRoutes.put("/groups/:id", groupWriters, h(async (req, res) => {
   success(res, await groups.updateGroup(actorOf(req), uuid.parse(req.params.id), body));
 }));
 staffRoutes.delete("/groups/:id", groupWriters, h(async (req, res) => success(res, await groups.archiveGroup(actorOf(req), uuid.parse(req.params.id)))));
+staffRoutes.post("/groups/:id/restore", groupWriters, h(async (req, res) => success(res, await groups.restoreGroup(actorOf(req), uuid.parse(req.params.id)))));
+// For good, with its members, lessons and attendance (the "delete" button; archiving keeps the history).
+staffRoutes.delete("/groups/:id/permanent", groupWriters, h(async (req, res) => success(res, await groups.deleteGroup(actorOf(req), uuid.parse(req.params.id)))));
 staffRoutes.post("/groups/:id/members", groupWriters, h(async (req, res) => success(res, await groups.addMember(actorOf(req), uuid.parse(req.params.id), memberSchema.parse(req.body).studentId), 201)));
 staffRoutes.delete("/groups/:id/members/:studentId", groupWriters, h(async (req, res) => success(res, await groups.removeMember(actorOf(req), uuid.parse(req.params.id), uuid.parse(req.params.studentId)))));
 staffRoutes.post("/groups/:id/slots", groupWriters, h(async (req, res) => success(res, await groups.createSlots(actorOf(req), uuid.parse(req.params.id), slotSchema.parse(req.body)), 201)));

@@ -1920,5 +1920,33 @@
     "rule2": "Rol o'zgarsa, akkauntning barcha sessiyalari darhol yopiladi va sabab audit jurnaliga yoziladi.",
     "rule3": "O'qituvchi qilinganda teacher0001… raqami beriladi, user raqami bo'shab yangi foydalanuvchiga o'tadi; kurslar va natijalar o'zida qoladi.",
     "rule4": "Faol guruhi bor o'qituvchidan rol olinmaydi — avval guruhlarni boshqa o'qituvchiga bering."
+  },
+  "groupDelete": {
+    "title": "Tanlangan {{count}} ta guruhni o'chirasizmi?",
+    "text": "Guruhlar butunlay o'chiriladi: a'zolari, darslari va davomat tarixi ham. Buni qaytarib bo'lmaydi.",
+    "done": "{{count}} ta guruh o'chirildi",
+    "partly": "{{done}} ta o'chirildi, {{failed}} tasini o'chirib bo'lmadi",
+    "deleteSelected": "Tanlanganlarni o'chirish ({{count}})",
+    "all": "Hammasini tanlash",
+    "none": "Tanlovni bekor qilish",
+    "pickHint": "O'chiriladigan guruhlarni bosib tanlang."
+  },
+  "groupArchive": {
+    "show": "Arxiv ({{count}})",
+    "back": "Faol guruhlar",
+    "empty": "Arxivda guruh yo'q",
+    "editTitle": "«{{name}}» — tahrirlash",
+    "edit": "Tahrirlash",
+    "archive": "Arxivlash",
+    "restore": "Arxivdan chiqarish",
+    "pickEdit": "Tahrirlanadigan guruhni bosing.",
+    "pickArchive": "Arxivlanadigan guruhlarni bosib tanlang.",
+    "pickRestore": "Arxivdan chiqariladigan guruhlarni bosib tanlang.",
+    "archiveSelected": "Arxivlash ({{count}})",
+    "restoreSelected": "Arxivdan chiqarish ({{count}})",
+    "archived": "{{count}} ta guruh arxivlandi",
+    "restored": "{{count}} ta guruh arxivdan chiqarildi",
+    "partly": "{{done}} tasi bajarildi, {{failed}} tasini bo'lmadi",
+    "ended": "Tugash sanasi o'tgan guruhni avval tahrirlab, sanasini uzaytiring."
   }
 }

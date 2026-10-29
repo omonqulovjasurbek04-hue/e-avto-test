@@ -17,6 +17,8 @@ export interface GroupFormProps {
 }
 
 const dateOnly = (iso?: string | null) => (iso ? iso.slice(0, 10) : "");
+/** Today in Tashkent as YYYY-MM-DD: a new group starts the day it is opened. */
+const todayTashkent = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
 
 /** Opening or editing a group: name, course, (teacher), dates, toq/juft kunlar, lesson time and length. */
 export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }: GroupFormProps) {
@@ -25,7 +27,8 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
     name: group?.name ?? "",
     courseId: group?.courseId ?? "",
     teacherId: group?.teacherId ?? "",
-    startDate: dateOnly(group?.startDate),
+    // Not asked: a new group starts today; an existing one keeps its own start date.
+    startDate: dateOnly(group?.startDate) || todayTashkent(),
     endDate: dateOnly(group?.endDate),
     capacity: String(group?.capacity ?? 20),
     days: (group?.days ?? "") as GroupDays | "",
@@ -72,10 +75,7 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
           onChange={(e) => set({ teacherId: e.target.value })}
         />
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <Input label={t("groupForm.startDate")} type="date" value={f.startDate} onChange={(e) => set({ startDate: e.target.value })} />
-        <Input label={t("groupForm.endDate")} type="date" value={f.endDate} onChange={(e) => set({ endDate: e.target.value })} />
-      </div>
+      <Input label={t("groupForm.endDate")} type="date" min={f.startDate} value={f.endDate} onChange={(e) => set({ endDate: e.target.value })} />
 
       <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
         <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-200">{t("groupForm.rhythm")}</legend>
