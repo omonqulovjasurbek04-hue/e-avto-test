@@ -136,7 +136,10 @@ export const recordVideoWatch = async (userId: string, role: string, lessonId: s
 };
 
 export const getLessonProgress = async (userId: string, lessonId: string) => {
-  const lesson = await prisma.lesson.findUnique({ where: { id: lessonId }, select: { id: true } });
+  const lesson = await prisma.lesson.findFirst({
+    where: { id: lessonId, isPublished: true, course: { isPublished: true } },
+    select: { id: true },
+  });
   if (!lesson) throw notFound("Lesson not found");
   return prisma.lessonProgress.findUnique({ where: { userId_lessonId: { userId, lessonId } } });
 };
@@ -156,7 +159,7 @@ export const getProgress = async (userId: string) => {
     select: {
       id: true,
       title: true,
-      _count: { select: { lessons: true } },
+      _count: { select: { lessons: { where: { isPublished: true } } } },
       progress: { where: { userId }, select: { completedLessons: true, percent: true, updatedAt: true } },
     },
   });

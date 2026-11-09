@@ -25,11 +25,11 @@ export const listOwnOrders = (userId: string) =>
  * nothing price-related is accepted from the client. Order items snapshot the price paid.
  */
 export const createOrder = async (userId: string, packageId: string, couponCode?: string) => {
-  const provider = activeProvider();
-  if (!provider) throw new HttpError(503, "Payments are not configured");
-
   const q = await quote(packageId, couponCode);
   if (couponCode && !q.couponApplied) throw badRequest(`Coupon cannot be applied (${q.couponRejection})`);
+
+  const provider = activeProvider();
+  if (q.total > 0 && !provider) throw new HttpError(503, "Payments are not configured");
 
   const pkg = await prisma.coursePackage.findUniqueOrThrow({ where: { id: packageId }, include: { course: true } });
   const existing = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId: pkg.courseId } } });
@@ -68,6 +68,8 @@ export const createOrder = async (userId: string, packageId: string, couponCode?
     await fulfilOrder(payment.id, "order.free");
     return getOwnOrder(userId, order.id);
   }
+
+  if (!provider) throw new HttpError(503, "Payments are not configured");
 
   const payment = await prisma.payment.create({
     data: { orderId: order.id, provider: provider.name, amount: order.total, currency: order.currency },

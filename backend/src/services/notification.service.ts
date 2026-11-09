@@ -278,7 +278,16 @@ const audienceUserIds = async (a: Audience): Promise<string[]> => {
     return (await prisma.groupMembership.findMany({ where: { groupId: a.groupId, leftAt: null, student: { isActive: true } }, select: { studentId: true } })).map((m) => m.studentId);
   }
   if (!(await prisma.course.findUnique({ where: { id: a.courseId }, select: { id: true } }))) throw notFound("Course not found");
-  const rows = await prisma.enrollment.findMany({ where: { courseId: a.courseId, status: "ACTIVE", user: { isActive: true } }, select: { userId: true } });
+  const now = new Date();
+  const rows = await prisma.enrollment.findMany({
+    where: {
+      courseId: a.courseId,
+      status: "ACTIVE",
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      user: { isActive: true },
+    },
+    select: { userId: true },
+  });
   return rows.map((r) => r.userId);
 };
 

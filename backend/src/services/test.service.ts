@@ -103,7 +103,15 @@ export const startTest = async (userId: string, input: TestStartInput, role = "U
   const config = targetCourseId && !practice ? await prisma.testConfig.findUnique({ where: { courseId: targetCourseId } }) : null;
   // Tickets are practice before the exam: they do not use up the course's exam attempts.
   if (config?.maxAttempts && !input.ticket) {
-    const used = await prisma.test.count({ where: { userId, courseId: targetCourseId!, mode: "EXAM" } });
+    const used = await prisma.test.count({
+      where: {
+        userId,
+        courseId: targetCourseId!,
+        mode: "EXAM",
+        ticket: null,
+        finishedAt: { not: null },
+      },
+    });
     if (used >= config.maxAttempts) throw conflict("Attempt limit reached for this course");
   }
   if (input.courseId) where.courseId = input.courseId;

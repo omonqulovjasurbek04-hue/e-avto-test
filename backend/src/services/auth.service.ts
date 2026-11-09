@@ -97,13 +97,14 @@ export const checkPassword = async (input: LoginInput): Promise<User> => {
   const user = input.phone
     ? await prisma.user.findUnique({ where: { phone: input.phone } })
     : await prisma.user.findUnique({ where: { email: input.email! } });
-  // Telegram-only accounts have no password, so password login is never possible for them.
-  const valid = await comparePassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
   // While locked, even the correct password is refused (so the lock cannot be probed with guesses).
   if (user?.lockedUntil && user.lockedUntil > new Date()) {
     throw new HttpError(429, "Too many failed attempts, try again in a few minutes");
   }
+
+  // Telegram-only accounts have no password, so password login is never possible for them.
+  const valid = await comparePassword(input.password, user?.passwordHash ?? DUMMY_HASH);
 
   if (!user || !user.passwordHash || !valid) {
     if (user) {

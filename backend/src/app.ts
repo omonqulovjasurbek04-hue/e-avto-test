@@ -115,7 +115,15 @@ app.use(
   })
 );
 // Plain HTML form posts (no nested objects); payment providers may notify in this format.
-app.use(express.urlencoded({ extended: false, limit: "100kb" }));
+app.use(
+  express.urlencoded({
+    extended: false,
+    limit: "100kb",
+    verify: (req, _res, buf) => {
+      (req as Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  })
+);
 
 const health = async (_req: Request, res: Response): Promise<void> => {
   await prisma.$queryRaw`SELECT 1`;
