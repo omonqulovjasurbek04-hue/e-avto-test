@@ -6,6 +6,7 @@ import { Readable } from "stream";
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eavto-media-"));
 process.env.MEDIA_DIR = dir;
+process.env.STORAGE_DRIVER = "local";
 
 describe("private storage", () => {
   let storage: typeof import("../src/lib/media/storage");

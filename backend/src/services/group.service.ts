@@ -345,8 +345,7 @@ export const searchStudents = async (query: string) => {
       ? {}
       : accountIdFilter(q) ?? (isPhone ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" } });
   return prisma.user.findMany({
-    // Only real students (they get a student#### number on their first course); plain users stay out.
-    where: { role: "USER", isActive: true, studentNumber: { not: null }, ...where },
+    where: { role: "USER", isActive: true, ...where },
     orderBy: q.length === 0 ? { createdAt: "desc" } : { name: "asc" },
     take: q.length === 0 ? 20 : 10,
     select: { id: true, name: true, phone: true, userNumber: true, studentNumber: true },

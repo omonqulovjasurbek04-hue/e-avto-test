@@ -145,7 +145,7 @@ describe.skipIf(!enabled)("groups, schedule and attendance", () => {
     expect(mine.body.data.lessons[0].records[0].status).toBe("PRESENT");
 
     expect((await request(app).get(url).set(bearer("teacherB"))).status).toBe(404);
-    expect((await request(app).get(`/api/groups/${groupId}/attendance-journal?month=2026-13`).set(bearer("teacherA"))).status).toBe(400);
+    expect((await request(app).get(`/api/groups/${groupId}/attendance-journal?month=2026-13`).set(bearer("teacherA"))).status).toBe(422);
   });
 
   it("CSV export is admin-only", async () => {

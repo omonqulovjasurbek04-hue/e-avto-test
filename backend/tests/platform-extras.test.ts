@@ -77,7 +77,7 @@ describe.skipIf(!enabled)("platform extras", () => {
 
     it("a question editor uploads a scanned clip and gets a public URL", async () => {
       const before = scans;
-      const res = await request(app).put("/api/teacher/clips").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(MP4);
+      const res = await request(app).put("/api/teacher/clips").set(bearer("admin")).set("Content-Type", "application/octet-stream").send(MP4);
       expect(res.status).toBe(201);
       expect(scans).toBe(before + 1);
       expect(res.body.data.url).toMatch(/^https:\/\/api\.example\.uz\/api\/clips\/[a-f0-9-]{36}\.mp4$/);
@@ -93,8 +93,9 @@ describe.skipIf(!enabled)("platform extras", () => {
     });
 
     it("accepts only video, and only from question editors", async () => {
-      expect((await request(app).put("/api/teacher/clips").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(PNG)).status).toBe(415);
+      expect((await request(app).put("/api/teacher/clips").set(bearer("admin")).set("Content-Type", "application/octet-stream").send(PNG)).status).toBe(415);
       expect((await request(app).put("/api/teacher/clips").set(bearer("student")).set("Content-Type", "application/octet-stream").send(MP4)).status).toBe(403);
+      expect((await request(app).put("/api/teacher/clips").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(MP4)).status).toBe(403);
       expect((await request(app).get("/api/clips/not-a-clip.mp4")).status).toBe(404);
     });
   });
@@ -105,7 +106,7 @@ describe.skipIf(!enabled)("platform extras", () => {
 
     it("a content editor uploads a scanned image and gets an absolute public URL", async () => {
       const before = scans;
-      const res = await request(app).put("/api/admin/cms/images?filename=cover.png").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(PNG);
+      const res = await request(app).put("/api/admin/cms/images?filename=cover.png").set(bearer("admin")).set("Content-Type", "application/octet-stream").send(PNG);
       expect(res.status).toBe(201);
       expect(scans).toBe(before + 1);
       expect(res.body.data.url).toMatch(/^https:\/\/api\.example\.uz\/api\/images\/[a-f0-9-]{36}\.png$/);
@@ -150,6 +151,7 @@ describe.skipIf(!enabled)("platform extras", () => {
     it("rejects non-images and students", async () => {
       expect((await request(app).put("/api/admin/cms/images").set(bearer("admin")).set("Content-Type", "application/octet-stream").send(Buffer.from("%PDF-1.7 x"))).status).toBe(415);
       expect((await request(app).put("/api/admin/cms/images").set(bearer("student")).set("Content-Type", "application/octet-stream").send(PNG)).status).toBe(403);
+      expect((await request(app).put("/api/admin/cms/images").set(bearer("moder")).set("Content-Type", "application/octet-stream").send(PNG)).status).toBe(403);
     });
 
     it("private files are never served by the public image route", async () => {
@@ -160,9 +162,9 @@ describe.skipIf(!enabled)("platform extras", () => {
     });
 
     it("lists and deletes images", async () => {
-      const list = await request(app).get("/api/admin/cms/images").set(bearer("moder"));
+      const list = await request(app).get("/api/admin/cms/images").set(bearer("admin"));
       expect(list.body.data.some((i: { id: string }) => i.id === imageId)).toBe(true);
-      expect((await request(app).delete(`/api/admin/cms/images/${imageId}`).set(bearer("moder"))).status).toBe(200);
+      expect((await request(app).delete(`/api/admin/cms/images/${imageId}`).set(bearer("admin"))).status).toBe(200);
       expect((await request(app).get(imagePath)).status).toBe(404);
     });
   });
