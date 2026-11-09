@@ -1,10 +1,22 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Integration: a missed class sends a site notice and up to 3 Telegram reminders
-// (right away, after 1 hour, the next day); reading the notice or a corrected mark stops them. Needs PostgreSQL.
+// (+1 hour, next day at the lesson time, then 20:00 that evening in Tashkent). Needs PostgreSQL.
 const enabled = Boolean(process.env.TEST_DATABASE_URL);
 const run = `abs${Date.now()}`;
 const HOUR = 60 * 60 * 1000;
+
+describe("Telegram reminder schedule", () => {
+  it("uses the Tashkent schedule and the original lesson time", async () => {
+    const { telegramReminderAt } = await import("../src/services/notification.service");
+    const createdAt = new Date("2025-01-15T12:00:00.000Z");
+    const lessonAt = new Date("2025-01-15T03:30:00.000Z");
+    expect(telegramReminderAt(createdAt, 0)).toEqual(new Date("2025-01-15T13:00:00.000Z"));
+    expect(telegramReminderAt(createdAt, 1, lessonAt)).toEqual(new Date("2025-01-16T03:30:00.000Z"));
+    expect(telegramReminderAt(createdAt, 2, lessonAt)).toEqual(new Date("2025-01-16T15:00:00.000Z"));
+    expect(telegramReminderAt(createdAt, 3)).toBeNull();
+  });
+});
 
 describe.skipIf(!enabled)("missed class reminders", () => {
   let prisma: typeof import("../src/config/database").prisma;
@@ -33,14 +45,8 @@ describe.skipIf(!enabled)("missed class reminders", () => {
       expect(n.dedupeKey).toBe(`absent:${session.id}`);
       return n;
     });
-  // Pretend the notice was created `hoursAgo` ago, so the next reminders become due.
-  const age = (id: string, hoursAgo: number) =>
-    prisma.notification.update({ where: { id }, data: { createdAt: new Date(Date.now() - hoursAgo * HOUR) } }).then(async (n) => {
-      if (n.telegramNextAt) {
-        const offset = notifications.TELEGRAM_REMINDERS_MS[n.telegramSends];
-        await prisma.notification.update({ where: { id }, data: { telegramNextAt: new Date(n.createdAt.getTime() + offset) } });
-      }
-    });
+  const makeReminderDue = (id: string) =>
+    prisma.notification.update({ where: { id }, data: { telegramNextAt: new Date(Date.now() - 1000) } });
 
   beforeAll(async () => {
     vi.stubGlobal(
@@ -76,33 +82,35 @@ describe.skipIf(!enabled)("missed class reminders", () => {
     await prisma.$disconnect();
   });
 
-  it("a missed class: site notice + 3 Telegram reminders (now, +1 hour, next day), then nothing", async () => {
+  it("sends reminders after one hour, then at lesson time and 20:00 the next day", async () => {
     const s = await slot(5);
     await mark(s, uid.linked, "ABSENT");
     await notifications.processTelegramReminders();
     const n = await absentNotice(uid.linked, s);
     expect(n.inApp).toBe(true); // shown under "Bildirishnomalar"
+    expect(sent).toHaveLength(0);
+    expect(n.telegramNextAt?.getTime()).toBe(n.createdAt.getTime() + HOUR);
+
+    await makeReminderDue(n.id);
+    await notifications.processTelegramReminders();
     expect(sent).toHaveLength(1);
     expect(sent[0].chat_id).toBe(`${run}-tg1`);
     expect(sent[0].text).not.toMatch(/Eslatma/);
+    const firstAt = notifications.telegramReminderAt(n.createdAt, 1, n.telegramLessonAt);
+    expect((await prisma.notification.findUniqueOrThrow({ where: { id: n.id } })).telegramNextAt).toEqual(firstAt);
 
-    // Not due yet: nothing more.
-    await notifications.processTelegramReminders();
-    expect(sent).toHaveLength(1);
-
-    await age(n.id, 1.1);
+    await makeReminderDue(n.id);
     await notifications.processTelegramReminders();
     expect(sent).toHaveLength(2);
     expect(sent[1].text).toMatch(/^Eslatma \(2\/3\)/);
+    expect((await prisma.notification.findUniqueOrThrow({ where: { id: n.id } })).telegramNextAt).toEqual(
+      notifications.telegramReminderAt(n.createdAt, 2, n.telegramLessonAt)
+    );
 
-    await age(n.id, 25);
+    await makeReminderDue(n.id);
     await notifications.processTelegramReminders();
     expect(sent).toHaveLength(3);
     expect(sent[2].text).toMatch(/^Eslatma \(3\/3\)/);
-
-    await age(n.id, 100);
-    await notifications.processTelegramReminders();
-    expect(sent).toHaveLength(3);
     expect((await prisma.notification.findUniqueOrThrow({ where: { id: n.id } })).telegramNextAt).toBeNull();
   });
 
@@ -110,12 +118,12 @@ describe.skipIf(!enabled)("missed class reminders", () => {
     const s = await slot(4);
     await mark(s, uid.linked, "ABSENT");
     await notifications.processTelegramReminders();
-    expect(sent).toHaveLength(1);
+    expect(sent).toHaveLength(0);
     const n = await absentNotice(uid.linked, s);
     await prisma.notification.update({ where: { id: n.id }, data: { readAt: new Date() } });
-    await age(n.id, 30);
+    await makeReminderDue(n.id);
     await notifications.processTelegramReminders();
-    expect(sent).toHaveLength(1);
+    expect(sent).toHaveLength(0);
   });
 
   it("a mark corrected to PRESENT cancels the reminders; no Telegram link means site notice only", async () => {
@@ -132,5 +140,37 @@ describe.skipIf(!enabled)("missed class reminders", () => {
     const site = await prisma.notification.findFirst({ where: { userId: uid.unlinked, type: "ATTENDANCE_ABSENT" } });
     expect(site?.inApp).toBe(true);
     expect(site?.telegramNextAt).toBeNull();
+  });
+
+  it("sends a teacher-written message only to linked students marked absent in that lesson", async () => {
+    const s = await slot(2);
+    await mark(s, uid.linked, "ABSENT");
+    await mark(s, uid.unlinked, "ABSENT");
+    const todayMessage = "Bugungi xabar.";
+    const tomorrowMessage = "Ertangi alohida eslatma.";
+
+    const result = await attendance.sendAttendanceTelegramMessage(
+      { userId: uid.teacher, role: "TEACHER" },
+      groupId,
+      s,
+      todayMessage,
+      tomorrowMessage
+    );
+
+    expect(result).toEqual({ recipients: 1, sent: 1, failed: 0 });
+    expect(sent).toEqual([{ chat_id: `${run}-tg1`, text: todayMessage }]);
+
+    let notice = await absentNotice(uid.linked, s);
+    expect(notice.telegramTodayMessage).toBe(todayMessage);
+    expect(notice.telegramTomorrowMessage).toBe(tomorrowMessage);
+
+    await makeReminderDue(notice.id);
+    await notifications.processTelegramReminders();
+    expect(sent[1].text).toContain(todayMessage);
+
+    notice = await absentNotice(uid.linked, s);
+    await makeReminderDue(notice.id);
+    await notifications.processTelegramReminders();
+    expect(sent[2].text).toContain(tomorrowMessage);
   });
 });

@@ -8,7 +8,6 @@ import { useUIStore } from "../store/ui.store";
 import { Button } from "../components/ui";
 import { useSiteSettings } from "../hooks/useSiteSettings";
 import {
-  Car,
   Moon,
   Sun,
   Menu,
@@ -53,7 +52,7 @@ export const MainLayout: React.FC = () => {
           <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-blue-500 text-white shadow-md shadow-brand-500/25 group-hover:scale-105 transition-transform">
-              <Car className="h-5 w-5" />
+              <img src="/brand-logo.png" alt="" className="h-10 w-10 rounded-xl object-cover" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-black tracking-tight bg-gradient-to-r from-brand-600 to-blue-700 bg-clip-text text-transparent dark:from-brand-400 dark:to-blue-300">

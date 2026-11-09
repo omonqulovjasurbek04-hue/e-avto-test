@@ -16,7 +16,7 @@ export const phoneSchema = z
     return phone;
   });
 
-const password = z
+export const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
   .max(100)
@@ -28,7 +28,7 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
     email: z.string().trim().toLowerCase().email("Invalid email").optional(),
-    password,
+    password: passwordSchema,
     phone: phoneSchema.optional(),
   })
   .refine((v) => v.phone || v.email, { message: "Phone number is required", path: ["phone"] });
@@ -57,7 +57,7 @@ const fullNameSchema = z
 export const completeRegistrationSchema = z.object({
   name: fullNameSchema,
   phone: phoneSchema,
-  password,
+  password: passwordSchema,
 });
 
 export const updateProfileSchema = z.object({
@@ -70,7 +70,7 @@ export const updateProfileSchema = z.object({
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(100),
-  newPassword: password,
+  newPassword: passwordSchema,
 });
 
 export const forgotPasswordSchema = z.object({
@@ -79,7 +79,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(20).max(200),
-  password,
+  password: passwordSchema,
 });
 
 export const verifyEmailSchema = z.object({

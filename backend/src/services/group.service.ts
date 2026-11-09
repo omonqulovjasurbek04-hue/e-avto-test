@@ -6,6 +6,7 @@ import { accountIdFilter } from "../lib/accountNumbers";
 import { expandRecurrence, findConflicts, GroupDays, Interval, Recurrence, RHYTHM_WEEKDAYS, rhythmIntervals } from "../lib/schedule";
 import { writeAudit } from "./audit.service";
 import { dispatchEmails, notify } from "./notification.service";
+import { scheduleSettingsSchema } from "../validators/groups";
 
 export interface Actor {
   userId: string;
@@ -45,6 +46,26 @@ const assertTeacher = async (teacherId: string) => {
 
 /** Lesson length when a rhythm is chosen without one. */
 export const DEFAULT_LESSON_MINUTES = 90;
+const SCHEDULE_SETTINGS_KEY = "teacher_schedule";
+const DEFAULT_SCHEDULE_SETTINGS = { workStart: "08:00", workEnd: "20:00", lessonMinutes: DEFAULT_LESSON_MINUTES, breakMinutes: 15 };
+
+export const getScheduleSettings = async () => {
+  const setting = await prisma.siteSetting.findUnique({ where: { key: SCHEDULE_SETTINGS_KEY }, select: { value: true } });
+  return scheduleSettingsSchema.parse(setting?.value ?? DEFAULT_SCHEDULE_SETTINGS);
+};
+
+export const updateScheduleSettings = async (actor: Actor, input: ReturnType<typeof scheduleSettingsSchema.parse>) => {
+  const value = input as Prisma.InputJsonValue;
+  await prisma.$transaction(async (tx) => {
+    await tx.siteSetting.upsert({
+      where: { key: SCHEDULE_SETTINGS_KEY },
+      create: { key: SCHEDULE_SETTINGS_KEY, value },
+      update: { value },
+    });
+    await writeAudit({ actorId: actor.userId, action: "schedule.settings.update", entity: "SiteSetting", entityId: SCHEDULE_SETTINGS_KEY, after: input }, tx);
+  });
+  return input;
+};
 
 export interface GroupInput {
   name: string;
@@ -54,18 +75,40 @@ export interface GroupInput {
   endDate?: Date | null;
   capacity: number;
   days?: GroupDays | null;
+  weekdays?: number[] | null;
   startTime?: string | null;
   lessonMinutes?: number | null;
   room?: string | null;
 }
 
 /** The lessons a rhythm produces (from `from` on), or none when the group has no rhythm. */
-const lessonsOf = (g: Pick<GroupInput, "startDate" | "endDate" | "days" | "startTime" | "lessonMinutes">, from?: Date) => {
-  if (!g.days || !g.startTime) return [];
+const lessonsOf = (g: Pick<GroupInput, "startDate" | "endDate" | "days" | "weekdays" | "startTime" | "lessonMinutes">, from?: Date) => {
+  const hasDays = Boolean(g.days) || Boolean(g.weekdays && g.weekdays.length > 0);
+  if (!hasDays || !g.startTime) return [];
   try {
-    return rhythmIntervals({ startDate: g.startDate, endDate: g.endDate, days: g.days, startTime: g.startTime, lessonMinutes: g.lessonMinutes ?? DEFAULT_LESSON_MINUTES }, from);
+    return rhythmIntervals(
+      { startDate: g.startDate, endDate: g.endDate, days: g.days, weekdays: g.weekdays, startTime: g.startTime, lessonMinutes: g.lessonMinutes ?? DEFAULT_LESSON_MINUTES },
+      from
+    );
   } catch (e) {
     throw badRequest((e as Error).message);
+  }
+};
+
+const assertWithinWorkHours = (
+  group: Pick<GroupInput, "days" | "weekdays" | "startTime" | "lessonMinutes">,
+  settings: Awaited<ReturnType<typeof getScheduleSettings>>,
+) => {
+  if ((!group.days && !group.weekdays?.length) || !group.startTime) return;
+  const [hours, minutes] = group.startTime.split(":").map(Number);
+  const start = hours * 60 + minutes;
+  const duration = group.lessonMinutes ?? settings.lessonMinutes;
+  const workStart = settings.workStart.split(":").map(Number);
+  const workEnd = settings.workEnd.split(":").map(Number);
+  const startLimit = workStart[0] * 60 + workStart[1];
+  const endLimit = workEnd[0] * 60 + workEnd[1];
+  if (start < startLimit || start + duration > endLimit) {
+    throw badRequest(`Group lesson must fit within working hours (${settings.workStart}–${settings.workEnd})`);
   }
 };
 
@@ -81,10 +124,29 @@ const assertNoConflicts = async (intervals: Interval[], teacherId: string, room:
       endsAt: { gt: from },
       ...(replacing ? { NOT: { groupId: replacing.groupId, startsAt: { gte: replacing.from } } } : {}),
     },
-    include: { group: { select: { teacherId: true } } },
+    include: { group: { select: { teacherId: true, name: true } } },
   });
-  const existing = nearby.map((s) => ({ id: s.id, startsAt: s.startsAt, endsAt: s.endsAt, room: s.room, groupId: s.groupId, teacherId: s.group.teacherId }));
-  const conflicts = intervals.flatMap((iv) => findConflicts({ ...iv, teacherId, room }, existing).map((c) => ({ ...c, startsAt: iv.startsAt })));
+  const existing = nearby.map((s) => ({
+    id: s.id,
+    startsAt: s.startsAt,
+    endsAt: s.endsAt,
+    room: s.room,
+    groupId: s.groupId,
+    groupName: s.group.name,
+    teacherId: s.group.teacherId,
+  }));
+  const conflicts = intervals.flatMap((iv) =>
+    findConflicts({ ...iv, teacherId, room }, existing).map((c) => {
+      const slot = existing.find((s) => s.id === c.slotId);
+      return {
+        ...c,
+        startsAt: iv.startsAt,
+        conflictingStartsAt: slot?.startsAt,
+        conflictingEndsAt: slot?.endsAt,
+        conflictingGroup: slot?.groupName,
+      };
+    })
+  );
   if (conflicts.length > 0) throw Object.assign(conflict("Schedule conflict"), { details: conflicts });
 };
 
@@ -96,15 +158,19 @@ export const createGroup = async (actor: Actor, input: Omit<GroupInput, "teacher
   if (!isAdmin(actor) && !hasPermission(actor.role, "groups:own")) throw forbidden("You cannot open groups");
   const teacherId = isAdmin(actor) ? input.teacherId : actor.userId;
   if (!teacherId) throw badRequest("teacherId is required");
-  const data: GroupInput = {
+  const scheduleSettings = await getScheduleSettings();
+  const hasRhythm = Boolean(input.days) || Boolean(input.weekdays && input.weekdays.length > 0);
+  const data = {
     ...input,
     teacherId,
-    lessonMinutes: input.days ? (input.lessonMinutes ?? DEFAULT_LESSON_MINUTES) : input.lessonMinutes,
+    weekdays: input.weekdays ?? [],
+    lessonMinutes: hasRhythm ? input.lessonMinutes ?? scheduleSettings.lessonMinutes : input.lessonMinutes,
   };
   await assertTeacher(data.teacherId);
   if (!(await prisma.course.findUnique({ where: { id: data.courseId }, select: { id: true } }))) throw notFound("Course not found");
   if (data.endDate && data.endDate <= data.startDate) throw badRequest("endDate must be after startDate");
 
+  assertWithinWorkHours(data, scheduleSettings);
   const lessons = lessonsOf(data);
   await assertNoConflicts(lessons, data.teacherId, data.room ?? null);
   return prisma.$transaction(async (tx) => {
@@ -128,12 +194,21 @@ export const updateGroup = async (actor: Actor, id: string, data: Partial<GroupI
   }
   if (typeof data.capacity === "number" && data.capacity < before._count.members) throw conflict("Capacity is below the current number of members");
   const next = { ...before, ...data };
-  if (data.days && !data.lessonMinutes && !before.lessonMinutes) next.lessonMinutes = DEFAULT_LESSON_MINUTES;
+  // One source of the weekly rhythm wins: a fixed toq/juft rhythm clears custom weekdays, and custom
+  // weekdays (days: null + weekdays) clear the fixed rhythm.
+  const nextDays = data.days !== undefined ? data.days : before.days;
+  const nextWeekdays = nextDays ? [] : data.weekdays !== undefined ? data.weekdays ?? [] : before.weekdays;
+  next.days = nextDays;
+  next.weekdays = nextWeekdays;
+  if ((next.days || next.weekdays.length > 0) && !data.lessonMinutes && !before.lessonMinutes) {
+    next.lessonMinutes = (await getScheduleSettings()).lessonMinutes;
+  }
   if (next.endDate && next.endDate <= next.startDate) throw badRequest("endDate must be after startDate");
 
-  const rhythmKeys = ["days", "startTime", "lessonMinutes", "room", "startDate", "endDate"] as const;
-  const rhythmChanged = rhythmKeys.some((k) => data[k] !== undefined && String(data[k]) !== String(before[k]));
+  const rhythmKeys = ["days", "weekdays", "startTime", "lessonMinutes", "room", "startDate", "endDate"] as const;
+  const rhythmChanged = rhythmKeys.some((k) => String(next[k]) !== String(before[k]));
   const from = new Date(Math.max(Date.now(), next.startDate.getTime()));
+  if (rhythmChanged) assertWithinWorkHours(next, await getScheduleSettings());
   const lessons = rhythmChanged ? lessonsOf(next, from) : [];
   if (rhythmChanged) await assertNoConflicts(lessons, next.teacherId, next.room ?? null, { groupId: id, from });
 
@@ -143,16 +218,22 @@ export const updateGroup = async (actor: Actor, id: string, data: Partial<GroupI
       where: { id },
       data: {
         ...data,
+        days: nextDays,
+        weekdays: nextWeekdays,
         ...(next.lessonMinutes !== before.lessonMinutes ? { lessonMinutes: next.lessonMinutes } : {}),
         // A finished (archived) group whose end date is moved into the future runs again.
         ...(before.status === "ARCHIVED" && data.endDate !== undefined && (!next.endDate || next.endDate > new Date()) ? { status: "ACTIVE" as const } : {}),
       },
     });
     let replaced = 0;
-    if (rhythmChanged && next.days && next.startTime) {
+    if (rhythmChanged) {
       // Lessons that already have attendance are history and stay; only untouched future lessons move.
       replaced = (await tx.scheduleSlot.deleteMany({ where: { groupId: id, startsAt: { gte: from }, status: "PLANNED", session: null } })).count;
-      if (lessons.length > 0) await tx.scheduleSlot.createMany({ data: lessons.map((iv) => ({ groupId: id, ...iv, room: next.room ?? null })) });
+      if (lessons.length > 0) {
+        await tx.scheduleSlot.createMany({ data: lessons.map((iv) => ({ groupId: id, ...iv, room: next.room ?? null })) });
+      }
+    }
+    if (lessons.length > 0) {
       for (const studentId of await memberIds(tx, id)) {
         emailIds.push(await notify({ userId: studentId, type: "SCHEDULE_NEW", dedupeKey: `rhythm:${id}:${g.updatedAt.getTime()}`, template: "SCHEDULE_NEW", vars: { group: g.name, count: lessons.length }, email: true }, tx));
       }
@@ -250,19 +331,24 @@ export const getGroup = async (actor: Actor, id: string) => {
 
 // ───────────── membership ─────────────
 
-/** Students a group owner can add: active student accounts by name, phone or user####/student####. */
+/**
+ * Students a group owner can add. Without a query it lists the newest active students
+ * (so the picker shows who is registered); otherwise it matches name, phone or user####/student####.
+ */
 export const searchStudents = async (query: string) => {
   const q = query.trim().slice(0, 80);
-  if (q.length < 2) return [];
   const digits = q.replace(/\D/g, "");
   // Only a query that looks like a phone number ("90 123 45 67", "+998…") is matched against phones.
   const isPhone = /^[\d\s+()-]+$/.test(q) && digits.length >= 4;
   const where: Prisma.UserWhereInput =
-    accountIdFilter(q) ?? (isPhone ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" } });
+    q.length === 0
+      ? {}
+      : accountIdFilter(q) ?? (isPhone ? { phone: { contains: digits.slice(-9) } } : { name: { contains: q, mode: "insensitive" } });
   return prisma.user.findMany({
-    where: { role: "USER", isActive: true, ...where },
-    orderBy: { name: "asc" },
-    take: 10,
+    // Only real students (they get a student#### number on their first course); plain users stay out.
+    where: { role: "USER", isActive: true, studentNumber: { not: null }, ...where },
+    orderBy: q.length === 0 ? { createdAt: "desc" } : { name: "asc" },
+    take: q.length === 0 ? 20 : 10,
     select: { id: true, name: true, phone: true, userNumber: true, studentNumber: true },
   });
 };
@@ -451,6 +537,7 @@ export const studentGroups = async (studentId: string, now = new Date()) => {
       id: true,
       name: true,
       days: true,
+      weekdays: true,
       startTime: true,
       lessonMinutes: true,
       course: { select: { title: true } },
@@ -463,11 +550,18 @@ export const studentGroups = async (studentId: string, now = new Date()) => {
   });
   return groups.map((g) => {
     // A rhythm chosen when the group was opened is the answer; older groups are read from their lessons.
-    if (g.days && g.startTime) {
+    if ((g.days || g.weekdays.length > 0) && g.startTime) {
       const [hh, mm] = g.startTime.split(":").map(Number);
       const end = hh * 60 + mm + (g.lessonMinutes ?? DEFAULT_LESSON_MINUTES);
       const endTime = `${String(Math.floor(end / 60) % 24).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
-      return { id: g.id, name: g.name, course: g.course.title, days: g.days, weekdays: [...RHYTHM_WEEKDAYS[g.days]], time: `${g.startTime}–${endTime}` };
+      return {
+        id: g.id,
+        name: g.name,
+        course: g.course.title,
+        days: g.days ?? "CUSTOM",
+        weekdays: g.days ? [...RHYTHM_WEEKDAYS[g.days]] : [...g.weekdays].sort((a, b) => a - b),
+        time: `${g.startTime}–${endTime}`,
+      };
     }
     // Monday = 1 … Sunday = 7, in Tashkent.
     const weekdays = [...new Set(g.slots.map((s) => new Date(s.startsAt.getTime() + TZ_OFFSET_MS).getUTCDay() || 7))].sort();

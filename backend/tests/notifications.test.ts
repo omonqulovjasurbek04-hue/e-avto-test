@@ -22,7 +22,7 @@ describe.skipIf(!enabled)("notifications: preferences, e-mail delivery, announce
   let groupId = "";
   let slotId = "";
 
-  const signup = async (k: string, role?: "ADMIN" | "TEACHER" | "MODERATOR") => {
+  const signup = async (k: string, role?: "ADMIN" | "TEACHER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: email(k), password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     uid[k] = res.body.data.user.id;
@@ -37,7 +37,7 @@ describe.skipIf(!enabled)("notifications: preferences, e-mail delivery, announce
     ({ prisma } = await import("../src/config/database"));
     svc = await import("../src/services/notification.service");
     await signup("admin", "ADMIN");
-    await signup("moderator", "MODERATOR");
+    await signup("moderator", "ADMIN");
     await signup("teacher", "TEACHER");
     for (const k of ["a", "b", "outsider"]) await signup(k);
 

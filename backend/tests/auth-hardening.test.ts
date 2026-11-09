@@ -284,7 +284,7 @@ describe.skipIf(!enabled)("auth hardening", () => {
   describe("TOTP two-factor", () => {
     const codeNow = (secret: string, offset = 0) => codeForStep(secret, currentStep() + offset);
 
-    async function staff(label: string, role: "ADMIN" | "FINANCE" | "SUPERADMIN" = "ADMIN") {
+    async function staff(label: string, role: "ADMIN" | "SUPERADMIN" = "ADMIN") {
       const u = await register(label);
       await prisma.user.update({ where: { id: u.id }, data: { role } });
       const login = await api().post("/api/auth/login").send({ email: u.email, password: PASSWORD });
@@ -319,7 +319,7 @@ describe.skipIf(!enabled)("auth hardening", () => {
     });
 
     it("login asks for the second factor, then issues a session; codes cannot be replayed", async () => {
-      const a = await staff("login2fa", "FINANCE");
+      const a = await staff("login2fa", "SUPERADMIN");
       const { secret } = await enable(a.token);
 
       const step1 = await api().post("/api/auth/login").send({ email: a.email, password: PASSWORD });

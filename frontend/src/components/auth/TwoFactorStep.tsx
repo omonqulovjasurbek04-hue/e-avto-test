@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 
 /** Second login step for accounts with 2FA: a TOTP code or a one-time recovery code. */
-export default function TwoFactorStep() {
+export default function TwoFactorStep({ nextPath = ROUTES.dashboard }: { nextPath?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const completeTwoFactor = useAuthStore((s) => s.completeTwoFactor);
@@ -29,7 +29,12 @@ export default function TwoFactorStep() {
     setError(null);
     try {
       await completeTwoFactor(code.trim());
-      navigate(ROUTES.dashboard);
+      try {
+        sessionStorage.removeItem("e_avto_login_return_to");
+      } catch {
+        // Navigation can proceed without session storage.
+      }
+      navigate(nextPath, { replace: true });
     } catch (err) {
       const status = err instanceof ApiError ? err.status : undefined;
       const expired = !useAuthStore.getState().twoFactorChallenge;

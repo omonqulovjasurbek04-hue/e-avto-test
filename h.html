@@ -1,0 +1,1061 @@
+<!DOCTYPE html><html class="dark" lang="uz"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-primary":"#0060ac","outline":"#8b919d","error-container":"#93000a","on-background":"#dce2f6","surface-container-lowest":"#070e1c","secondary-fixed":"#6dfe9c","primary-fixed":"#d4e3ff","tertiary-fixed-dim":"#f9bd22","error":"#ffb4ab","inverse-on-surface":"#2a3040","surface-container-low":"#151b2a","tertiary":"#f9bd22","background":"#0c1321","on-secondary-fixed":"#00210c","surface-tint":"#a4c9ff","inverse-surface":"#dce2f6","on-tertiary-container":"#4a3500","on-error":"#690005","primary":"#a4c9ff","on-primary-fixed":"#001c39","on-tertiary":"#402d00","tertiary-container":"#ce9a00","secondary-fixed-dim":"#4de082","surface-container-high":"#232a39","surface":"#0c1321","tertiary-fixed":"#ffdf9f","on-secondary":"#003919","surface-container-highest":"#2e3544","surface-container":"#19202e","outline-variant":"#414751","surface-dim":"#0c1321","primary-container":"#60a5fa","on-primary-container":"#003a6b","secondary-container":"#00b55d","on-primary-fixed-variant":"#004883","on-surface-variant":"#c1c7d3","on-primary":"#00315d","on-tertiary-fixed-variant":"#5c4300","on-error-container":"#ffdad6","on-secondary-container":"#003e1c","on-tertiary-fixed":"#261a00","primary-fixed-dim":"#a4c9ff","surface-variant":"#2e3544","on-surface":"#dce2f6","surface-bright":"#323949","on-secondary-fixed-variant":"#005227","secondary":"#4de082"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter":"1.5rem","space-sm":"0.5rem","space-xs":"0.25rem","margin":"2rem","margin-mobile":"1rem","space-xl":"2rem","space-lg":"1.5rem","gutter-mobile":"1rem","space-md":"1rem"},fontFamily:{"label-sm":["Inter"],"body-sm":["Inter"],"body-md":["Inter"],"label-lg":["Inter"],"headline-lg-mobile":["Inter"],"headline-xl":["Inter"],"body-lg":["Inter"],"headline-xl-mobile":["Inter"],"headline-lg":["Inter"],"headline-sm":["Inter"],"label-md":["Inter"],"headline-md":["Inter"]},fontSize:{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"500"}],"body-sm":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"700"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-xl-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center gap-space-sm bg-surface-container-low"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-on-primary-container text-[20px]">school</span></div><div class="flex flex-col"><span class="font-label-lg text-label-lg text-on-surface tracking-tight leading-none">AvtoMaktab LMS</span><span class="font-label-sm text-label-sm text-on-surface-variant">O'qituvchi Portali</span></div></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider">Asosiy Menyu</div></div><nav class="flex flex-col gap-space-xs px-space-md" data-active-classes="bg-primary-container text-on-primary-container font-label-lg rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span>O'qituvchi paneli</a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="my-groups" href="#"><span class="material-symbols-outlined text-[20px]">groups</span>Mening guruhlarim</a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-all bg-primary-container text-on-primary-container font-label-lg rounded-lg" data-path="attendance" href="#"><span class="material-symbols-outlined text-[20px]">fact_check</span>Davomat</a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="schedule" href="#"><span class="material-symbols-outlined text-[20px]">calendar_month</span>Dars jadvali</a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="theory-tests" href="#"><span class="material-symbols-outlined text-[20px]">quiz</span>Nazariy testlar</a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="students" href="#"><span class="material-symbols-outlined text-[20px]">badge</span>O'quvchilar ro'yxati</a></nav></div><div class="p-space-md bg-surface-container-lowest"><div class="flex flex-col gap-space-xs"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span>Sozlamalar</a><div class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-surface-container text-on-surface"><div class="w-2 h-2 rounded-full bg-secondary"></div><div class="flex flex-col"><span class="font-label-sm text-label-sm text-on-surface font-semibold">Nazariya B-toifa</span><span class="font-label-sm text-label-sm text-on-surface-variant">Sessiya: Faol</span></div></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-space-xl flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-lg"><span class="material-symbols-outlined text-outline text-[18px]">directions_car</span><span class="font-label-sm text-label-sm text-on-surface-variant">Guruh:</span><select class="bg-transparent text-on-surface font-label-lg text-label-lg outline-none cursor-pointer pr-space-xs"><option class="bg-surface-container-low text-on-surface" selected="" value="B-24">B-24 guruhi</option><option class="bg-surface-container-low text-on-surface" value="B-25">B-25 guruhi</option><option class="bg-surface-container-low text-on-surface" value="BC-12">BC-12 guruhi</option><option class="bg-surface-container-low text-on-surface" value="A-04">A-04 guruhi</option></select></div><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-lg"><span class="material-symbols-outlined text-outline text-[18px]">event</span><span class="font-label-sm text-label-sm text-on-surface-variant">Davr:</span><span class="font-label-lg text-label-lg text-on-surface">Fevral 2025</span></div></div><div class="flex items-center gap-space-lg"><button class="relative p-space-xs rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-tertiary"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="text-right hidden sm:flex flex-col"><span class="font-label-lg text-label-lg text-on-surface leading-tight">Rustam Olimov</span><span class="font-label-sm text-label-sm text-on-surface-variant">Katta yo'riqchi</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background px-space-xl py-space-lg"><div class="flex flex-col w-full">
+<!-- Header / Breadcrumb Banner -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg mb-space-xl">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="px-space-sm py-space-xs rounded bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase tracking-wider">Avtomobil Nazariyasi &amp; Amaliyot</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-outline">Davomat nazorati</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Oylik Davomat Jurnali — B-24 Guruh (Yengil Avto B toifa)</h1>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-space-sm flex-wrap">
+<span class="">O'qituvchi: <strong class="text-on-surface font-label-lg">Rustam Qodirov</strong></span>
+<span class="text-outline-variant">•</span>
+<span class="">Davr: <strong class="text-on-surface font-label-lg">2025-yil Fevral</strong></span>
+
+
+</p>
+</div>
+<!-- Right Stats Quick Badges -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-md px-space-lg py-space-sm rounded-xl bg-surface-container shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase">Umumiy o'rtacha davomat</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-secondary font-bold">92.4%</span>
+<span class="font-label-sm text-label-sm text-secondary-fixed flex items-center">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>+3.1%
+            </span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[24px]">verified</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md px-space-lg py-space-sm rounded-xl bg-surface-container shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase">Xavf ostida</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-error font-bold">2 nafar</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">&lt;80%</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-error-container/30 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[24px]">warning</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Toolbar -->
+<div class="bg-surface-container-low rounded-xl p-space-lg mb-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-space-md">
+<!-- Selector & Status pill -->
+<div class="flex flex-wrap items-center gap-space-md">
+<div class="flex items-center bg-surface-container px-space-md py-space-xs rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-outline text-[20px] mr-space-xs">badge</span>
+<span class="font-label-sm text-label-sm text-outline mr-space-xs">Guruh:</span>
+<span class="font-label-lg text-label-lg text-on-surface">B-24 (20 nafar o'quvchi)</span>
+</div>
+<div class="flex items-center bg-surface-container px-space-md py-space-xs rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-outline text-[20px] mr-space-xs">calendar_month</span>
+<span class="font-label-sm text-label-sm text-outline mr-space-xs">Oy:</span>
+<span class="font-label-lg text-label-lg text-on-surface">Fevral, 2025</span>
+</div>
+<!-- Highlighted Active Day Badge -->
+<div class="flex items-center gap-space-xs bg-primary-container text-on-primary-container px-space-md py-space-xs rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-[18px]">radio_button_checked</span>
+<span class="font-label-lg text-label-lg font-bold">Bugun: 24-dars (24-Fevral)</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-colors shadow-sm" id="btn-mark-all" type="button">
+<span class="material-symbols-outlined text-[20px] text-secondary">bolt</span>
+<span class="">⚡ Bugungi kunga barchaga "Bor"</span>
+</button>
+<button class="flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-colors shadow-sm" id="btn-toggle-mode" type="button">
+<span class="material-symbols-outlined text-[20px] text-tertiary">swap_horiz</span>
+<span id="current-mode-label" class="">Rejim: Bor (✓)</span>
+</button>
+<button class="flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-colors shadow-sm" id="btn-export-excel" type="button">
+<span class="material-symbols-outlined text-[20px] text-secondary">table_view</span>
+<span class="">Excel eksport</span>
+</button>
+<button class="flex items-center gap-space-xs bg-primary hover:bg-primary-fixed text-on-primary font-label-lg text-label-lg px-space-lg py-space-sm rounded-lg transition-colors shadow-sm" id="btn-save" type="button">
+<span class="material-symbols-outlined text-[20px]">save</span>
+<span class="">O'zgarishlarni saqlash</span>
+</button>
+</div>
+</div>
+<!-- Visual Legend Bar -->
+<div class="pt-space-md border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-md text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex flex-wrap items-center gap-space-lg">
+<span class="text-outline uppercase tracking-wider font-semibold">Belgilar izohi:</span>
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-secondary-container/90 text-on-secondary flex items-center justify-center font-bold text-[12px] shadow-sm">✓</span>
+<span class="text-on-surface">Bor (Qatnashdi)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-error text-on-error flex items-center justify-center font-bold text-[12px] shadow-sm">✗</span>
+<span class="text-on-surface">Yo'q (Sababsiz)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center font-bold text-[12px] shadow-sm">⏱</span>
+<span class="text-on-surface">Kechikdi (&gt;15 min)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-primary-fixed-dim text-on-primary-fixed flex items-center justify-center font-bold text-[11px] shadow-sm">U</span>
+<span class="text-on-surface">Uzrli sabab</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant/40 text-outline flex items-center justify-center text-[10px]">•</span>
+<span class="text-on-surface-variant">Kelgusi dars</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs text-outline">
+<span class="material-symbols-outlined text-[16px]">touch_app</span>
+<span class="">Katakchani bosish orqali holatni almashtiring (Qatnashdi → Yo'q → Kechikdi → Uzrli)</span>
+</div>
+</div>
+</div>
+<!-- Notification Toast Alert (Saqlanganda) -->
+<div class="hidden transition-all duration-300 mb-space-md p-space-md rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-between shadow-lg" id="save-toast">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[24px]">check_circle</span>
+<span class="font-label-lg text-label-lg">Davomat jurnali muvaffaqiyatli saqlandi va markaziy tizimga sinxronlashtirildi!</span>
+</div>
+<button class="hover:opacity-80" onclick="document.getElementById('save-toast').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- MATRIX TABLE CONTAINER -->
+<div class="bg-surface-container-low rounded-xl shadow-xl overflow-hidden mb-space-xl"><div class="px-space-lg py-space-md bg-surface-container border-b border-outline-variant/30 text-body-sm select-none" id="timeline-slider-bar"><div class="flex flex-wrap items-center justify-between gap-space-md mb-space-sm"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary text-[20px]">linear_scale</span><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md text-on-surface font-semibold">Darslar xronologiyasi:</span><span class="font-label-sm text-label-sm text-outline-variant">1–30 Fevral</span></div><span class="px-space-xs py-0.5 rounded bg-primary-container/20 text-primary font-label-sm text-label-sm ring-1 ring-primary/30 font-semibold" id="current-active-marker">Bugun: 24-dars</span></div><div class="flex items-center gap-space-sm"><div class="flex items-center gap-1.5"><button type="button" id="tl-btn-start" class="px-space-sm py-1 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-all hover:text-primary">1-kun</button><button type="button" id="tl-btn-mid" class="px-space-sm py-1 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-all hover:text-primary">15-kun</button><button type="button" id="tl-btn-today" class="flex items-center gap-1 px-space-md py-1 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary-fixed transition-all shadow-sm active:scale-95"><span class="material-symbols-outlined text-[14px]">my_location</span>Bugun (24)</button><button type="button" id="tl-btn-end" class="px-space-sm py-1 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-all hover:text-primary">30-kun</button></div><div class="h-4 w-px bg-outline-variant/40 mx-space-xs"></div><div class="flex items-center gap-1 p-0.5 bg-surface-container-lowest rounded-lg border border-outline-variant/30"><button type="button" id="tl-step-prev" title="Oldingi kun" class="w-7 h-7 rounded flex items-center justify-center bg-surface-container hover:bg-surface-bright text-on-surface hover:text-primary transition-all active:scale-95"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button><button type="button" id="tl-step-next" title="Keyingi kun" class="w-7 h-7 rounded flex items-center justify-center bg-surface-container hover:bg-surface-bright text-on-surface hover:text-primary transition-all active:scale-95"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button></div></div></div><div class="relative py-space-xs flex flex-col gap-1"><div class="relative w-full h-3 bg-surface-container-lowest rounded-full cursor-pointer overflow-hidden border border-outline-variant/30" id="timeline-track"><div class="absolute left-0 top-0 bottom-0 bg-primary/25 rounded-l-full transition-all duration-75" id="timeline-progress-fill" style="width: 80%;"></div><div class="absolute top-0 bottom-0 w-2.5 bg-tertiary/70" style="left: 77.5%;" title="Bugungi dars (24-kun)"></div></div><div class="relative w-full flex items-center justify-between px-1 text-[10px] font-label-sm text-outline-variant tracking-wider" id="timeline-ticks"><span class="">1</span><span class="">5</span><span class="">10</span><span class="">15</span><span class="">20</span><span class="text-primary font-bold">24 (Bugun)</span><span class="">30</span></div></div></div>
+<div class="overflow-x-auto relative max-h-[720px] select-none" id="table-scroll-container" style="scroll-behavior: smooth;">
+<table class="w-full text-left border-collapse min-w-[1780px]">
+<thead>
+<tr class="bg-surface-container-high text-on-surface font-label-md text-label-md sticky top-0 z-30 shadow-sm">
+<!-- Sticky Student Name Column Header -->
+<th class="sticky left-0 z-40 bg-surface-container-high p-space-md w-[320px] min-w-[320px] shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center justify-between">
+<span class="uppercase tracking-wider text-outline">O'quvchi F.I.Sh. (20 nafar)</span>
+
+</div>
+</th>
+<!-- Days 1 to 30 Headers -->
+<!-- Highlight 24-kun as TODAY -->
+<th class="p-space-xs text-center w-10 text-on-surface-variant">1</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">2</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">3</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">4</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">5</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">6</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">7</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">8</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">9</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">10</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">11</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">12</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">13</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">14</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">15</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">16</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">17</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">18</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">19</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">20</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">21</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">22</th>
+<th class="p-space-xs text-center w-10 text-on-surface-variant">23</th>
+<!-- Bugungi ustun (24-kun) -->
+<th class="p-space-xs text-center w-12 bg-primary/25 text-primary font-bold shadow-sm ring-1 ring-primary/40 rounded-t-lg">
+<div class="flex flex-col items-center">
+<span class="text-[10px] text-primary uppercase font-bold tracking-tight">Bugun</span>
+<span class="font-headline-sm text-headline-sm leading-none">24</span>
+</div>
+</th>
+<!-- Future days 25 to 30 -->
+<th class="p-space-xs text-center w-10 text-outline">25</th>
+<th class="p-space-xs text-center w-10 text-outline">26</th>
+<th class="p-space-xs text-center w-10 text-outline">27</th>
+<th class="p-space-xs text-center w-10 text-outline">28</th>
+<th class="p-space-xs text-center w-10 text-outline">29</th>
+<th class="p-space-xs text-center w-10 text-outline">30</th>
+<!-- Summary Totals Columns -->
+<th class="p-space-sm text-center w-16 bg-surface-container text-secondary font-label-md">Bor</th>
+<th class="p-space-sm text-center w-16 bg-surface-container text-error font-label-md">Yo'q</th>
+<th class="p-space-sm text-center w-16 bg-surface-container text-tertiary font-label-md">Kech.</th>
+<th class="p-space-md text-right w-24 bg-surface-container text-on-surface font-label-md pr-space-lg">Davomat %</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10 font-body-sm text-body-sm" id="attendance-tbody">
+<!-- Row 1: Azizbek Alimov -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">01</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/30 text-primary flex items-center justify-center font-label-md font-bold">AA</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Azizbek Alimov</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2401</span>
+</div>
+</div>
+</td>
+<!-- 1..23 -->
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn l" data-state="l">⏱</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<!-- Day 24 (Today) -->
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<!-- 25..30 (Future) -->
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<!-- Aggregates -->
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">23</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-tertiary">1</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">96%</span>
+</td>
+</tr>
+<!-- Row 2: Nodira Karimova -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">02</span>
+<div class="w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-label-md font-bold">NK</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Nodira Karimova</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2402</span>
+</div>
+</div>
+</td>
+<!-- 1..23 -->
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<!-- Day 24 (Today) -->
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<!-- 25..30 -->
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+<!-- Row 3: Jasur Rahimov (Xavf ostida: 75%) -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group bg-error-container/5">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">03</span>
+<div class="w-8 h-8 rounded-full bg-error-container/40 text-error flex items-center justify-center font-label-md font-bold">JR</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate flex items-center gap-1">
+                    Jasur Rahimov
+                    <span class="material-symbols-outlined text-error text-[16px]" title="Xavf ostida: &lt;80%">warning</span>
+</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2403</span>
+</div>
+</div>
+</td>
+<!-- 1..23 -->
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<!-- Day 24 (Today - Absent) -->
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn a active-day" data-state="a">✗</button></td>
+<!-- 25..30 -->
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">17</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-error font-bold">7</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-error-container/30 text-error font-label-md text-label-md font-bold">70.8%</span>
+</td>
+</tr>
+<!-- Row 4: Malika Usmonova -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">04</span>
+<div class="w-8 h-8 rounded-full bg-tertiary-container/30 text-tertiary flex items-center justify-center font-label-md font-bold">MU</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Malika Usmonova</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2404</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn e" data-state="e">U</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">23</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">95.8%</span>
+</td>
+</tr>
+<!-- Row 5: Sardorbek Bekmurodov -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">05</span>
+<div class="w-8 h-8 rounded-full bg-surface-bright text-on-surface flex items-center justify-center font-label-md font-bold">SB</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Sardorbek Bekmurodov</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2405</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn l" data-state="l">⏱</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<!-- Day 24 (Today - Late) -->
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn l active-day" data-state="l">⏱</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">22</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-tertiary">2</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">91.6%</span>
+</td>
+</tr>
+<!-- Row 6: Dilshod Toirov -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">06</span>
+<div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-label-md font-bold">DT</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Dilshod Toirov</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2406</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">23</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-error">1</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">95.8%</span>
+</td>
+</tr>
+<!-- Row 7: Madina Ahmedova -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">07</span>
+<div class="w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-label-md font-bold">MA</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Madina Ahmedova</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2407</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+<!-- Row 8: Bobur Mirzayev (Xavf ostida: 79%) -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group bg-error-container/5">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">08</span>
+<div class="w-8 h-8 rounded-full bg-error-container/40 text-error flex items-center justify-center font-label-md font-bold">BM</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate flex items-center gap-1">
+                    Bobur Mirzayev
+                    <span class="material-symbols-outlined text-error text-[16px]" title="Xavf ostida: 79.1%">warning</span>
+</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2408</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn a" data-state="a">✗</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">19</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-error font-bold">5</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-error-container/30 text-error font-label-md text-label-md font-bold">79.1%</span>
+</td>
+</tr>
+<!-- Row 9: Shahnoza Ergasheva -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">09</span>
+<div class="w-8 h-8 rounded-full bg-tertiary/20 text-tertiary flex items-center justify-center font-label-md font-bold">SE</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Shahnoza Ergasheva</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2409</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+<!-- Row 10: Farrux Zokirov -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">10</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 text-primary flex items-center justify-center font-label-md font-bold">FZ</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Farrux Zokirov</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2410</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+<!-- Row 11: Gulnoza Yoqubova -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">11</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center font-label-md font-bold">GY</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Gulnoza Yoqubova</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2411</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+<!-- Row 12: Otabek Qodirov -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="sticky left-0 z-20 bg-surface-container-low group-hover:bg-surface-container p-space-md shadow-[2px_0_8px_rgba(0,0,0,0.3)]">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-outline w-5">12</span>
+<div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-label-md font-bold">OQ</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate">Otabek Qodirov</span>
+<span class="font-label-sm text-label-sm text-outline">ID-2412</span>
+</div>
+</div>
+</td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn p" data-state="p">✓</button></td>
+<td class="p-space-xs text-center bg-primary/10 ring-1 ring-primary/20"><button class="att-btn p active-day" data-state="p">✓</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-xs text-center"><button class="att-btn future" data-state="f">•</button></td>
+<td class="p-space-sm text-center font-label-md text-label-md text-secondary">24</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-sm text-center font-label-md text-label-md text-outline">0</td>
+<td class="p-space-md text-right pr-space-lg">
+<span class="px-space-sm py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md font-bold">100%</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Bottom Analytics & Control Panel (3-Bento Grid) -->
+<div class="grid grid-cols-1 gap-space-lg mb-space-xl lg:grid-cols-2">
+<!-- 1. Bugungi qatnashuv xulosasi (Donut / Visual Stats) -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">pie_chart</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Bugungi Qatnashuv Tahlili</h3>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-primary/20 text-primary font-label-sm text-label-sm">24-Fevral</span>
+</div>
+<div class="flex items-center gap-space-lg py-space-sm">
+<!-- SVG Donut Chart for Attendance -->
+<div class="relative w-28 h-28 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+<!-- Background Ring -->
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4.5"></path>
+<!-- Present Segment (90%) -->
+<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="90, 100" stroke-linecap="round" stroke-width="4.5"></path>
+<!-- Absent Segment (5%) -->
+<path class="text-error" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="5, 100" stroke-dashoffset="-90" stroke-width="4.5"></path>
+<!-- Late Segment (5%) -->
+<path class="text-tertiary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="5, 100" stroke-dashoffset="-95" stroke-width="4.5"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold leading-none">90%</span>
+<span class="font-label-sm text-label-sm text-outline">davomat</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs w-full">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-on-surface">Bor (Qatnashgan):</span>
+</div>
+<span class="font-label-lg text-label-lg text-secondary font-bold">18 nafar</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-error"></span>
+<span class="text-on-surface">Yo'q (Sababsiz):</span>
+</div>
+<span class="font-label-lg text-label-lg text-error font-bold">1 nafar</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-tertiary"></span>
+<span class="text-on-surface">Kechikkan:</span>
+</div>
+<span class="font-label-lg text-label-lg text-tertiary font-bold">1 nafar</span>
+</div>
+</div>
+</div>
+<div class="pt-space-sm mt-space-sm border-t border-outline-variant/30 flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline">Jami ro'yxatdagi: 20 nafar</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">Kvorum talabi bajarildi ✓</span>
+</div>
+</div>
+<!-- 2. Imtihonga qo'yilmaslik xavfi ostidagi o'quvchilar -->
+
+<!-- 3. SMS Xabarnoma & O'qituvchi Saqlash Paneli -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">sms</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">SMS Xabarnoma Jo'natish</h3>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">send_time_extension</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Bugun darsga kelmagan (1 nafar) yoki kechikkan (1 nafar) o'quvchilarga avtomatik ravishda SMS eslatma jo'nating:
+      </p>
+<div class="bg-surface-container p-space-sm rounded-lg my-space-xs font-label-sm text-label-sm text-outline">
+<div class="text-on-surface-variant mb-1 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">chat_bubble</span>
+          SMS shabloni:
+        </div>
+<div class="italic text-[12px] text-outline-variant bg-surface-container-low p-space-xs rounded">
+          "Hurmatli o'quvchi, 24-fevral kuni B-24 guruhi darsida ishtirok etmadingiz. Qayta o'zlashtirish talab etiladi."
+        </div>
+</div>
+<div class="flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-lg text-label-lg transition-colors" id="btn-send-sms" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">send</span>
+<span class="">SMS Yuborish (2 ta)</span>
+</button>
+<button class="flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-fixed transition-colors" onclick="document.getElementById('btn-save').click()" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span class="">Tasdiqlash</span>
+</button>
+</div>
+</div>
+</div>
+<!-- In-page Micro-interaction Styles and Script -->
+<style>
+    .att-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.15s ease-in-out;
+      outline: none;
+      cursor: pointer;
+    }
+    .att-btn:hover {
+      transform: scale(1.15);
+      filter: brightness(1.2);
+    }
+    /* Present */
+    .att-btn.p {
+      background-color: #00b55d;
+      color: #003e1c;
+      box-shadow: 0 1px 4px rgba(0, 181, 93, 0.3);
+    }
+    /* Absent */
+    .att-btn.a {
+      background-color: #ffb4ab;
+      color: #690005;
+      box-shadow: 0 1px 4px rgba(255, 180, 171, 0.3);
+    }
+    /* Late */
+    .att-btn.l {
+      background-color: #f9bd22;
+      color: #402d00;
+      box-shadow: 0 1px 4px rgba(249, 189, 34, 0.3);
+    }
+    /* Excused */
+    .att-btn.e {
+      background-color: #a4c9ff;
+      color: #00315d;
+      box-shadow: 0 1px 4px rgba(164, 201, 255, 0.3);
+    }
+    /* Future */
+    .att-btn.future {
+      background-color: transparent;
+      border: 1px dashed #414751;
+      color: #8b919d;
+    }
+    .att-btn.future:hover {
+      border-color: #a4c9ff;
+      color: #a4c9ff;
+    }
+    /* Active Day pulsing subtle frame */
+    .active-day {
+      box-shadow: 0 0 0 2px rgba(164, 201, 255, 0.4);
+    }
+  </style>
+<script>
+    (function initAttendanceManager() {
+      // States rotation
+      const states = ['p', 'a', 'l', 'e', 'future'];
+      const symbols = {
+        p: '✓',
+        a: '✗',
+        l: '⏱',
+        e: 'U',
+        future: '•'
+      };
+
+      let activeStampMode = 'p'; // Default stamp mode
+
+      // Click on any cell toggles state
+      document.querySelectorAll('.att-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const currentState = this.getAttribute('data-state') || 'future';
+          let nextIndex = (states.indexOf(currentState) + 1) % states.length;
+          let nextState = states[nextIndex];
+
+          // Apply state
+          applyButtonState(this, nextState);
+        });
+      });
+
+      function applyButtonState(btn, state) {
+        btn.classList.remove('p', 'a', 'l', 'e', 'future');
+        btn.classList.add(state);
+        btn.setAttribute('data-state', state);
+        btn.textContent = symbols[state] || '•';
+      }
+
+      // Mark All Present for Today (Day 24)
+      const markAllBtn = document.getElementById('btn-mark-all');
+      if (markAllBtn) {
+        markAllBtn.addEventListener('click', function() {
+          const todayButtons = document.querySelectorAll('.active-day');
+          todayButtons.forEach(btn => {
+            applyButtonState(btn, 'p');
+          });
+          showNotification("Bugungi (24-Fevral) barcha o'quvchilarga 'Bor' deb belgilandi!");
+        });
+      }
+
+      // Toggle Mode Button
+      const modeBtn = document.getElementById('btn-toggle-mode');
+      const modeLabel = document.getElementById('current-mode-label');
+      const modeList = [
+        { key: 'p', label: 'Rejim: Bor (✓)' },
+        { key: 'a', label: "Rejim: Yo'q (✗)" },
+        { key: 'l', label: 'Rejim: Kechikdi (⏱)' }
+      ];
+      let currentModeIndex = 0;
+
+      if (modeBtn && modeLabel) {
+        modeBtn.addEventListener('click', function() {
+          currentModeIndex = (currentModeIndex + 1) % modeList.length;
+          activeStampMode = modeList[currentModeIndex].key;
+          modeLabel.textContent = modeList[currentModeIndex].label;
+        });
+      }
+
+      // Save Button
+      const saveBtn = document.getElementById('btn-save');
+      const toast = document.getElementById('save-toast');
+      if (saveBtn && toast) {
+        saveBtn.addEventListener('click', function() {
+          toast.classList.remove('hidden');
+          setTimeout(() => {
+            toast.classList.add('hidden');
+          }, 4500);
+        });
+      }
+
+      // SMS Send confirmation
+      const smsBtn = document.getElementById('btn-send-sms');
+      if (smsBtn) {
+        smsBtn.addEventListener('click', function() {
+          alert("2 nafar sababsiz qoldirgan/kechikkan o'quvchilarning telefon raqamlariga SMS xabarnoma jo'natildi!");
+        });
+      }
+
+      // Excel export notice
+      const exportBtn = document.getElementById('btn-export-excel');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+          alert("B-24 guruhi fevral oyi davomat ma'lumotlari (.xlsx) shaklida yuklab olinmoqda...");
+        });
+      }
+
+      function showNotification(msg) {
+        if (!toast) return;
+        toast.querySelector('.font-label-lg').textContent = msg;
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+        }, 3500);
+      }
+    })();
+  </script>
+</div></main></div>
+
+
+
+<script>(function initDemoButton(){const demoBtn=document.getElementById('demo-cycle-btn');const demoCap=document.getElementById('demo-cycle-caption');if(!demoBtn||!demoCap)return;const states=['p','a','l','e','future'];const labels={'p':'✓ Bor (Qatnashdi)','a':"✗ Yo'q (Sababsiz)",'l':'⏱ Kechikdi (>15 min)','e':'U Uzrli sabab','future':'• Kelgusi dars'};const textColors={'p':'text-secondary','a':'text-error','l':'text-tertiary','e':'text-primary','future':'text-outline'};const symbols={'p':'✓','a':'✗','l':'⏱','e':'U','future':'•'};demoBtn.addEventListener('click',function(){const current=this.getAttribute('data-state')||'p';const nextIndex=(states.indexOf(current)+1)%states.length;const nextState=states[nextIndex];this.classList.remove('p','a','l','e','future');this.classList.add(nextState);this.setAttribute('data-state',nextState);this.textContent=symbols[nextState];demoCap.textContent=labels[nextState];demoCap.className='font-label-sm text-label-sm font-semibold '+textColors[nextState];});})();</script>
+
+<script class="">(function initTimelineSync() { const track = document.getElementById('timeline-track'); const fill = document.getElementById('timeline-progress-fill'); const tableScroll = document.getElementById('table-scroll-container'); const btnToday = document.getElementById('tl-btn-today'); const btnStart = document.getElementById('tl-btn-start'); const btnMid = document.getElementById('tl-btn-mid'); const btnEnd = document.getElementById('tl-btn-end'); const btnPrev = document.getElementById('tl-step-prev'); const btnNext = document.getElementById('tl-step-next'); const badge = document.getElementById('current-active-marker'); if (!track || !tableScroll) return; const totalDays = 30; function getMaxScroll() { return Math.max(1, tableScroll.scrollWidth - tableScroll.clientWidth); } function updateFillFromScroll() { const ratio = Math.min(1, Math.max(0, tableScroll.scrollLeft / getMaxScroll())); if (fill) fill.style.width = (ratio * 100) + '%'; const approxDay = Math.min(30, Math.max(1, Math.round(1 + (ratio * 29)))); if (badge) { if (approxDay === 24) { badge.textContent = "Bugun: 24-dars"; badge.className = "px-space-xs py-0.5 rounded bg-primary-container/20 text-primary font-label-sm text-label-sm ring-1 ring-primary/30 font-semibold"; } else { badge.textContent = approxDay + "-dars / 30"; badge.className = "px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm ring-1 ring-outline-variant/30"; } } } tableScroll.addEventListener('scroll', updateFillFromScroll, { passive: true }); function scrollToDay(day) { const ratio = (day - 1) / (totalDays - 1); const targetLeft = ratio * getMaxScroll(); tableScroll.scrollTo({ left: targetLeft, behavior: 'smooth' }); } function handleTrackClick(e) { const rect = track.getBoundingClientRect(); const clickX = Math.min(Math.max(0, e.clientX - rect.left), rect.width); const ratio = clickX / rect.width; tableScroll.scrollTo({ left: ratio * getMaxScroll(), behavior: 'smooth' }); } track.addEventListener('click', handleTrackClick); let isDragging = false; track.addEventListener('mousedown', function(e) { isDragging = true; handleTrackClick(e); }); window.addEventListener('mousemove', function(e) { if (!isDragging) return; const rect = track.getBoundingClientRect(); const clickX = Math.min(Math.max(0, e.clientX - rect.left), rect.width); const ratio = clickX / rect.width; tableScroll.scrollLeft = ratio * getMaxScroll(); }); window.addEventListener('mouseup', function() { isDragging = false; }); if (btnToday) btnToday.addEventListener('click', () => scrollToDay(24)); if (btnStart) btnStart.addEventListener('click', () => scrollToDay(1)); if (btnMid) btnMid.addEventListener('click', () => scrollToDay(15)); if (btnEnd) btnEnd.addEventListener('click', () => scrollToDay(30)); if (btnPrev) btnPrev.addEventListener('click', () => tableScroll.scrollBy({ left: -220, behavior: 'smooth' })); if (btnNext) btnNext.addEventListener('click', () => tableScroll.scrollBy({ left: 220, behavior: 'smooth' })); scrollToDay(24); setTimeout(updateFillFromScroll, 200); })();</script></body></html>

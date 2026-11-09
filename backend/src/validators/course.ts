@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { httpUrl } from "./common";
+import { passwordSchema, phoneSchema } from "./auth";
 
 const optionalUrl = httpUrl.optional().nullable();
 
@@ -58,13 +59,22 @@ export const questionUpdateSchema = questionBase.partial();
 const reason = z.string().trim().max(500).optional();
 
 export const userRoleSchema = z.object({
-  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]),
+  role: z.enum(["USER", "TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"]),
   reason,
 });
 
 export const userStatusSchema = z.object({
   isActive: z.boolean(),
   reason,
+});
+
+/** An account created by an admin: the person can sign in with the phone and password right away. */
+export const userCreateSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  phone: phoneSchema,
+  email: z.string().trim().toLowerCase().email("Invalid email").optional(),
+  password: passwordSchema,
+  role: z.enum(["USER", "TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"]).optional(),
 });
 
 /** A course opened by an admin without payment: the reason is required. */
@@ -79,7 +89,7 @@ export const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
   search: z.string().trim().max(100).optional(),
   // Only used by the user list (e.g. to pick teachers/students for a group).
-  role: z.enum(["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"]).optional(),
+  role: z.enum(["USER", "TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"]).optional(),
   // User list: "student" = bought a course (has a student number), "user" = only signed up.
   kind: z.enum(["student", "user", "teacher", "staff"]).optional(),
 });
@@ -91,3 +101,4 @@ export type LessonUpdateInput = z.infer<typeof lessonUpdateSchema>;
 export type QuestionCreateInput = z.infer<typeof questionCreateSchema>;
 export type QuestionUpdateInput = z.infer<typeof questionUpdateSchema>;
 export type ListQuery = z.infer<typeof listQuerySchema>;
+export type UserCreateInput = z.infer<typeof userCreateSchema>;

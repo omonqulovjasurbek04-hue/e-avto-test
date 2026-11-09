@@ -70,11 +70,18 @@ export interface Rhythm {
   /** Calendar dates (only the Y-M-D part is used, as a Tashkent date). */
   startDate: Date;
   endDate?: Date | null;
-  days: GroupDays;
+  /** Fixed rhythm; null/omitted when the weekdays are chosen one by one. */
+  days?: GroupDays | null;
+  /** Custom weekdays (1 = Monday … 7 = Sunday); used when `days` is not set. */
+  weekdays?: readonly number[] | null;
   /** "HH:MM", Tashkent time. */
   startTime: string;
   lessonMinutes: number;
 }
+
+/** The weekdays of a rhythm: ODD/EVEN when `days` is set, otherwise the custom list. */
+export const rhythmWeekdaysOf = (r: Pick<Rhythm, "days" | "weekdays">): readonly number[] =>
+  r.days ? RHYTHM_WEEKDAYS[r.days] : r.weekdays ?? [];
 
 /**
  * Every lesson of the rhythm between the start and end dates (both inclusive), in UTC.
@@ -86,8 +93,9 @@ export const rhythmIntervals = (r: Rhythm, from?: Date): Interval[] => {
   const lastDay = r.endDate
     ? Date.UTC(r.endDate.getUTCFullYear(), r.endDate.getUTCMonth(), r.endDate.getUTCDate())
     : firstDay + DEFAULT_RHYTHM_WEEKS * WEEK_MS - DAY_MS;
-  const weekdays = RHYTHM_WEEKDAYS[r.days];
+  const weekdays = rhythmWeekdaysOf(r);
   const out: Interval[] = [];
+  if (weekdays.length === 0) return out;
   for (let day = firstDay; day <= lastDay; day += DAY_MS) {
     if (!weekdays.includes(new Date(day).getUTCDay())) continue;
     const startsAt = new Date(day + (hh * 60 + mm) * 60_000 - TASHKENT_OFFSET_MS);

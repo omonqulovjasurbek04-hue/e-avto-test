@@ -7,14 +7,14 @@ import { Prisma, Role } from "@prisma/client";
  *                   given to a new sign-up (history in user_identifiers).
  *   studentNumber — own sequence, at the first paid (or admin-granted) course → "student0001". Never reused.
  *   teacherNumber — own sequence, when the account first becomes a teacher → "teacher0001". Never reused.
- *   staffNumber   — one sequence per staff role → "moderator01", "finance01", "manager01",
- *                   "admin01", "superadmin01". A new staff role gives a new number. Never reused.
+ *   staffNumber   — one sequence per staff role → "manager01", "admin01", "superadmin01".
+ *                   A new staff role gives a new number. Never reused.
  * At least four digits (two for staff: there are few of them), never a limit: …9999, then 10000, …
  */
 const pad = (n: number) => String(n).padStart(4, "0");
 
 /** Staff roles and the prefix of their numbers (the role in lower case). */
-export const STAFF_ROLES = ["MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"] as const satisfies readonly Role[];
+export const STAFF_ROLES = ["MANAGER", "ADMIN", "SUPERADMIN"] as const satisfies readonly Role[];
 const isStaff = (role: string | undefined): role is (typeof STAFF_ROLES)[number] => (STAFF_ROLES as readonly string[]).includes(role ?? "");
 
 export const formatUserId = (n: number) => `user${pad(n)}`;
@@ -47,7 +47,7 @@ const asNumber = (digits: string) => {
  */
 export const accountIdFilter = (text: string): Prisma.UserWhereInput | null => {
   const q = text.trim();
-  const prefixed = /^(superadmin|admin|manager|finance|moderator|teacher|student|user)0*(\d{1,10})$/i.exec(q);
+  const prefixed = /^(superadmin|admin|manager|teacher|student|user)0*(\d{1,10})$/i.exec(q);
   if (prefixed) {
     const n = asNumber(prefixed[2]);
     // An impossible number matches nobody (instead of an error from the database).

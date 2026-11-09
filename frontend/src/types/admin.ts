@@ -39,7 +39,7 @@ export interface AdminUser {
 
 export interface UserIdentifierRow {
   id: string;
-  kind: "USER" | "STUDENT" | "TEACHER" | "MODERATOR" | "FINANCE" | "MANAGER" | "ADMIN" | "SUPERADMIN";
+  kind: "USER" | "STUDENT" | "TEACHER" | "MANAGER" | "ADMIN" | "SUPERADMIN";
   number: number;
   assignedAt: string;
   releasedAt: string | null;

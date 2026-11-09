@@ -17,7 +17,7 @@ import { writeAudit } from "./audit.service";
 import { MAX_FAILED_LOGINS, LOCK_MINUTES } from "./auth.service";
 
 /** 2FA is offered to the roles that can move money or change other people's rights. */
-export const TWO_FACTOR_ROLES = ["ADMIN", "SUPERADMIN", "FINANCE"] as const;
+export const TWO_FACTOR_ROLES = ["ADMIN", "SUPERADMIN"] as const;
 export const canUseTwoFactor = (role: string) => (TWO_FACTOR_ROLES as readonly string[]).includes(role);
 
 const RECOVERY_CODE = /^[0-9a-f]{5}-?[0-9a-f]{5}$/i;
@@ -41,7 +41,7 @@ export const getStatus = async (userId: string) => {
 /** Step 1: a new secret is stored as "pending" until the user proves their app produces valid codes. */
 export const beginSetup = async (userId: string) => {
   const user = await load(userId);
-  if (!canUseTwoFactor(user.role)) throw forbidden("Two-factor authentication is available for admin and finance accounts");
+  if (!canUseTwoFactor(user.role)) throw forbidden("Two-factor authentication is available for admin accounts");
   if (user.totpEnabledAt) throw conflict("Two-factor authentication is already enabled");
   const secret = generateSecret();
   await prisma.user.update({ where: { id: userId }, data: { totpPendingSecret: encryptSecret(secret) } });
@@ -52,7 +52,7 @@ export const beginSetup = async (userId: string) => {
 /** Step 2: confirms the pending secret with a code and returns one-time recovery codes (shown once). */
 export const confirmSetup = async (userId: string, code: string) => {
   const user = await load(userId);
-  if (!canUseTwoFactor(user.role)) throw forbidden("Two-factor authentication is available for admin and finance accounts");
+  if (!canUseTwoFactor(user.role)) throw forbidden("Two-factor authentication is available for admin accounts");
   if (user.totpEnabledAt) throw conflict("Two-factor authentication is already enabled");
   if (!user.totpPendingSecret) throw badRequest("Start the setup first");
   const secret = decryptSecret(user.totpPendingSecret);

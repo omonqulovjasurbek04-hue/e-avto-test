@@ -18,8 +18,6 @@ const FORMAT: Record<UserIdentifierRow["kind"], (n: number) => string> = {
   USER: formatUserId,
   STUDENT: formatStudentId,
   TEACHER: formatTeacherId,
-  MODERATOR: (n) => formatStaffId("MODERATOR", n),
-  FINANCE: (n) => formatStaffId("FINANCE", n),
   MANAGER: (n) => formatStaffId("MANAGER", n),
   ADMIN: (n) => formatStaffId("ADMIN", n),
   SUPERADMIN: (n) => formatStaffId("SUPERADMIN", n),

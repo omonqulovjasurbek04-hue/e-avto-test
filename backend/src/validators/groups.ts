@@ -12,15 +12,21 @@ const groupFields = {
   capacity: z.number().int().min(1).max(200).default(20),
   // Weekly rhythm: toq kunlar (ODD: Mon/Wed/Fri) or juft kunlar (EVEN: Tue/Thu/Sat) at startTime (Tashkent).
   days: z.enum(["ODD", "EVEN"]).nullable().optional(),
+  // Or custom weekdays (1 = Monday … 7 = Sunday) when `days` is null.
+  weekdays: z.array(z.number().int().min(1).max(7)).max(7).nullable().optional(),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM").nullable().optional(),
   lessonMinutes: z.number().int().min(30).max(240).nullable().optional(),
   room: z.string().trim().max(60).nullable().optional(),
 };
 
-/** Days and time come together: one without the other cannot produce a schedule. */
-const rhythmComplete = (g: { days?: string | null; startTime?: string | null }) =>
-  (g.days === undefined && g.startTime === undefined) || !g.days === !g.startTime;
-const rhythmIssue = { message: "Choose both the days (toq/juft) and the start time", path: ["startTime"] };
+/** A rhythm and a start time are supplied together; groups may be created with neither. */
+const rhythmComplete = (g: { days?: string | null; weekdays?: number[] | null; startTime?: string | null }) => {
+  if (g.days === undefined && g.weekdays === undefined && g.startTime === undefined) return true;
+  const hasDays = Boolean(g.days) || Boolean(g.weekdays && g.weekdays.length > 0);
+  const hasTime = Boolean(g.startTime);
+  return hasDays === hasTime;
+};
+const rhythmIssue = { message: "Choose both lesson days and a start time", path: ["startTime"] };
 
 export const groupSchema = z.object(groupFields).refine(rhythmComplete, rhythmIssue);
 /** A teacher opens a group for themselves: the teacher is the caller, not a field. */
@@ -28,6 +34,16 @@ export const ownGroupSchema = z.object(groupFields).omit({ teacherId: true }).re
 export const groupUpdateSchema = z.object(groupFields).partial().refine(rhythmComplete, rhythmIssue);
 /** What a teacher may change on their own group (not the teacher, not the course). */
 export const ownGroupUpdateSchema = z.object(groupFields).omit({ teacherId: true, courseId: true }).partial().refine(rhythmComplete, rhythmIssue);
+
+export const scheduleSettingsSchema = z.object({
+  workStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM"),
+  workEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM"),
+  lessonMinutes: z.number().int().min(1).max(240),
+  breakMinutes: z.number().int().min(0).max(120),
+}).refine((settings) => settings.workEnd > settings.workStart, {
+  message: "Work end must be after work start",
+  path: ["workEnd"],
+});
 
 export const memberSchema = z.object({ studentId: id });
 
@@ -56,12 +72,32 @@ export const attendanceSchema = z.object({
     .array(
       z.object({
         studentId: id,
-        status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED", "ONLINE"]),
+        status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED", "ONLINE"]).nullable(),
         note: z.string().trim().max(300).nullable().optional(),
       })
     )
     .min(1)
     .max(200),
-  // Required when changing an already-saved record.
   reason: z.string().trim().min(3).max(300).optional(),
 });
+
+export const attendanceBulkSchema = z.object({
+  records: z
+    .array(
+      z.object({
+        slotId: id,
+        studentId: id,
+        status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED", "ONLINE"]).nullable(),
+        note: z.string().trim().max(300).nullable().optional(),
+      })
+    )
+    .min(1)
+    .max(10000),
+  reason: z.string().trim().min(3).max(300).optional(),
+});
+
+export const attendanceTelegramMessageSchema = z.object({
+  slotId: id,
+  message: z.string().trim().min(1).max(1000),
+  tomorrowMessage: z.string().trim().min(1).max(1000).optional(),
+}).strict();

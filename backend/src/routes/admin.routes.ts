@@ -11,7 +11,7 @@ router.use(asyncHandler(authMiddleware));
 const users = requirePermission("users:manage");
 const catalog = requirePermission("catalog:manage");
 const tests = requirePermission("tests:manage");
-// Question editors (MODERATOR) need the course/lesson lists to file questions, and group planners (MANAGER)
+// Question editors (ADMIN) need the course/lesson lists to file questions, and group planners (MANAGER)
 // need the course list to open a group, but neither may change them.
 const readCatalog = requireAnyPermission("catalog:manage", "tests:manage", "groups:manage");
 // The front desk (users:read) picks teachers and students for groups from this list; changes still need users:manage.
@@ -20,6 +20,7 @@ const readUsers = requireAnyPermission("users:manage", "users:read");
 router.get("/users", readUsers, asyncHandler(adminController.listUsers));
 router.patch("/users/:id/role", users, asyncHandler(adminController.updateUserRole));
 router.patch("/users/:id/status", users, asyncHandler(adminController.updateUserStatus));
+router.delete("/users/:id", users, asyncHandler(adminController.deleteUser));
 router.delete("/users/:id/two-factor", users, asyncHandler(adminController.resetUserTwoFactor));
 // Number history (user/student/teacher) and courses of one account; opening a course without payment.
 router.get("/users/:id/identifiers", readUsers, asyncHandler(adminController.userIdentifiers));

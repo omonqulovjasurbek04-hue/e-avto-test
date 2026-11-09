@@ -51,6 +51,10 @@ export const resetUserTwoFactor = async (req: AuthRequest, res: Response): Promi
   success(res, await adminService.resetTwoFactor(requireUserId(req), req.user!.role, req.params.id));
 };
 
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  success(res, await adminService.deleteUser(requireUserId(req), req.user!.role, userId.parse(req.params.id)));
+};
+
 export const listCourses = async (_req: Request, res: Response): Promise<void> => {
   success(res, await courseService.listCourses(true));
 };

@@ -41,10 +41,12 @@ describe.skipIf(!enabled)("account identifiers", () => {
   beforeAll(async () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
-    for (const k of ["admin", "manager"]) await signup(k);
+    for (const k of ["admin", "super", "manager"]) await signup(k);
     await prisma.user.update({ where: { id: uid.admin }, data: { role: "ADMIN" } });
+    await prisma.user.update({ where: { id: uid.super }, data: { role: "SUPERADMIN" } });
     await prisma.user.update({ where: { id: uid.manager }, data: { role: "MANAGER" } });
     await relogin("admin");
+    await relogin("super");
     await relogin("manager");
     courseId = (await prisma.course.create({ data: { title: `Ids ${run}`, description: "d" } })).id;
     course2 = (await prisma.course.create({ data: { title: `Ids2 ${run}`, description: "d" } })).id;
@@ -158,30 +160,31 @@ describe.skipIf(!enabled)("account identifiers", () => {
 
   it("gives staff their own numbers per role and frees the user number", async () => {
     const before = await user("p2");
-    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("admin")).send({ role: "MODERATOR", reason: "Content editor" }).expect(200);
-    const mod = await user("p2");
-    expect(mod.userNumber).toBeNull();
-    expect(mod.staffNumber).toEqual(expect.any(Number));
+    const lastManager = (await prisma.user.aggregate({ where: { role: "MANAGER" }, _max: { staffNumber: true } }))._max.staffNumber ?? 0;
+    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("super")).send({ role: "MANAGER", reason: "Front desk" }).expect(200);
+    const mgr = await user("p2");
+    expect(mgr.userNumber).toBeNull();
+    expect(mgr.staffNumber).toBeGreaterThan(lastManager);
 
     // Another staff role: a number from that role's own sequence; the old one is closed in the history.
-    const lastManager = (await prisma.user.aggregate({ where: { role: "MANAGER" }, _max: { staffNumber: true } }))._max.staffNumber ?? 0;
-    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("admin")).send({ role: "MANAGER", reason: "Moved to the front desk" }).expect(200);
-    const fin = await user("p2");
-    expect(fin.staffNumber).toBeGreaterThan(lastManager);
+    const lastAdmin = (await prisma.user.aggregate({ where: { role: "ADMIN" }, _max: { staffNumber: true } }))._max.staffNumber ?? 0;
+    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("super")).send({ role: "ADMIN", reason: "Content editor" }).expect(200);
+    const adm = await user("p2");
+    expect(adm.staffNumber).toBeGreaterThan(lastAdmin);
     const rows = await prisma.userIdentifier.findMany({ where: { userId: uid.p2 }, orderBy: { assignedAt: "asc" } });
     expect(rows.map((r) => [r.kind, r.releasedAt === null])).toEqual([
       ["USER", false],
-      ["MODERATOR", false],
-      ["MANAGER", true],
+      ["MANAGER", false],
+      ["ADMIN", true],
     ]);
     expect(rows[0].number).toBe(before.userNumber);
 
     // Found by its staff id; back to a student role, a user number again.
-    const found = await request(app).get("/api/admin/users").query({ search: `manager${String(fin.staffNumber).padStart(2, "0")}` }).set(as("admin"));
+    const found = await request(app).get("/api/admin/users").query({ search: `admin${String(adm.staffNumber).padStart(2, "0")}` }).set(as("admin"));
     expect(found.body.data.map((u: { id: string }) => u.id)).toEqual([uid.p2]);
     const staff = await request(app).get("/api/admin/users").query({ kind: "staff", search: run }).set(as("admin"));
     expect(staff.body.data.map((u: { id: string }) => u.id)).toContain(uid.p2);
-    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("admin")).send({ role: "USER", reason: "Left" }).expect(200);
+    await request(app).patch(`/api/admin/users/${uid.p2}/role`).set(as("super")).send({ role: "USER", reason: "Left" }).expect(200);
     const back = await user("p2");
     expect(back.staffNumber).toBeNull();
     expect(back.userNumber).toEqual(expect.any(Number));

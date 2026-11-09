@@ -24,7 +24,7 @@ const parsePeriod = (req: AuthRequest, res: Response) => {
   return q;
 };
 
-/** Reports: reports:read (ADMIN, SUPERADMIN, FINANCE). */
+/** Reports: reports:read (ADMIN, SUPERADMIN). */
 export const reportRoutes = Router();
 reportRoutes.use(asyncHandler(authMiddleware));
 reportRoutes.use(requirePermission("reports:read"));

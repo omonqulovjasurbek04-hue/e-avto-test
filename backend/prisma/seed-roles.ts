@@ -16,8 +16,6 @@ const ACCOUNTS: { role: Role; name: string; email: string; phone: string }[] = [
   // A plain user: signed up, no course bought yet (user#### number, no student number).
   { role: "USER", name: "Test User", email: "user@test.local", phone: "+998900000017" },
   { role: "TEACHER", name: "Test Teacher", email: "teacher@test.local", phone: "+998900000012" },
-  { role: "MODERATOR", name: "Test Moderator", email: "moderator@test.local", phone: "+998900000013" },
-  { role: "FINANCE", name: "Test Finance", email: "finance@test.local", phone: "+998900000014" },
   { role: "ADMIN", name: "Test Admin", email: "admin@test.local", phone: "+998900000015" },
   { role: "MANAGER", name: "Test Manager", email: "manager@test.local", phone: "+998900000016" },
   { role: "SUPERADMIN", name: "Test Superadmin", email: "superadmin@test.local", phone: "+998900000018" },

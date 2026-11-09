@@ -12,7 +12,7 @@ import "./index.css";
 void i18nReady.then(() =>
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ThemeProvider>
           <App />
           <Toaster position="top-center" richColors closeButton />

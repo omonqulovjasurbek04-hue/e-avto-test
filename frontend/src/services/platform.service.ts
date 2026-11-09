@@ -129,6 +129,8 @@ export interface GroupInput {
   endDate?: string | null;
   capacity: number;
   days?: GroupDays | null;
+  /** Custom weekdays (1 = Monday … 7 = Sunday) when `days` is null. */
+  weekdays?: number[] | null;
   startTime?: string | null;
   lessonMinutes?: number | null;
   room?: string | null;
@@ -150,8 +152,10 @@ export interface Group {
   startDate: string;
   endDate: string | null;
   capacity: number;
-  /** Weekly rhythm: ODD = toq kunlar (Du/Chor/Ju), EVEN = juft kunlar (Se/Pay/Sha); null = lessons planned one by one. */
+  /** Weekly rhythm: ODD = toq kunlar (Du/Chor/Ju), EVEN = juft kunlar (Se/Pay/Sha); null = custom `weekdays` or no rhythm. */
   days: GroupDays | null;
+  /** Custom weekdays (1 = Monday … 7 = Sunday) when `days` is null; empty = no fixed rhythm. */
+  weekdays: number[];
   /** "HH:MM", Tashkent time. */
   startTime: string | null;
   lessonMinutes: number | null;
@@ -160,6 +164,12 @@ export interface Group {
   course: { id: string; title: string };
   teacher: { id: string; name: string };
   _count: { members: number };
+}
+export interface ScheduleSettings {
+  workStart: string;
+  workEnd: string;
+  lessonMinutes: number;
+  breakMinutes: number;
 }
 export interface GroupDetail extends Omit<Group, "_count"> {
   members: { studentId: string; student: { id: string; name: string; phone: string | null } }[];
@@ -177,6 +187,36 @@ export interface Slot {
 export interface Roster {
   slot: { id: string; startsAt: string; endsAt: string; status: string; onlineUrl: string | null; finalizedAt: string | null };
   students: { studentId: string; name: string; status: AttendanceStatus | null; note: string | null }[];
+}
+export interface JournalMember {
+  studentId: string;
+  name: string;
+  phone: string | null;
+  telegramLinked: boolean;
+  userNumber: number;
+  studentNumber: number | null;
+}
+export interface JournalRecord {
+  studentId: string;
+  status: AttendanceStatus;
+  note: string | null;
+}
+export interface JournalLesson {
+  slotId: string;
+  startsAt: string;
+  endsAt: string;
+  topic: string | null;
+  status: "PLANNED" | "DONE" | "CANCELLED";
+  onlineUrl: string | null;
+  finalizedAt: string | null;
+  records: JournalRecord[];
+}
+/** One Tashkent calendar month of a group's lessons and marks. */
+export interface GroupJournal {
+  groupId: string;
+  month: string;
+  members: JournalMember[];
+  lessons: JournalLesson[];
 }
 
 export interface AdminPackage {
@@ -374,6 +414,8 @@ export interface QuestionBankPage {
 }
 
 export const teacherService = {
+  scheduleSettings: () => apiGet<ScheduleSettings>("/schedule/settings"),
+  updateScheduleSettings: (settings: ScheduleSettings) => apiPut<ScheduleSettings>("/schedule/settings", settings),
   overview: () => apiGet<TeacherOverview>("/teacher/overview"),
   knowledge: (groupId?: string, teacherId?: string) =>
     apiGet<GroupKnowledge>("/teacher/knowledge", { ...(groupId ? { groupId } : {}), ...(teacherId ? { teacherId } : {}) }),
@@ -425,11 +467,17 @@ export const teacherService = {
   group: (id: string) => apiGet<GroupDetail>(`/groups/${id}`),
   slots: (id: string) => apiGet<Slot[]>(`/groups/${id}/slots`),
   roster: (slotId: string) => apiGet<Roster>(`/slots/${slotId}/attendance`),
-  mark: (slotId: string, records: { studentId: string; status: AttendanceStatus; note?: string | null }[], reason?: string) =>
+  mark: (slotId: string, records: { studentId: string; status: AttendanceStatus | null; note?: string | null }[], reason?: string) =>
     apiPut<unknown>(`/slots/${slotId}/attendance`, { records, reason: reason || undefined }),
+  markBulk: (groupId: string, records: { slotId: string; studentId: string; status: AttendanceStatus | null; note?: string | null }[]) =>
+    apiPost<unknown>(`/groups/${groupId}/attendance/bulk`, { records }),
   finalize: (slotId: string) => apiPost<unknown>(`/slots/${slotId}/attendance/finalize`),
+  sendAttendanceTelegram: (groupId: string, slotId: string, message: string, tomorrowMessage: string) =>
+    apiPost<{ recipients: number; sent: number; failed: number }>(`/groups/${groupId}/attendance/telegram`, { slotId, message, tomorrowMessage }),
   updateSlot: (slotId: string, data: { topic?: string | null; status?: Slot["status"] }) => apiPatch<Slot>(`/slots/${slotId}`, data),
   report: (id: string) => apiGet<{ lessons: number; rows: (AttendanceSummary & { studentId: string; name: string })[] }>(`/groups/${id}/attendance-report`),
+  /** One month (YYYY-MM) of the group's daily attendance journal. */
+  journal: (id: string, month: string) => apiGet<GroupJournal>(`/groups/${id}/attendance-journal`, { month }),
   /** Downloads the CSV through the authenticated client (a plain link could not send the token). */
   downloadCsv: async (id: string) => {
     const res = await apiClient.get<Blob>(`/groups/${id}/attendance-report.csv`, { responseType: "blob" });

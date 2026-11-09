@@ -6,7 +6,6 @@ import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { useAuthStore } from "../store/auth.store";
 import { useUIStore } from "../store/ui.store";
 import {
-  Car,
   LayoutDashboard,
   BookOpen,
   CheckSquare,
@@ -31,6 +30,7 @@ import {
   Activity,
   Receipt,
   ClipboardList,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { assetUrl } from "../utils/assetUrl";
@@ -114,12 +114,15 @@ export const StudentLayout: React.FC = () => {
     { to: "/dashboard", label: t("nav.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
     // Teaching staff: their groups right after the dashboard; group managers run every group there.
     ...(["TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"].includes(user?.role ?? "")
-      ? [{ to: "/teacher", label: user?.role === "TEACHER" ? t("nav.teacher") : t("admin.nav.groups"), icon: <GraduationCap className="h-5 w-5" /> }]
+      ? [
+          { to: "/teacher", label: user?.role === "TEACHER" ? t("nav.teacher") : t("admin.nav.groups"), icon: <GraduationCap className="h-5 w-5" /> },
+          { to: "/teacher/schedule", label: t("nav.schedule"), icon: <CalendarDays className="h-5 w-5" /> },
+        ]
       : []),
     // Admins manage the accounts here, next to their teaching page.
     ...(can(user?.role, "users:manage") ? [{ to: "/users", label: t("admin.nav.users"), icon: <Users className="h-5 w-5" /> }] : []),
     { to: "/my-courses", label: t("nav.courses"), icon: <Library className="h-5 w-5" /> },
-    // Back-office staff (front desk, finance) do not study: no lessons, tests or mistakes for them.
+    // Back-office staff (front desk, admins) do not study: no lessons, tests or mistakes for them.
     ...(backOffice
       ? []
       : [
@@ -242,7 +245,7 @@ export const StudentLayout: React.FC = () => {
                   // Collapsed: the icon slides to the middle of the narrow column (padding animates, no jump).
                   collapsed && "lg:px-[1.125rem]",
                   // A locked item points at the catalogue, but only "Kurslar" itself is the current page.
-                  isActive && !locked
+                  (item.to === "/teacher" ? pathname === "/teacher" || pathname.startsWith("/teacher/groups") : isActive) && !locked
                     ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 )}
@@ -287,7 +290,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <Link to="/dashboard" className="flex items-center" aria-label="E-AVTO TEST">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm shadow-brand-500/30">
-        <Car className="h-5 w-5" />
+        <img src="/brand-logo.png" alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
       </span>
       <span
         className={cn(

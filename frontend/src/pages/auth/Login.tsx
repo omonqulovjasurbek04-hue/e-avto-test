@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +20,35 @@ import { useAuthStore } from "@/store/auth.store";
 import { normalizeUzPhone } from "@/utils/phone";
 import type { TFunction } from "i18next";
 
+const REMEMBERED_LOGIN_KEY = "e_avto_login_phone";
+const RETURN_TO_KEY = "e_avto_login_return_to";
+
+const safeReturnPath = (value: unknown): string | null => {
+  if (!value || typeof value !== "object") return null;
+  const location = value as { pathname?: unknown; search?: unknown; hash?: unknown };
+  if (typeof location.pathname !== "string" || !location.pathname.startsWith("/") || location.pathname.startsWith("//")) return null;
+  if (location.pathname === ROUTES.login) return null;
+  const search = typeof location.search === "string" ? location.search : "";
+  const hash = typeof location.hash === "string" ? location.hash : "";
+  return `${location.pathname}${search}${hash}`;
+};
+
+const readStoredValue = (key: string): string | null => {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const readRememberedLogin = (): string => {
+  try {
+    return localStorage.getItem(REMEMBERED_LOGIN_KEY) ?? "";
+  } catch {
+    return "";
+  }
+};
+
 // The login is the phone number: the field always yields "+998XXXXXXXXX" (or a partial one while typing).
 const makeLoginSchema = (t: TFunction) =>
   z.object({
@@ -36,8 +65,12 @@ type LoginFormValues = z.infer<ReturnType<typeof makeLoginSchema>>;
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // A protected page that sent the guest here is where they return after logging in.
-  const from = (useLocation().state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const location = useLocation();
+  const requestedReturnPath = safeReturnPath((location.state as { from?: unknown } | null)?.from);
+  // Keep the protected destination through a refresh while signing in, including the 2FA step.
+  const from = requestedReturnPath ?? safeReturnPath({ pathname: readStoredValue(RETURN_TO_KEY) }) ?? ROUTES.dashboard;
+  const [rememberedLogin] = useState(readRememberedLogin);
+  const [rememberPhone, setRememberPhone] = useState(Boolean(rememberedLogin));
   const { login } = useAuth();
   const twoFactorPending = useAuthStore((s) => Boolean(s.twoFactorChallenge));
   // Back from Google without a session: say why (cancelled, failed, account disabled, not configured).
@@ -53,15 +86,37 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(makeLoginSchema(t)),
-    defaultValues: { login: "", password: "" },
+    defaultValues: { login: rememberedLogin, password: "" },
   });
+
+  useEffect(() => {
+    if (!requestedReturnPath) return;
+    try {
+      sessionStorage.setItem(RETURN_TO_KEY, requestedReturnPath);
+    } catch {
+      // The in-memory router state still preserves the destination for this visit.
+    }
+  }, [requestedReturnPath]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
     try {
       const result = await login(values.login, values.password);
+      try {
+        if (rememberPhone) localStorage.setItem(REMEMBERED_LOGIN_KEY, normalizeUzPhone(values.login) ?? values.login);
+        else localStorage.removeItem(REMEMBERED_LOGIN_KEY);
+      } catch {
+        // Chrome can still offer to save the credentials when site storage is unavailable.
+      }
       // Accounts with 2FA stay on this page for the code step.
-      if ("token" in result) navigate(from || ROUTES.dashboard, { replace: true });
+      if ("token" in result) {
+        try {
+          sessionStorage.removeItem(RETURN_TO_KEY);
+        } catch {
+          // Navigation can proceed without session storage.
+        }
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("auth.login.error");
@@ -70,7 +125,7 @@ export default function Login() {
     }
   };
 
-  if (twoFactorPending) return <TwoFactorStep />;
+  if (twoFactorPending) return <TwoFactorStep nextPath={from} />;
 
   return (
     <div className="space-y-6">
@@ -87,8 +142,7 @@ export default function Login() {
         <Alert variant="danger">{serverError}</Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {/* The phone number is the account login: "username" lets password managers fill it with the password. */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="on" noValidate>
         <Controller
           name="login"
           control={control}
@@ -99,7 +153,7 @@ export default function Login() {
               autoComplete="username"
               enterKeyHint="next"
               error={errors.login?.message}
-              name={field.name}
+              name="username"
               value={field.value}
               onChange={field.onChange}
               onBlur={field.onBlur}
@@ -119,6 +173,30 @@ export default function Login() {
           error={errors.password?.message}
           {...register("password")}
         />
+
+        <div className="flex items-start gap-2">
+          <input
+            id="remember-phone"
+            type="checkbox"
+            checked={rememberPhone}
+            onChange={(event) => {
+              const checked = event.target.checked;
+              setRememberPhone(checked);
+              if (!checked) {
+                try {
+                  localStorage.removeItem(REMEMBERED_LOGIN_KEY);
+                } catch {
+                  // The browser password manager still works without site storage.
+                }
+              }
+            }}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+          />
+          <label htmlFor="remember-phone" className="text-sm text-slate-600 dark:text-slate-300">
+            {t("auth.login.rememberPhone")}
+            <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{t("auth.login.browserPasswordHint")}</span>
+          </label>
+        </div>
 
         <Button type="submit" loading={isSubmitting} className="w-full">
           {t("auth.login.submit")}

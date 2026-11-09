@@ -1,19 +1,20 @@
 import { Prisma, Role } from "@prisma/client";
 import { prisma } from "../config/database";
-import { ListQuery } from "../validators/course";
+import { ListQuery, UserCreateInput } from "../validators/course";
 import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
 import { canAssignRole } from "../lib/permissions";
 import { accountIdFilter, assignStudentNumber, STAFF_ROLES } from "../lib/accountNumbers";
 import { writeAudit } from "./audit.service";
 import { revokeAllSessions } from "./session.service";
 import { getPagination } from "../utils/pagination";
+import { hashPassword } from "../utils/password";
 
 export const listUsers = async (query: ListQuery) => {
   const { page, limit, skip, take } = getPagination(query.page, query.limit);
   const digits = query.search?.replace(/\D/g, "") ?? "";
   const where: Prisma.UserWhereInput = {
     ...(query.role ? { role: query.role } : {}),
-    // student = had a course; user = only signed up; teacher = teaches now; staff = moderator … superadmin.
+    // student = had a course; user = only signed up; teacher = teaches now; staff = manager … superadmin.
     ...(query.kind === "student"
       ? { studentNumber: { not: null }, role: "USER" as const }
       : query.kind === "user"
@@ -169,6 +170,111 @@ export const updateUserStatus = async (actorId: string, actorRole: string, userI
     return saved;
   });
   return { id: user.id, isActive: user.isActive };
+};
+
+/**
+ * An admin creates an account for somebody who cannot sign up themselves. The person can sign in
+ * with the phone and password right away; the role is limited to what the admin may grant.
+ */
+export const createUser = async (actorId: string, actorRole: string, input: UserCreateInput) => {
+  const role = input.role ?? "USER";
+  if (!canAssignRole(actorRole, "USER", role)) throw forbidden("Only a superadmin can create admin accounts");
+  if (await prisma.user.findUnique({ where: { phone: input.phone } })) throw conflict("Phone number already registered");
+  if (input.email && (await prisma.user.findUnique({ where: { email: input.email } }))) throw conflict("Email already registered");
+
+  const passwordHash = await hashPassword(input.password);
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: { name: input.name, phone: input.phone, email: input.email, passwordHash, role },
+    });
+    // A teacher has a public profile from the start, like after an admin role change.
+    if (role === "TEACHER") await tx.teacherProfile.upsert({ where: { userId: created.id }, create: { userId: created.id }, update: { isActive: true } });
+    await writeAudit(
+      {
+        actorId,
+        action: "user.create",
+        entity: "User",
+        entityId: created.id,
+        after: {
+          name: created.name,
+          email: created.email,
+          phone: created.phone,
+          role,
+          userNumber: created.userNumber,
+          teacherNumber: created.teacherNumber,
+          staffNumber: created.staffNumber,
+        },
+      },
+      tx
+    );
+    return created;
+  });
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    userNumber: user.userNumber,
+    studentNumber: user.studentNumber,
+    teacherNumber: user.teacherNumber,
+    staffNumber: user.staffNumber,
+    role: user.role,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    emailVerifiedAt: user.emailVerifiedAt,
+    totpEnabledAt: user.totpEnabledAt,
+  };
+};
+
+/**
+ * Deletes an account and everything that hangs off it (courses, results, attendance, notifications).
+ * Orders and taught groups are financial/teaching history, so they block the delete; blocking the
+ * account is the answer there. Audited before the row disappears.
+ */
+export const deleteUser = async (actorId: string, actorRole: string, userId: string) => {
+  if (actorId === userId) throw badRequest("You cannot delete your own account");
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) throw notFound("User not found");
+  if (!canAssignRole(actorRole, existing.role, existing.role)) throw forbidden("Only a superadmin can delete admin accounts");
+
+  const [orders, groups] = await Promise.all([
+    prisma.order.count({ where: { userId } }),
+    prisma.teacherGroup.count({ where: { teacherId: userId } }),
+  ]);
+  if (orders > 0) throw conflict("This account has orders; block it instead");
+  if (groups > 0) throw conflict("This account teaches groups; hand them to another teacher first");
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await writeAudit(
+        {
+          actorId,
+          action: "user.delete",
+          entity: "User",
+          entityId: userId,
+          before: {
+            name: existing.name,
+            email: existing.email,
+            phone: existing.phone,
+            role: existing.role,
+            userNumber: existing.userNumber,
+            studentNumber: existing.studentNumber,
+            teacherNumber: existing.teacherNumber,
+            staffNumber: existing.staffNumber,
+          },
+        },
+        tx
+      );
+      await tx.user.delete({ where: { id: userId } });
+    });
+  } catch (e) {
+    // Anything else the database protects (e.g. financial records) is a reason to block, not delete.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") {
+      throw conflict("This account has records that must be kept; block it instead");
+    }
+    throw e;
+  }
+  return { id: userId, deleted: true };
 };
 
 /** Every public number the account has held (user, student, teacher), newest first. */

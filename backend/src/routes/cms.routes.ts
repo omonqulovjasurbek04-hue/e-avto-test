@@ -57,7 +57,7 @@ crawlerRoutes.get("/sitemap.xml", asyncHandler(async (_req: Request, res: Respon
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`);
 }));
 
-// ───────────── admin / moderator (content:manage) ─────────────
+// ───────────── admin (content:manage) ─────────────
 export const adminCmsRoutes = Router();
 adminCmsRoutes.use(asyncHandler(authMiddleware));
 adminCmsRoutes.use(requirePermission("content:manage"));

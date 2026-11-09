@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Car, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "@/store/ui.store";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
@@ -26,7 +26,7 @@ export const AuthLayout: React.FC = () => {
       <header className="flex items-center justify-between px-4 py-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2" aria-label="E-Avto Test">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white ring-1 ring-white/30 backdrop-blur">
-            <Car className="h-5 w-5" />
+            <img src="/brand-logo.png" alt="" className="h-9 w-9 rounded-xl object-cover" />
           </span>
           <span className="text-lg font-black tracking-tight text-white drop-shadow">E-AVTO.TEST</span>
         </Link>

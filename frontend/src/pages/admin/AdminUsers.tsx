@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
+import { MoreHorizontal, Search } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -23,6 +23,8 @@ import { UserDetailModal } from "@/components/admin/UserDetailModal";
 import { RolesInfo } from "@/components/admin/RolesInfo";
 import type { UserRole } from "@/types/user";
 
+type SelectionMode = "delete" | "block" | "unblock";
+
 export default function AdminUsers() {
   const { t } = useTranslation();
   const me = useAuthStore((s) => s.user);
@@ -38,16 +40,62 @@ export default function AdminUsers() {
   const [roleBusy, setRoleBusy] = useState(false);
   // The dashboard's per-role counts open this page already filtered to that role.
   const linked = (useLocation().state as { role?: string; kind?: "student" | "user" } | null) ?? {};
-  const linkedRole = linked.role ?? "";
+  // The dashboard's student/user cards point at the two plain-account kinds; the role filter carries them too.
+  const linkedRole = linked.kind === "student" ? "student" : linked.kind === "user" ? "user" : linked.role ?? "";
   const [roleFilter, setRoleFilter] = useState(linkedRole);
-  // "student" = had a course, "user" = only signed up, "teacher" = teaches now.
-  const [kindFilter, setKindFilter] = useState<"" | "student" | "user" | "teacher" | "staff">(linked.kind ?? "");
+  // The role filter also carries the two plain-account kinds (User = no course, O'quvchi = had a course).
+  const isKindRole = roleFilter === "user" || roleFilter === "student";
   const [resetting, setResetting] = useState<AdminUser | null>(null);
   // Role changes and blocking ask for a reason; it goes to the audit log.
   const [roleReason, setRoleReason] = useState("");
-  const [blocking, setBlocking] = useState<AdminUser | null>(null);
-  const [blockReason, setBlockReason] = useState("");
   const [detail, setDetail] = useState<AdminUser | null>(null);
+  // Bulk workflow: pick an action at the top, then tick the rows it should apply to.
+  const [mode, setMode] = useState<SelectionMode | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const [bulkBlockOpen, setBulkBlockOpen] = useState(false);
+  const [bulkBlockReason, setBulkBlockReason] = useState("");
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [moreOpen]);
+
+  // You cannot block or delete your own account, so it is never selectable.
+  const isSelectable = (u: AdminUser) => u.id !== me?.id;
+  const selectableIds = items.filter(isSelectable).map((u) => u.id);
+  const allOnPageSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      selectableIds.forEach((id) => (allOnPageSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  };
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const startMode = (next: SelectionMode) => {
+    setMode(next);
+    setSelected(new Set());
+    setMoreOpen(false);
+  };
+  const cancelMode = () => {
+    setMode(null);
+    setSelected(new Set());
+  };
 
   const resetTwoFactor = async () => {
     const u = resetting;
@@ -62,15 +110,49 @@ export default function AdminUsers() {
     }
   };
 
-  const toggleActive = async (u: AdminUser, reason?: string) => {
-    setBlocking(null);
-    try {
-      await adminService.setUserActive(u.id, !u.isActive, reason);
-      toast.success(u.isActive ? t("admin.users.blockedToast") : t("admin.users.activatedToast"));
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("admin.users.statusError"));
-    }
+  const bulkBlock = async () => {
+    const ids = [...selected].filter((id) => id !== me?.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => adminService.setUserActive(id, false, bulkBlockReason.trim())));
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const done = results.length - failed;
+    setBulkBusy(false);
+    setBulkBlockOpen(false);
+    setBulkBlockReason("");
+    if (done) toast.success(t("admin.users.bulkBlockedToast", { n: done }));
+    if (failed) toast.error(t("admin.users.bulkPartialError", { n: failed }));
+    cancelMode();
+    load();
+  };
+
+  const bulkUnblock = async () => {
+    const ids = [...selected].filter((id) => id !== me?.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => adminService.setUserActive(id, true)));
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const done = results.length - failed;
+    setBulkBusy(false);
+    if (done) toast.success(t("admin.users.bulkUnblockedToast", { n: done }));
+    if (failed) toast.error(t("admin.users.bulkPartialError", { n: failed }));
+    cancelMode();
+    load();
+  };
+
+  const bulkDelete = async () => {
+    const ids = [...selected].filter((id) => id !== me?.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => adminService.deleteUser(id)));
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const done = results.length - failed;
+    setBulkBusy(false);
+    setBulkDeleteOpen(false);
+    if (done) toast.success(t("admin.users.bulkDeletedToast", { n: done }));
+    if (failed) toast.error(t("admin.users.bulkPartialError", { n: failed }));
+    cancelMode();
+    load();
   };
 
   const requestId = useRef(0);
@@ -79,7 +161,12 @@ export default function AdminUsers() {
     setLoading(true);
     setError(null);
     adminService
-      .listUsers({ page, search: debounced || undefined, role: roleFilter || undefined, kind: kindFilter || undefined })
+      .listUsers({
+        page,
+        search: debounced || undefined,
+        role: isKindRole ? undefined : roleFilter || undefined,
+        kind: isKindRole ? roleFilter : undefined,
+      })
       .then((res) => {
         if (id !== requestId.current) return; // a newer request is on its way
         setItems(res.items);
@@ -89,8 +176,13 @@ export default function AdminUsers() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [page, debounced, roleFilter, kindFilter]);
-  useEffect(() => setPage(1), [debounced, roleFilter, kindFilter]);
+  useEffect(load, [page, debounced, roleFilter, isKindRole]);
+  useEffect(() => setPage(1), [debounced, roleFilter]);
+  // A different page or filter means a different set of rows; leave selection mode as well.
+  useEffect(() => {
+    setSelected(new Set());
+    setMode(null);
+  }, [page, debounced, roleFilter]);
 
   const openRole = (u: AdminUser) => {
     setNextRole(u.role);
@@ -119,6 +211,14 @@ export default function AdminUsers() {
     <div className="container-page py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("admin.users.title")}</h1>
+        {mode && (
+          <div className="text-center">
+            <p className="text-sm font-medium text-brand-800 dark:text-brand-200">
+              {t(mode === "delete" ? "admin.users.modeDelete" : mode === "block" ? "admin.users.modeBlock" : "admin.users.modeUnblock")}
+            </p>
+            <p className="text-xs text-brand-700 dark:text-brand-300">{t("admin.users.selectedCount", { n: selected.size })}</p>
+          </div>
+        )}
         <RolesInfo />
       </div>
 
@@ -133,19 +233,97 @@ export default function AdminUsers() {
           />
         </div>
         <div className="flex flex-wrap gap-3 [&>*]:w-48">
-          <Select aria-label={t("admin.users.byRole")} options={[{ value: "", label: t("admin.users.allRoles") }, ...ALL_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))]} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} />
           <Select
-            aria-label={t("admin.users.byKind")}
+            aria-label={t("admin.users.byRole")}
             options={[
-              { value: "", label: t("admin.users.allKinds") },
-              { value: "student", label: t("admin.users.kindStudent") },
-              { value: "user", label: t("admin.users.kindUser") },
-              { value: "teacher", label: t("admin.users.kindTeacher") },
-              { value: "staff", label: t("admin.users.kindStaff") },
+              { value: "", label: t("admin.users.allRoles") },
+              { value: "user", label: t("admin.users.filterUser") },
+              { value: "student", label: t("roles.USER") },
+              { value: "TEACHER", label: t("roles.TEACHER") },
+              { value: "MANAGER", label: t("roles.MANAGER") },
+              { value: "ADMIN", label: t("roles.ADMIN") },
+              { value: "SUPERADMIN", label: t("roles.SUPERADMIN") },
             ]}
-            value={kindFilter}
-            onChange={(e) => setKindFilter(e.target.value as "" | "student" | "user" | "teacher" | "staff")}
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
           />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {mode ? (
+            <>
+              <Button size="md" variant="outline" disabled={selectableIds.length === 0} onClick={toggleAll}>
+                {t("admin.users.selectAll")}
+              </Button>
+              {mode === "delete" && (
+                <Button size="md" variant="danger" disabled={selected.size === 0} onClick={() => setBulkDeleteOpen(true)}>
+                  {t("admin.users.deleteSelected")}
+                </Button>
+              )}
+              {mode === "block" && (
+                <Button
+                  size="md"
+                  variant="danger"
+                  disabled={selected.size === 0}
+                  onClick={() => {
+                    setBulkBlockReason("");
+                    setBulkBlockOpen(true);
+                  }}
+                >
+                  {t("admin.users.blockSelected")}
+                </Button>
+              )}
+              {mode === "unblock" && (
+                <Button size="md" variant="success" loading={bulkBusy} disabled={selected.size === 0} onClick={() => void bulkUnblock()}>
+                  {t("admin.users.unblockSelected")}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <Button size="md" variant="outline" disabled={loading || items.length === 0} onClick={() => startMode("delete")}>
+                {t("admin.users.delete")}
+              </Button>
+              <Button size="md" variant="outline" disabled={loading || items.length === 0} onClick={() => startMode("block")}>
+                {t("admin.users.block")}
+              </Button>
+            </>
+          )}
+          <div className="relative" ref={moreRef}>
+            <Button
+              size="md"
+              variant="ghost"
+              rightIcon={<MoreHorizontal className="h-4 w-4" />}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              {t("admin.users.more")}
+            </Button>
+            {moreOpen && (
+              <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                <button
+                  type="button"
+                  disabled={!mode}
+                  onClick={() => {
+                    cancelMode();
+                    setMoreOpen(false);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  {t("admin.users.clearSelection")}
+                </button>
+                <button
+                  type="button"
+                  disabled={loading || items.length === 0}
+                  onClick={() => {
+                    startMode("unblock");
+                    setMoreOpen(false);
+                  }}
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  {t("admin.users.unblock")}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -161,11 +339,23 @@ export default function AdminUsers() {
             <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
+                  {mode && (
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label={t("admin.users.selectAll")}
+                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800"
+                        checked={allOnPageSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = selected.size > 0 && !allOnPageSelected;
+                        }}
+                        onChange={toggleAll}
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3">{t("admin.users.id")}</th>
                   <th className="px-4 py-3">{t("admin.users.name")}</th>
-                  <th className="px-4 py-3">{t("admin.users.email")}</th>
                   <th className="px-4 py-3">{t("admin.users.role")}</th>
-                  <th className="px-4 py-3">{t("admin.common.status")}</th>
                   <th className="px-4 py-3">{t("admin.users.registered")}</th>
                   <th className="px-4 py-3 text-right">{t("admin.common.action")}</th>
                 </tr>
@@ -173,6 +363,18 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {items.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    {mode && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label={t("admin.users.selectRow", { name: u.name })}
+                          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800"
+                          checked={selected.has(u.id)}
+                          disabled={!isSelectable(u)}
+                          onChange={() => toggleOne(u.id)}
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 font-mono text-xs">
                       {/* The prefix tells: teacher#### teaches, student#### had a course, user#### only signed up. */}
                       <Badge variant={u.staffNumber ? "warning" : u.role === "TEACHER" && u.teacherNumber ? "primary" : u.studentNumber ? "success" : "neutral"}>{formatAccountId(u)}</Badge>
@@ -182,17 +384,10 @@ export default function AdminUsers() {
                       {u.phone && <div className="text-xs font-normal text-slate-500 dark:text-slate-400">{u.phone}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      {u.email ?? "Telegram"}
-                      {u.email && !u.emailVerifiedAt && <div className="text-xs text-amber-600 dark:text-amber-400">{t("admin.users.emailUnverified")}</div>}
-                    </td>
-                    <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1">
                         <Badge variant={u.role === "USER" ? "neutral" : u.role === "ADMIN" || u.role === "SUPERADMIN" ? "warning" : "primary"}>{t(`roles.${u.role}`)}</Badge>
                         {u.totpEnabledAt && <Badge variant="success">{t("admin.users.twoFactor")}</Badge>}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={u.isActive ? "success" : "danger"}>{u.isActive ? t("admin.common.active") : t("admin.users.blocked")}</Badge>
                     </td>
                     <td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
@@ -202,20 +397,6 @@ export default function AdminUsers() {
                         </Button>
                         <Button size="sm" variant="outline" disabled={u.id === me?.id || !ALL_ROLES.some((r) => r !== u.role && canAssignRole(me?.role, u.role, r))} onClick={() => openRole(u)}>
                           {t("admin.users.changeRole")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={u.isActive ? "danger" : "success"}
-                          disabled={u.id === me?.id}
-                          onClick={() => {
-                            // Blocking asks why; activating again is immediate.
-                            if (u.isActive) {
-                              setBlockReason("");
-                              setBlocking(u);
-                            } else void toggleActive(u);
-                          }}
-                        >
-                          {u.isActive ? t("admin.users.block") : t("admin.users.activate")}
                         </Button>
                         {me?.role === "SUPERADMIN" && u.totpEnabledAt && u.id !== me.id && (
                           <Button size="sm" variant="outline" onClick={() => setResetting(u)}>
@@ -273,19 +454,26 @@ export default function AdminUsers() {
         )}
       </Modal>
 
-      <Modal isOpen={blocking !== null} onClose={() => setBlocking(null)} title={t("admin.users.blockTitle", { name: blocking?.name ?? "" })} maxWidth="md">
-        {blocking && (
-          <div className="space-y-4">
-            <Textarea label={t("admin.users.reasonLabel")} rows={2} value={blockReason} onChange={(e) => setBlockReason(e.target.value)} placeholder={t("admin.users.blockReasonPlaceholder")} />
-            <p className="text-xs text-slate-500">{t("admin.users.blockHint")}</p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setBlocking(null)}>{t("admin.common.cancel")}</Button>
-              <Button variant="danger" disabled={blockReason.trim().length < 3} onClick={() => void toggleActive(blocking, blockReason.trim())}>
-                {t("admin.users.block")}
-              </Button>
-            </div>
+      <ConfirmDialog
+        isOpen={bulkDeleteOpen}
+        title={t("admin.users.bulkDeleteTitle")}
+        message={t("admin.users.bulkDeleteConfirm", { n: selected.size })}
+        confirmText={t("admin.users.deleteSelected")}
+        onConfirm={() => void bulkDelete()}
+        onCancel={() => setBulkDeleteOpen(false)}
+      />
+
+      <Modal isOpen={bulkBlockOpen} onClose={() => setBulkBlockOpen(false)} title={t("admin.users.bulkBlockTitle", { n: selected.size })} maxWidth="md">
+        <div className="space-y-4">
+          <Textarea label={t("admin.users.reasonLabel")} rows={2} value={bulkBlockReason} onChange={(e) => setBulkBlockReason(e.target.value)} placeholder={t("admin.users.blockReasonPlaceholder")} />
+          <p className="text-xs text-slate-500">{t("admin.users.bulkBlockHint")}</p>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setBulkBlockOpen(false)}>{t("admin.common.cancel")}</Button>
+            <Button variant="danger" loading={bulkBusy} disabled={bulkBlockReason.trim().length < 3} onClick={() => void bulkBlock()}>
+              {t("admin.users.blockSelected")}
+            </Button>
           </div>
-        )}
+        </div>
       </Modal>
 
       {detail && <UserDetailModal user={detail} onClose={() => setDetail(null)} onChanged={load} />}

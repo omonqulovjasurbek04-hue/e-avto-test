@@ -64,7 +64,7 @@ describe.skipIf(!enabled)("multilingual CMS and notification templates", () => {
   let savedSettings: { key: string; value: unknown }[] = [];
   let savedTemplates: { key: string; language: string; subject: string; body: string }[] = [];
 
-  const signup = async (k: string, role?: "ADMIN" | "MODERATOR") => {
+  const signup = async (k: string, role?: "ADMIN" | "MANAGER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     uid[k] = res.body.data.user.id;
@@ -81,7 +81,7 @@ describe.skipIf(!enabled)("multilingual CMS and notification templates", () => {
     savedTemplates = await prisma.notificationTemplate.findMany({ select: { key: true, language: true, subject: true, body: true } });
     await prisma.notificationTemplate.deleteMany({});
     await signup("admin", "ADMIN");
-    await signup("moderator", "MODERATOR");
+    await signup("moderator", "MANAGER");
     for (const k of ["uzUser", "ruUser", "cyrlUser"]) await signup(k);
   });
 

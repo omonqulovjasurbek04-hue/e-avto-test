@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type ReactNode } from "react";
-import { BookOpen, CalendarRange, ClipboardCheck, Crown, GraduationCap, HelpCircle, PenLine, Percent, School, ShieldCheck, Target, UserRound, Users, Wallet } from "lucide-react";
+import { BookOpen, CalendarRange, ClipboardCheck, Crown, GraduationCap, HelpCircle, Percent, School, ShieldCheck, Target, UserRound, Users } from "lucide-react";
 import { adminService } from "@/services/admin.service";
 import type { AdminStats } from "@/types/admin";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -51,8 +51,6 @@ export function AdminStatsGrid() {
         { key: "students", label: t("admin.dashboard.cards.students"), value: stats.studentUsers ?? 0, icon: <GraduationCap className="h-5 w-5" />, color: "green", filter: { role: "USER", kind: "student" } },
         { key: "users", label: t("admin.dashboard.cards.users"), value: (stats.byRole.USER ?? 0) - (stats.studentUsers ?? 0), icon: <UserRound className="h-5 w-5" />, color: "slate", filter: { role: "USER", kind: "user" } },
         { key: "TEACHER", label: t("admin.dashboard.cards.TEACHER"), value: stats.byRole.TEACHER ?? 0, icon: <School className="h-5 w-5" />, color: "brand", filter: { role: "TEACHER" } },
-        { key: "MODERATOR", label: t("admin.dashboard.cards.MODERATOR"), value: stats.byRole.MODERATOR ?? 0, icon: <PenLine className="h-5 w-5" />, color: "amber", filter: { role: "MODERATOR" } },
-        { key: "FINANCE", label: t("admin.dashboard.cards.FINANCE"), value: stats.byRole.FINANCE ?? 0, icon: <Wallet className="h-5 w-5" />, color: "green", filter: { role: "FINANCE" } },
         { key: "MANAGER", label: t("admin.dashboard.cards.MANAGER"), value: stats.byRole.MANAGER ?? 0, icon: <CalendarRange className="h-5 w-5" />, color: "brand", filter: { role: "MANAGER" } },
         { key: "ADMIN", label: t("admin.dashboard.cards.ADMIN"), value: stats.byRole.ADMIN ?? 0, icon: <ShieldCheck className="h-5 w-5" />, color: "amber", filter: { role: "ADMIN" } },
         { key: "SUPERADMIN", label: t("admin.dashboard.cards.SUPERADMIN"), value: stats.byRole.SUPERADMIN ?? 0, icon: <Crown className="h-5 w-5" />, color: "red", filter: { role: "SUPERADMIN" } },

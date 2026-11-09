@@ -7,9 +7,10 @@ describe("permission matrix", () => {
     expect(hasPermission("USER", "users:manage")).toBe(false);
   });
 
-  it("keeps finance away from user management and teachers away from payments", () => {
-    expect(hasPermission("FINANCE", "orders:read")).toBe(true);
-    expect(hasPermission("FINANCE", "users:manage")).toBe(false);
+  it("gives admins money and user management, and keeps teachers away from payments", () => {
+    expect(hasPermission("ADMIN", "orders:read")).toBe(true);
+    expect(hasPermission("ADMIN", "payments:manage")).toBe(true);
+    expect(hasPermission("ADMIN", "users:manage")).toBe(true);
     expect(hasPermission("TEACHER", "payments:manage")).toBe(false);
     expect(hasPermission("TEACHER", "attendance:mark")).toBe(true);
   });
@@ -46,7 +47,7 @@ describe("role escalation guard", () => {
 
   it("allows an admin to manage ordinary roles", () => {
     expect(canAssignRole("ADMIN", "USER", "TEACHER")).toBe(true);
-    expect(canAssignRole("ADMIN", "TEACHER", "MODERATOR")).toBe(true);
+    expect(canAssignRole("ADMIN", "TEACHER", "USER")).toBe(true);
   });
 
   it("lets an admin hire and remove a MANAGER (every MANAGER right is also an ADMIN right)", () => {
@@ -57,17 +58,9 @@ describe("role escalation guard", () => {
     expect(canAssignRole("MANAGER", "USER", "MANAGER")).toBe(false);
   });
 
-  it("never lets an admin hand out rights it does not hold itself (FINANCE has payments:manage)", () => {
-    expect(hasPermission("ADMIN", "payments:manage")).toBe(false);
-    expect(canAssignRole("ADMIN", "USER", "FINANCE")).toBe(false);
-    expect(canAssignRole("ADMIN", "TEACHER", "FINANCE")).toBe(false);
-    expect(canAssignRole("ADMIN", "FINANCE", "USER")).toBe(false);
-    expect(canAssignRole("SUPERADMIN", "USER", "FINANCE")).toBe(true);
-  });
-
   it("allows a superadmin everything and nobody else anything", () => {
     expect(canAssignRole("SUPERADMIN", "USER", "ADMIN")).toBe(true);
-    expect(canAssignRole("FINANCE", "USER", "TEACHER")).toBe(false);
+    expect(canAssignRole("MANAGER", "USER", "TEACHER")).toBe(false);
     expect(canAssignRole("USER", "USER", "USER")).toBe(false);
   });
 });

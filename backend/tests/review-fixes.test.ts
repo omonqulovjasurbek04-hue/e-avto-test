@@ -18,7 +18,7 @@ describe.skipIf(!enabled)("code review fixes", () => {
   let draftLessonId = "";
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
 
-  const signup = async (k: string, role?: "ADMIN" | "MODERATOR") => {
+  const signup = async (k: string, role?: "ADMIN" | "MANAGER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     uid[k] = res.body.data.user.id;
@@ -30,7 +30,7 @@ describe.skipIf(!enabled)("code review fixes", () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
     await signup("admin", "ADMIN");
-    await signup("moderator", "MODERATOR");
+    await signup("moderator", "MANAGER");
     await signup("guestish");
     await signup("owner");
     courseId = (await prisma.course.create({ data: { title: `RV ${run}`, description: "d" } })).id;
@@ -112,18 +112,16 @@ describe.skipIf(!enabled)("code review fixes", () => {
     expect(reword.status).toBe(200);
   });
 
-  it("a moderator can edit questions and read the course list, but not change courses or users", async () => {
+  it("a front-desk manager cannot edit questions or see statistics", async () => {
     const q = await prisma.question.findFirstOrThrow({ where: { text: `${run} q1` } });
-    expect((await request(app).put(`/api/admin/questions/${q.id}`).set(bearer("moderator")).send({ explanation: "Tuzatildi" })).status).toBe(200);
-    expect((await request(app).get("/api/admin/questions").set(bearer("moderator"))).status).toBe(200);
-    expect((await request(app).get("/api/admin/courses").set(bearer("moderator"))).status).toBe(200);
-    expect((await request(app).post("/api/admin/courses").set(bearer("moderator")).send({ title: "x", description: "y" })).status).toBe(403);
-    expect((await request(app).get("/api/admin/users").set(bearer("moderator"))).status).toBe(403);
+    expect((await request(app).put(`/api/admin/questions/${q.id}`).set(bearer("moderator")).send({ explanation: "Tuzatildi" })).status).toBe(403);
+    expect((await request(app).get("/api/admin/questions").set(bearer("moderator"))).status).toBe(403);
+    expect((await request(app).get("/api/admin/users").set(bearer("moderator"))).status).toBe(200);
     expect((await request(app).get("/api/admin/statistics").set(bearer("moderator"))).status).toBe(403);
   });
 
-  it("an admin cannot make anyone FINANCE", async () => {
-    expect((await request(app).patch(`/api/admin/users/${uid.guestish}/role`).set(bearer("admin")).send({ role: "FINANCE" })).status).toBe(403);
+  it("an admin cannot grant SUPERADMIN", async () => {
+    expect((await request(app).patch(`/api/admin/users/${uid.guestish}/role`).set(bearer("admin")).send({ role: "SUPERADMIN" })).status).toBe(403);
     expect((await prisma.user.findUniqueOrThrow({ where: { id: uid.guestish } })).role).toBe("USER");
   });
 

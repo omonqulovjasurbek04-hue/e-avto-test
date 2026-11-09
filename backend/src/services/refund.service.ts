@@ -4,7 +4,7 @@ import { badRequest, conflict, notFound } from "../utils/errors";
 import { writeAudit } from "./audit.service";
 
 /**
- * Refund lifecycle:  create (PENDING) -> provider confirms (or finance confirms by hand) -> DONE
+ * Refund lifecycle:  create (PENDING) -> provider confirms (or an admin confirms by hand) -> DONE
  *                                     \-> REJECTED
  * Revenue only subtracts DONE refunds, and access is revoked only when the payment is refunded in full.
  */

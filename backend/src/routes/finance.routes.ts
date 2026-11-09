@@ -9,7 +9,7 @@ import { success, paginated } from "../utils/apiResponse";
 
 const h = (fn: (req: AuthRequest, res: Response) => Promise<unknown>) => asyncHandler(fn as never);
 
-/** Orders and revenue (orders:read — ADMIN, SUPERADMIN, FINANCE). */
+/** Orders and revenue (orders:read — ADMIN, SUPERADMIN). */
 const router = Router();
 router.use(asyncHandler(authMiddleware));
 router.use(requirePermission("orders:read"));
@@ -32,7 +32,7 @@ router.get("/summary", h(async (req, res) => {
   success(res, await finance.summary(q.from, q.to));
 }));
 
-// Money movement needs payments:manage (FINANCE, SUPERADMIN) on top of reading orders.
+// Money movement needs payments:manage (ADMIN, SUPERADMIN) on top of reading orders.
 const uuid = z.string().uuid();
 router.get("/refunds", requirePermission("payments:manage"), h(async (_req, res) => success(res, await refunds.listRefunds())));
 router.post("/payments/:id/refunds", requirePermission("payments:manage"), h(async (req, res) => {

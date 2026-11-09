@@ -26,7 +26,7 @@ import { can } from "@/lib/permissions";
 export default function Dashboard() {
   const { user } = useAuth();
   if (user?.role === "TEACHER") return <TeacherDashboard />;
-  // Staff (admins, front desk, finance, moderators) see their work here, not a student's progress.
+  // Staff (admins, front desk, managers) see their work here, not a student's progress.
   if (user && user.role !== "USER") return <AdminStart />;
   return <StudentDashboard />;
 }

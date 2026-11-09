@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { TimeInput } from "@/components/ui/TimeInput";
 import type { Group, GroupDays, GroupInput } from "@/services/platform.service";
 
 export interface GroupFormProps {
@@ -19,8 +21,10 @@ export interface GroupFormProps {
 const dateOnly = (iso?: string | null) => (iso ? iso.slice(0, 10) : "");
 /** Today in Tashkent as YYYY-MM-DD: a new group starts the day it is opened. */
 const todayTashkent = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
+const sortDays = (days: number[]) => [...days].sort((a, b) => a - b);
+const weekdayNames = (t: TFunction) => t("schedule.weekdaysShort", { returnObjects: true }) as string[];
 
-/** Opening or editing a group: name, course, (teacher), dates, toq/juft kunlar, lesson time and length. */
+/** Opening or editing a group: name, course, (teacher), dates, lesson days and time. */
 export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }: GroupFormProps) {
   const { t } = useTranslation();
   const [f, setF] = useState({
@@ -30,18 +34,24 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
     // Not asked: a new group starts today; an existing one keeps its own start date.
     startDate: dateOnly(group?.startDate) || todayTashkent(),
     endDate: dateOnly(group?.endDate),
-    capacity: String(group?.capacity ?? 20),
-    days: (group?.days ?? "") as GroupDays | "",
+    rhythmMode: (group?.days ?? (group?.weekdays.length ? "CUSTOM" : "NONE")) as GroupDays | "CUSTOM" | "NONE",
+    weekdays: sortDays(group?.weekdays ?? []),
     startTime: group?.startTime ?? "",
-    lessonMinutes: String(group?.lessonMinutes ?? 90),
     room: group?.room ?? "",
   });
   const [err, setErr] = useState<string | null>(null);
   const set = (patch: Partial<typeof f>) => setF((prev) => ({ ...prev, ...patch }));
+  const days = weekdayNames(t);
+
+  const toggleDay = (day: number) =>
+    set({ weekdays: sortDays(f.weekdays.includes(day) ? f.weekdays.filter((d) => d !== day) : [...f.weekdays, day]) });
 
   const submit = () => {
     if (f.name.trim().length < 2 || !f.courseId || !f.startDate || (teachers && !f.teacherId)) return setErr(t("groupForm.fillAll"));
-    if (f.days && !f.startTime) return setErr(t("groupForm.needTime"));
+    const weekdays = f.rhythmMode === "CUSTOM" ? f.weekdays : [];
+    const rhythmDays = f.rhythmMode === "ODD" || f.rhythmMode === "EVEN" || weekdays.length > 0;
+    if (rhythmDays && !f.startTime) return setErr(t("groupForm.needTime"));
+    if (!rhythmDays && f.startTime) return setErr(t("groupForm.needDays"));
     setErr(null);
     void onSubmit({
       name: f.name.trim(),
@@ -49,10 +59,10 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
       ...(teachers ? { teacherId: f.teacherId } : {}),
       startDate: f.startDate,
       endDate: f.endDate || null,
-      capacity: Number(f.capacity) || 20,
-      days: f.days || null,
-      startTime: f.days ? f.startTime : null,
-      lessonMinutes: f.days ? Number(f.lessonMinutes) || 90 : null,
+      capacity: group?.capacity ?? 20,
+      days: f.rhythmMode === "ODD" || f.rhythmMode === "EVEN" ? f.rhythmMode : null,
+      weekdays,
+      startTime: rhythmDays ? f.startTime : null,
       room: f.room.trim() || null,
     });
   };
@@ -76,40 +86,64 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
         />
       )}
       <Input label={t("groupForm.endDate")} type="date" min={f.startDate} value={f.endDate} onChange={(e) => set({ endDate: e.target.value })} />
-
       <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
         <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-200">{t("groupForm.rhythm")}</legend>
-        <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t("groupForm.rhythm")}>
-          {(["ODD", "EVEN", ""] as const).map((d) => (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label={t("groupForm.rhythm")}>
+          {(["ODD", "EVEN", "CUSTOM", "NONE"] as const).map((mode) => (
             <button
-              key={d || "none"}
+              key={mode}
               type="button"
               role="radio"
-              aria-checked={f.days === d}
-              onClick={() => set({ days: d })}
+              aria-checked={f.rhythmMode === mode}
+              onClick={() => set({ rhythmMode: mode, ...(mode !== "CUSTOM" ? { weekdays: [] } : {}), ...(mode === "NONE" ? { startTime: "" } : {}) })}
               className={`rounded-lg border px-3 py-2 text-left text-sm font-medium transition ${
-                f.days === d
+                f.rhythmMode === mode
                   ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
                   : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
               }`}
             >
-              {d === "ODD" ? t("groupForm.odd") : d === "EVEN" ? t("groupForm.even") : t("groupForm.rhythmNone")}
+              {mode === "ODD" ? t("groupForm.odd") : mode === "EVEN" ? t("groupForm.even") : mode === "CUSTOM" ? t("groupForm.customRhythm") : t("groupForm.rhythmNone")}
             </button>
           ))}
         </div>
-        {f.days && (
-          <div className="grid grid-cols-2 gap-4">
-            <Input label={t("groupForm.startTime")} type="time" value={f.startTime} onChange={(e) => set({ startTime: e.target.value })} />
-            <Input label={t("groupForm.lessonMinutes")} type="number" min={30} max={240} step={15} value={f.lessonMinutes} onChange={(e) => set({ lessonMinutes: e.target.value })} />
+        {f.rhythmMode === "CUSTOM" && (
+          <div className="space-y-2">
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("groupForm.pickDays")}</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t("groupForm.pickDays")}>
+              {days.map((name, i) => {
+                const day = i + 1;
+                const on = f.weekdays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleDay(day)}
+                    className={`min-w-11 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                      on
+                        ? "border-brand-500 bg-brand-500 text-white"
+                        : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+            {f.weekdays.length > 0 && (
+              <button type="button" onClick={() => set({ weekdays: [] })} className="text-xs font-medium text-slate-500 underline-offset-2 hover:underline">
+                {t("groupForm.clearDays")}
+              </button>
+            )}
           </div>
+        )}
+        {f.rhythmMode !== "NONE" && (
+          <TimeInput label={t("groupForm.startTime")} value={f.startTime} onChange={(value) => set({ startTime: value })} />
         )}
         <p className="text-xs text-slate-500">{t("groupForm.rhythmHint")}</p>
       </fieldset>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Input label={t("groupForm.room")} value={f.room} onChange={(e) => set({ room: e.target.value })} />
-        <Input label={t("groupForm.capacity")} type="number" min={1} max={200} value={f.capacity} onChange={(e) => set({ capacity: e.target.value })} />
-      </div>
+      <Input label={t("groupForm.room")} value={f.room} onChange={(e) => set({ room: e.target.value })} />
 
       {err && <p role="alert" className="text-sm text-red-500">{err}</p>}
       <div className="flex justify-end gap-3">
@@ -120,6 +154,16 @@ export function GroupForm({ group, courses, teachers, busy, onSubmit, onCancel }
   );
 }
 
-/** "Toq · 18:00" — the short rhythm label for lists; empty when the group has none. */
-export const rhythmLabel = (g: Pick<Group, "days" | "startTime">, t: (k: string) => string) =>
-  g.days && g.startTime ? `${g.days === "ODD" ? t("groupForm.oddShort") : t("groupForm.evenShort")} · ${g.startTime}` : "";
+/** "Toq · 18:00" or "Du, Ch · 18:00" — the short rhythm label for lists; empty when the group has none. */
+export const rhythmLabel = (g: Pick<Group, "days" | "weekdays" | "startTime">, t: TFunction) => {
+  if (!g.startTime) return "";
+  const label = g.days
+    ? g.days === "ODD"
+      ? t("groupForm.oddShort")
+      : t("groupForm.evenShort")
+    : sortDays(g.weekdays)
+        .map((d) => weekdayNames(t)[d - 1])
+        .filter(Boolean)
+        .join(", ");
+  return label ? `${label} · ${g.startTime}` : "";
+};

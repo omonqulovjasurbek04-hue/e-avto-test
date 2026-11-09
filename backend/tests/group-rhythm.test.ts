@@ -21,6 +21,16 @@ describe("group rhythm (toq / juft kunlar)", () => {
     expect(rhythmIntervals({ ...base, days: "ODD" }, new Date("2027-03-08T00:00:00Z"))).toHaveLength(3);
     expect(() => rhythmIntervals({ ...base, endDate: new Date("2028-12-31"), days: "ODD" })).toThrow(/Too many lessons/);
   });
+
+  it("uses the chosen weekdays when the group is on a custom rhythm", () => {
+    const custom = rhythmIntervals({ ...base, weekdays: [1, 4, 6] });
+    expect(custom.map((i) => i.startsAt.getUTCDate())).toEqual([1, 4, 6, 8, 11, 13]);
+    // No day rule, or an empty custom list, produces nothing.
+    expect(rhythmIntervals({ ...base, weekdays: [] })).toHaveLength(0);
+    expect(rhythmIntervals({ ...base })).toHaveLength(0);
+    // Toq/juft always wins over leftover custom weekdays.
+    expect(rhythmIntervals({ ...base, days: "ODD", weekdays: [2] })).toHaveLength(6);
+  });
 });
 
 // Integration: teachers open their own groups; admins open any; TEACHER role assignment is complete.
@@ -94,6 +104,11 @@ describe.skipIf(!enabled)("opening groups", () => {
       .set(bearer("other"))
       .send({ name: `Clash ${run}`, courseId, startDate: "2027-03-01", endDate: "2027-03-14", days: "ODD", startTime: "18:30", room: `R-${run}` });
     expect(clash.status).toBe(409);
+    expect(clash.body.errors[0]).toMatchObject({
+      kind: "room",
+      conflictingGroup: `Toq 18:00 ${run}`,
+      conflictingStartsAt: "2027-03-01T13:00:00.000Z",
+    });
   });
 
   it("the teacher finds and adds a student; another teacher cannot see or change the group", async () => {
@@ -116,6 +131,23 @@ describe.skipIf(!enabled)("opening groups", () => {
     const slots = await prisma.scheduleSlot.findMany({ where: { groupId }, orderBy: { startsAt: "asc" } });
     expect(slots.map((s) => s.startsAt.toISOString())).toEqual(["02", "04", "06", "09", "11", "13"].map((d) => `2027-03-${d}T04:00:00.000Z`));
     expect(await prisma.notification.count({ where: { userId: u.student.id, type: "SCHEDULE_NEW" } })).toBe(1);
+  });
+
+  it("opens a group on custom weekdays and replaces them when a fixed rhythm is chosen", async () => {
+    const res = await request(app)
+      .post("/api/groups")
+      .set(bearer("teacher"))
+      .send({ name: `Custom ${run}`, courseId, startDate: "2027-03-01", endDate: "2027-03-14", weekdays: [1, 3, 6], startTime: "12:00", lessonMinutes: 60 });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({ days: null, weekdays: [1, 3, 6], lessonsCreated: 6 });
+
+    const customId = res.body.data.id as string;
+    const slots = await prisma.scheduleSlot.findMany({ where: { groupId: customId }, orderBy: { startsAt: "asc" } });
+    expect(slots.map((s) => s.startsAt.getUTCDate())).toEqual([1, 3, 6, 8, 10, 13]);
+
+    const upd = await request(app).put(`/api/groups/${customId}`).set(bearer("teacher")).send({ days: "ODD", startTime: "12:00" });
+    expect(upd.status).toBe(200);
+    expect(upd.body.data).toMatchObject({ days: "ODD", weekdays: [], lessonsCreated: 6 });
   });
 
   it("an admin opens a group for any teacher", async () => {

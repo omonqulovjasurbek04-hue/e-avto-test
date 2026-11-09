@@ -31,7 +31,7 @@ export const startCleanupJob = (): NodeJS.Timeout => {
   // Unpaid orders expire quickly, so they get their own, shorter cycle.
   const expire = () => {
     void processEmailQueue().catch((e: Error) => console.error("Notification e-mail queue failed:", e.message));
-    // Telegram reminders (missed class: now, +1 hour, next day) ride on the same 5-minute cycle.
+    // Telegram reminders (+1 hour, next day at lesson time, then 20:00 that evening) ride on this 5-minute cycle.
     void processTelegramReminders().catch((e: Error) => console.error("Telegram reminders failed:", e.message));
     return expireStaleOrders().catch((e: Error) => console.error("Order expiry failed:", e.message));
   };

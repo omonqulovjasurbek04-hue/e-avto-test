@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 
-const ROLES: UserRole[] = ["USER", "TEACHER", "MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"];
+const ROLES: UserRole[] = ["USER", "TEACHER", "MANAGER", "ADMIN", "SUPERADMIN"];
 const tone = (r: UserRole) => (r === "USER" ? "neutral" : r === "ADMIN" || r === "SUPERADMIN" ? "warning" : "primary");
 
 /**

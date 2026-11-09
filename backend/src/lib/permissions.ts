@@ -40,6 +40,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   "content:manage",
   "catalog:manage",
   "orders:read",
+  "payments:manage",
   "groups:manage",
   "groups:own",
   "courses:open-all",
@@ -59,12 +60,10 @@ const ADMIN_PERMISSIONS: Permission[] = [
 const MATRIX: Record<Role, readonly Permission[]> = {
   USER: [],
   TEACHER: ["teaching:access", "attendance:mark", "groups:own", "courses:open-all", "tickets:edit"],
-  MODERATOR: ["admin:access", "content:manage", "tests:manage", "tickets:edit", "courses:open-all"],
-  FINANCE: ["admin:access", "orders:read", "payments:manage", "reports:read"],
   // Front desk: enrols students into groups and plans classes; no prices, settings or audit.
   MANAGER: ["admin:access", "users:read", "groups:manage", "schedule:manage", "orders:read"],
   ADMIN: ADMIN_PERMISSIONS,
-  SUPERADMIN: [...ADMIN_PERMISSIONS, "roles:manage", "payments:manage"],
+  SUPERADMIN: [...ADMIN_PERMISSIONS, "roles:manage"],
 };
 
 export const hasPermission = (role: string, permission: Permission): boolean =>
@@ -81,7 +80,7 @@ export const canAssignRole = (actorRole: string, targetCurrentRole: Role, newRol
   if (actorRole === "SUPERADMIN") return true;
   if (actorRole !== "ADMIN") return false;
   if (PRIVILEGED.includes(targetCurrentRole) || PRIVILEGED.includes(newRole)) return false;
-  // Nobody may hand out (or take away) rights they do not hold themselves, e.g. ADMIN -> FINANCE (payments:manage).
+  // Nobody may hand out (or take away) rights they do not hold themselves.
   const own = new Set(MATRIX[actorRole as Role]);
   return [targetCurrentRole, newRole].every((r) => MATRIX[r].every((p) => own.has(p)));
 };

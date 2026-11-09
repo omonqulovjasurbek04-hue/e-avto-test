@@ -12,7 +12,7 @@ export const formatTeacherId = (n?: number | null): string => (valid(n) ? `teach
 
 type Numbers = { role?: string; userNumber?: number | null; studentNumber?: number | null; teacherNumber?: number | null; staffNumber?: number | null };
 
-const STAFF = ["MODERATOR", "FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"];
+const STAFF = ["MANAGER", "ADMIN", "SUPERADMIN"];
 
 /** ("ADMIN", 1) → "admin01" (two digits at least: staff are few). Empty when there is no number. */
 export const formatStaffId = (role: string, n?: number | null): string => (valid(n) ? `${role.toLowerCase()}${String(n).padStart(2, "0")}` : "");

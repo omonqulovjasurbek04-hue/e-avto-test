@@ -57,8 +57,8 @@ describe.skipIf(!enabled)("Telegram bot staff menu", () => {
       uid[k] = u.id;
     };
     await make("admin", "ADMIN", 1);
-    await make("moderator", "MODERATOR", 2);
-    await make("finance", "FINANCE", 3);
+    await make("moderator", "MANAGER", 2);
+    await make("finance", "MANAGER", 3);
     await make("student", "USER", 4, { telegramId: `${run}-tg` });
   });
 
@@ -113,10 +113,10 @@ describe.skipIf(!enabled)("Telegram bot staff menu", () => {
     await prisma.user.update({ where: { id: uid.finance }, data: { failedLogins: 0, lockedUntil: null } });
   });
 
-  it("shows only what the role allows (a moderator gets messages, not students or ranking)", async () => {
+  it("shows only what the role allows (the front desk gets students, not ranking or messages)", async () => {
     const chat = await signIn("moderator");
-    expect(lastKeyboard(chat)).toEqual(["✉️ Xabarlar", "🚪 Chiqish"]);
-    await say(chat, "👥 O'quvchilar");
+    expect(lastKeyboard(chat)).toEqual(["👥 O'quvchilar", "🔎 Qidirish", "🚪 Chiqish"]);
+    await say(chat, "🏆 Reyting");
     expect(last(chat)).toBe("Menyudan bo'limni tanlang.");
   });
 
@@ -165,7 +165,7 @@ describe.skipIf(!enabled)("Telegram bot staff menu", () => {
     await vi.waitFor(() => expect(texts(admin).some((t) => t.includes(`${run} Ali`))).toBe(true));
     const push = sent.find((s) => String(s.body.chat_id) === String(admin))!;
     expect(push.body.text).toContain("B &amp; C toifa"); // HTML-escaped for parse_mode HTML
-    expect(texts(finance)).toEqual([]); // finance has no content:manage
+    expect(texts(finance)).toEqual([]); // the front desk has no content:manage
 
     const msg = await prisma.contactMessage.findFirstOrThrow({ where: { name: `${run} Ali` } });
     await click(admin, `read:${msg.id}`, "x");

@@ -1,8 +1,10 @@
 # GitHub tekshiruvi → Render deploy (E-Avto Test)
 
-## Hozirgi sozlama
+## Oxirgi qayd etilgan sozlama
 
-`main` branchga yuborilgan har bir commit avval GitHub Actions’dagi `CI` tekshiruvlaridan o‘tadi. Render’dagi **eavto-test-uz-api** va **eavto-test-uz** servislarida `Auto-Deploy: After CI Checks Pass` yoqilgan: tekshiruvlar muvaffaqiyatli tugamaguncha yangi kod serverga chiqarilmaydi. CI xato qilsa, Render shu commitni deploy qilmaydi.
+Quyidagi holat 2026-10-23 dagi qaydga asoslangan; u GitHub va Render’dagi
+bugungi sozlamalarni tasdiqlamaydi. Deploy yoki production xulosasidan oldin
+GitHub Actions va Render boshqaruv panelidagi joriy holatni tekshiring.
 
 2026-10-23 holatida ikkala Render servisi ham ushbu rejimda. GitHub Actions’da `c74e3a5` commitining `CI` natijasi muvaffaqiyatli; Render frontendida shu commit live deb ko‘rsatilgan.
 
@@ -19,7 +21,7 @@
 
 Quyidagi promptni yangi o‘zgarish so‘raganda Codex’ga yuboring:
 
-> E-Avto Test loyihasida [o‘zgarishni bu yerga yozing]. Avval tegishli kod va loyiha qoidalarini tekshir. O‘zgarishni to‘liq amalga oshir, mos mavjud CI tekshiruvlarini lokalda bajar va xatolarni tuzat. Maxfiy ma’lumotlar yoki video fayllarni repoga kiritma. O‘zgarishni `main`ga chiqarishdan oldin GitHub Actions’dagi `CI` muvaffaqiyatli ekanini tasdiqla. Ushbu repoda Render API va frontend servislari `After CI Checks Pass` orqali deploy qilinadi; CI muvaffaqiyatsiz bo‘lsa deployni boshlama. CI yashil bo‘lgach ikkala Render servisida yangi commit `Live` bo‘lganini, API health endpointini va tegishli foydalanuvchi oqimini tekshir. Muammo topsang tuzatib, to‘liq ketma-ketlikni qayta bajar. Yakunda commit SHA, CI natijasi, Render deploy holati va amalda tekshirilgan sahifalarni qisqa bayon qil.
+> E-Avto Test loyihasida [o‘zgarishni bu yerga yozing]. Avval tegishli kod, test va loyiha qoidalarini o‘qib, minimal to‘liq o‘zgarish kiriting. Maxfiy ma’lumotlar yoki video fayllarni repoga qo‘shmang. Mos lokal CI tekshiruvlarini ishga tushirib, PASS/FAIL/SKIP natijalarini aniq qayd eting. Fayllarni commit/push qilmang, `main`ga o‘zgartirish chiqarmang, Render/Railway yoki boshqa production muhitiga deploy/migratsiya qilmang. Repo konfiguratsiyasini hostingdagi joriy holatning isboti deb qabul qilmang; release bo‘yicha alohida so‘rov va ruxsat bo‘lsa, GitHub Actions hamda hosting panelidagi ayni paytdagi holatni tekshiring. Yakunda o‘zgargan fayllar, test natijalari, yechilmagan xavflar va production’da egasi/operator tekshirishi kerak bo‘lgan narsalarni qisqa bayon qiling.
 
 ## Sozlamani buzmaslik
 

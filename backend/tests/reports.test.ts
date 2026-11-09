@@ -14,7 +14,7 @@ describe.skipIf(!enabled)("reports and system status", () => {
   let groupId = "";
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
 
-  const signup = async (k: string, role?: "FINANCE" | "TEACHER" | "ADMIN" | "MODERATOR") => {
+  const signup = async (k: string, role?: "TEACHER" | "ADMIN" | "MANAGER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     if (role) await prisma.user.update({ where: { id: res.body.data.user.id }, data: { role } });
@@ -26,8 +26,8 @@ describe.skipIf(!enabled)("reports and system status", () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
     await signup("admin", "ADMIN");
-    await signup("finance", "FINANCE");
-    await signup("moderator", "MODERATOR");
+    await signup("finance", "ADMIN");
+    await signup("moderator", "MANAGER");
     const teacher = await signup("teacher", "TEACHER");
     const a = await signup("a");
     const b = await signup("b");
@@ -63,12 +63,13 @@ describe.skipIf(!enabled)("reports and system status", () => {
     await prisma.$disconnect();
   });
 
-  it("reports are for admins and finance only; system status for admins only", async () => {
+  it("reports need reports:read; system status needs settings:manage", async () => {
     expect((await request(app).get("/api/admin/reports/tests").set(bearer("a"))).status).toBe(403);
     expect((await request(app).get("/api/admin/reports/teachers").set(bearer("teacher"))).status).toBe(403);
     expect((await request(app).get("/api/admin/reports/tests").set(bearer("moderator"))).status).toBe(403);
     expect((await request(app).get("/api/admin/reports/tests").set(bearer("finance"))).status).toBe(200);
-    expect((await request(app).get("/api/admin/system").set(bearer("finance"))).status).toBe(403);
+    expect((await request(app).get("/api/admin/system").set(bearer("moderator"))).status).toBe(403);
+    expect((await request(app).get("/api/admin/system").set(bearer("finance"))).status).toBe(200);
     expect((await request(app).get("/api/admin/system")).status).toBe(401);
   });
 

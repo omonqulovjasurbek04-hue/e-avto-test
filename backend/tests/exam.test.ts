@@ -15,7 +15,7 @@ describe.skipIf(!enabled)("exam module", () => {
   let courseId = "";
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
 
-  const signup = async (k: string, role?: "ADMIN" | "MODERATOR") => {
+  const signup = async (k: string, role?: "ADMIN") => {
     const res = await request(app).post("/api/auth/register").send({ name: k, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     if (role) await prisma.user.update({ where: { id: res.body.data.user.id }, data: { role } });
@@ -26,7 +26,7 @@ describe.skipIf(!enabled)("exam module", () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
     await signup("admin", "ADMIN");
-    await signup("moderator", "MODERATOR");
+    await signup("moderator", "ADMIN");
     await signup("student");
     courseId = (await prisma.course.create({ data: { title: `Exam ${run}`, description: "d" } })).id;
     await prisma.question.createMany({ data: Array.from({ length: 6 }, (_, i) => ({ courseId, text: `${run} q${i}`, options: ["A", "B", "C"], correctIndex: 0 })) });
@@ -41,7 +41,7 @@ describe.skipIf(!enabled)("exam module", () => {
     await prisma.$disconnect();
   });
 
-  it("students cannot touch exam settings or imports; moderators can", async () => {
+  it("students cannot touch exam settings or imports; admins can", async () => {
     expect((await request(app).put(`/api/admin/exam/courses/${courseId}/config`).set(bearer("student")).send({ questionCount: 5, passScore: 60 })).status).toBe(403);
     expect((await request(app).post("/api/admin/exam/questions/import").set(bearer("student")).send({ questions: [] })).status).toBe(403);
     expect((await request(app).get(`/api/admin/exam/courses/${courseId}/config`).set(bearer("moderator"))).status).toBe(200);

@@ -37,6 +37,8 @@ export const adminService = {
     apiPost<AdminEnrollment>(`/admin/users/${id}/enrollments`, d),
   /** Superadmin only: removes 2FA from an account that lost its authenticator and recovery codes. */
   resetUserTwoFactor: (id: string) => apiDelete<{ id: string; twoFactorEnabled: boolean }>(`/admin/users/${id}/two-factor`),
+  /** Deletes an account; accounts with orders or taught groups are refused and must be blocked instead. */
+  deleteUser: (id: string) => apiDelete<{ id: string; deleted: boolean }>(`/admin/users/${id}`),
 
   listCourses: () => apiGet<AdminCourse[]>("/admin/courses"),
   createCourse: (input: AdminCourseInput) => apiPost<AdminCourse>("/admin/courses", input),

@@ -86,11 +86,37 @@ describe.skipIf(!enabled)("groups, schedule and attendance", () => {
     expect(res.status).toBe(404);
   });
 
-  it("marks attendance; changes need a reason; finalized records are admin-only", async () => {
+  it("marks and changes attendance without a reason; finalized records are admin-only", async () => {
     const put = (who: string, body: object) => request(app).put(`/api/slots/${slotId}/attendance`).set(bearer(who)).send(body);
     expect((await put("teacherA", { records: [{ studentId: u.s1.id, status: "PRESENT" }] })).status).toBe(200);
-    expect((await put("teacherA", { records: [{ studentId: u.s1.id, status: "ABSENT" }] })).status).toBe(400);
+    expect((await put("teacherA", { records: [{ studentId: u.s1.id, status: "ABSENT" }] })).status).toBe(200);
     expect((await put("teacherA", { records: [{ studentId: u.s1.id, status: "LATE" }], reason: "keldi" })).status).toBe(200);
+    const bulk = await request(app)
+      .post(`/api/groups/${groupId}/attendance/bulk`)
+      .set(bearer("teacherA"))
+      .send({ records: [{ slotId, studentId: u.s1.id, status: "PRESENT" }] });
+    expect(bulk.status).toBe(200);
+    const auditCountAfterFirstSave = await prisma.auditLog.count({
+      where: { entity: "AttendanceRecord", entityId: { endsWith: u.s1.id } },
+    });
+    const repeatedBulk = await request(app)
+      .post(`/api/groups/${groupId}/attendance/bulk`)
+      .set(bearer("teacherA"))
+      .send({ records: [{ slotId, studentId: u.s1.id, status: "PRESENT" }] });
+    expect(repeatedBulk.status).toBe(200);
+    expect(await prisma.auditLog.count({
+      where: { entity: "AttendanceRecord", entityId: { endsWith: u.s1.id } },
+    })).toBe(auditCountAfterFirstSave);
+
+    await prisma.teacherGroup.update({ where: { id: groupId }, data: { capacity: 2 } });
+    expect((await request(app).post(`/api/admin/groups/${groupId}/members`).set(bearer("admin")).send({ studentId: u.s2.id })).status).toBe(201);
+    const addedStudentSave = await request(app)
+      .post(`/api/groups/${groupId}/attendance/bulk`)
+      .set(bearer("teacherA"))
+      .send({ records: [{ slotId, studentId: u.s2.id, status: "PRESENT" }] });
+    expect(addedStudentSave.status).toBe(200);
+    expect((await request(app).delete(`/api/admin/groups/${groupId}/members/${u.s2.id}`).set(bearer("admin"))).status).toBe(200);
+
     expect((await put("teacherA", { records: [{ studentId: u.outsider.id, status: "PRESENT" }] })).status).toBe(400);
     expect((await put("teacherA", { records: [{ studentId: u.s1.id, status: "ONLINE" }], reason: "online" })).status).toBe(400);
 
@@ -109,8 +135,29 @@ describe.skipIf(!enabled)("groups, schedule and attendance", () => {
     expect((await request(app).get("/api/me/schedule?from=2026-09-01&to=2026-10-01").set(bearer("s1"))).body.data.length).toBeGreaterThan(0);
   });
 
+  it("returns the monthly attendance journal for the owner only", async () => {
+    const url = `/api/groups/${groupId}/attendance-journal?month=2026-09`;
+    const mine = await request(app).get(url).set(bearer("teacherA"));
+    expect(mine.status).toBe(200);
+    expect(mine.body.data.month).toBe("2026-09");
+    expect(mine.body.data.members).toHaveLength(1);
+    expect(mine.body.data.lessons).toHaveLength(3);
+    expect(mine.body.data.lessons[0].records[0].status).toBe("PRESENT");
+
+    expect((await request(app).get(url).set(bearer("teacherB"))).status).toBe(404);
+    expect((await request(app).get(`/api/groups/${groupId}/attendance-journal?month=2026-13`).set(bearer("teacherA"))).status).toBe(400);
+  });
+
   it("CSV export is admin-only", async () => {
     expect((await request(app).get(`/api/groups/${groupId}/attendance-report.csv`).set(bearer("teacherA"))).status).toBe(403);
     expect((await request(app).get(`/api/groups/${groupId}/attendance-report.csv`).set(bearer("admin"))).status).toBe(200);
+  });
+
+  it("clears a saved attendance record with an audit reason", async () => {
+    const cleared = await request(app).put(`/api/slots/${slotId}/attendance`).set(bearer("admin"))
+      .send({ records: [{ studentId: u.s1.id, status: null }], reason: "Belgini tozalash" });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.data).not.toContainEqual(expect.objectContaining({ studentId: u.s1.id }));
+    expect(await prisma.auditLog.count({ where: { action: "attendance.clear", entityId: { endsWith: u.s1.id } } })).toBe(1);
   });
 });

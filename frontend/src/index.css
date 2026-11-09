@@ -173,3 +173,15 @@
 ::-webkit-scrollbar-thumb {
   @apply rounded-full bg-slate-300 dark:bg-slate-700;
 }
+
+.attendance-table-scroll::-webkit-scrollbar:horizontal {
+  height: 0;
+}
+
+.schedule-grid-scroll {
+  scrollbar-width: none;
+}
+
+.schedule-grid-scroll::-webkit-scrollbar:horizontal {
+  height: 0;
+}

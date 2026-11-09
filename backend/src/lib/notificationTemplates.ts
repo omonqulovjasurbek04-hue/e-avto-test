@@ -29,9 +29,9 @@ export const BUILTIN_TEMPLATES: Record<TemplateKey, Record<Language, TemplateTex
     ru: { subject: "Оплата получена", body: "Оплата {amount} сум получена. Доступ к курсу открыт." },
   },
   ATTENDANCE_ABSENT: {
-    uz: { subject: "Darsda qatnashmadingiz", body: "\"{group}\" guruhi, {date} dars. Davomat bo'limini tekshiring." },
-    uz_cyrl: { subject: "Дарсда қатнашмадингиз", body: "\"{group}\" гуруҳи, {date} дарс. Давомат бўлимини текширинг." },
-    ru: { subject: "Вы пропустили занятие", body: "Группа \"{group}\", занятие {date}. Проверьте раздел «Посещаемость»." },
+    uz: { subject: "Darsda qatnashmadingiz", body: "\"{group}\" guruhi, {date} kungi darsda qatnashmadingiz. Kelmaganlik sababini o'qituvchingizga yozib qoldiring va keyingi dars vaqtini jadvaldan tekshiring." },
+    uz_cyrl: { subject: "Дарсда қатнашмадингиз", body: "\"{group}\" гуруҳи, {date} кунги дарсда қатнашмадингиз. Келмаганлик сабабини ўқитувчингизга ёзиб қолдиринг ва кейинги дарс вақтини жадвалдан текширинг." },
+    ru: { subject: "Вы пропустили занятие", body: "Вы не были на занятии группы \"{group}\" {date}. Сообщите преподавателю причину отсутствия и проверьте в расписании время следующего занятия." },
   },
   SCHEDULE_NEW: {
     uz: { subject: "Yangi dars jadvali", body: "\"{group}\" guruhi uchun {count} ta dars qo'shildi. Jadval bo'limini tekshiring." },

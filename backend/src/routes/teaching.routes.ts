@@ -11,7 +11,7 @@ import { requireAnyPermission, requirePermission } from "../middleware/admin.mid
 import { asyncHandler } from "../middleware/asyncHandler";
 import { success } from "../utils/apiResponse";
 import { hasPermission } from "../lib/permissions";
-import { attendanceSchema, groupSchema, groupUpdateSchema, memberSchema, ownGroupSchema, ownGroupUpdateSchema, slotSchema, slotUpdateSchema } from "../validators/groups";
+import { attendanceBulkSchema, attendanceSchema, attendanceTelegramMessageSchema, groupSchema, groupUpdateSchema, memberSchema, ownGroupSchema, ownGroupUpdateSchema, scheduleSettingsSchema, slotSchema, slotUpdateSchema } from "../validators/groups";
 
 const uuid = z.string().uuid();
 const actorOf = (req: AuthRequest) => ({ userId: requireUserId(req), role: req.user!.role });
@@ -25,13 +25,28 @@ const rangeSchema = z.object({
 // ───────────── staff: /api/groups, /api/slots (teachers see only their own; groups:manage sees all) ─────────────
 // Group planners (MANAGER) read groups and slots here too; marking attendance is still checked per action.
 export const staffRoutes = Router();
-staffRoutes.use(["/groups", "/slots", "/teacher"], asyncHandler(authMiddleware));
-staffRoutes.use(["/groups", "/slots", "/teacher"], requireAnyPermission("teaching:access", "groups:manage"));
+staffRoutes.use(["/groups", "/slots", "/teacher", "/schedule"], asyncHandler(authMiddleware));
+staffRoutes.use(["/groups", "/slots", "/teacher", "/schedule"], requireAnyPermission("teaching:access", "groups:manage"));
 
 staffRoutes.get("/groups", h(async (req, res) => success(res, await groups.listGroups(actorOf(req)))));
+staffRoutes.get("/schedule/settings", h(async (_req, res) => success(res, await groups.getScheduleSettings())));
+staffRoutes.put("/schedule/settings", requireAnyPermission("schedule:manage", "groups:manage"), h(async (req, res) => {
+  success(res, await groups.updateScheduleSettings(actorOf(req), scheduleSettingsSchema.parse(req.body)));
+}));
 staffRoutes.get("/groups/:id", h(async (req, res) => success(res, await groups.getGroup(actorOf(req), uuid.parse(req.params.id)))));
 staffRoutes.get("/groups/:id/slots", h(async (req, res) => success(res, await groups.listSlots(actorOf(req), uuid.parse(req.params.id)))));
 staffRoutes.get("/groups/:id/attendance-report", h(async (req, res) => success(res, await attendance.groupReport(actorOf(req), uuid.parse(req.params.id)))));
+staffRoutes.get(
+  "/groups/:id/attendance-journal",
+  h(async (req, res) => {
+    const { month } = z.object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional() }).parse(req.query);
+    success(res, await attendance.groupMonthlyJournal(actorOf(req), uuid.parse(req.params.id), month));
+  })
+);
+staffRoutes.post("/groups/:id/attendance/telegram", h(async (req, res) => {
+  const { slotId, message, tomorrowMessage } = attendanceTelegramMessageSchema.parse(req.body);
+  success(res, await attendance.sendAttendanceTelegramMessage(actorOf(req), uuid.parse(req.params.id), slotId, message, tomorrowMessage ?? message));
+}));
 staffRoutes.get(
   "/groups/:id/attendance-report.csv",
   h(async (req, res) => {
@@ -84,10 +99,14 @@ staffRoutes.put("/slots/:id/attendance", h(async (req, res) => {
   const { records, reason } = attendanceSchema.parse(req.body);
   success(res, await attendance.markAttendance(actorOf(req), uuid.parse(req.params.id), records, reason));
 }));
+staffRoutes.post("/groups/:id/attendance/bulk", h(async (req, res) => {
+  const { records, reason } = attendanceBulkSchema.parse(req.body);
+  success(res, await attendance.markAttendanceBulk(actorOf(req), uuid.parse(req.params.id), records, reason));
+}));
 staffRoutes.post("/slots/:id/attendance/finalize", h(async (req, res) => success(res, await attendance.finalizeSession(actorOf(req), uuid.parse(req.params.id)))));
 
 // ───────────── questions: /api/teacher/courses/:id/(tickets|questions), /api/teacher/images|clips ─────────────
-// Teachers, moderators and admins (tickets:edit) fill the exam tickets and the course's question bank. Own
+// Teachers and admins (tickets:edit) fill the exam tickets and the course's question bank. Own
 // router (mounted before staffRoutes) so a question editor does not also need the teaching rights.
 export const questionRoutes = Router();
 const QUESTION_PATHS = ["/teacher/courses", "/teacher/images", "/teacher/clips"];

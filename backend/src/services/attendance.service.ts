@@ -1,16 +1,21 @@
 import { AttendanceStatus } from "@prisma/client";
 import { prisma } from "../config/database";
-import { badRequest, conflict, forbidden, notFound } from "../utils/errors";
+import { badRequest, conflict, forbidden, HttpError, notFound } from "../utils/errors";
 import { hasPermission } from "../lib/permissions";
 import { summarize, toCsv } from "../lib/attendance";
 import { writeAudit } from "./audit.service";
 import { Actor, loadAccessibleGroup } from "./group.service";
-import { cancelTelegramReminders, dispatchEmails, dispatchTelegramReminders, notify } from "./notification.service";
+import { cancelTelegramReminders, dispatchEmails, dispatchTelegramReminders, notify, TELEGRAM_REMINDER_COUNT } from "./notification.service";
+import { isTelegramConfigured, sendTelegramNotice } from "./telegram.service";
 
 interface Mark {
   studentId: string;
-  status: AttendanceStatus;
+  status: AttendanceStatus | null;
   note?: string | null;
+}
+
+interface BulkMark extends Mark {
+  slotId: string;
 }
 
 const slotWithGroup = async (slotId: string) => {
@@ -23,8 +28,8 @@ const slotWithGroup = async (slotId: string) => {
  * Saves attendance for one lesson.
  * - The actor must own the group (teacher) or be an admin; checked server-side on every call.
  * - Only current group members can be marked; one record per student per session (unique key).
- * - First marking is free; changing an existing record needs a reason, and after the session is
- *   finalized only users with attendance:edit (admin) may change it. Every change is audited with old/new.
+ * - Only current group members can be marked; after the session is finalized only users with
+ *   attendance:edit (admin) may change it. Every change is audited with old/new.
  */
 export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[], reason?: string) => {
   const slot = await slotWithGroup(slotId);
@@ -55,16 +60,28 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
 
     const existing = await tx.attendanceRecord.findMany({ where: { sessionId: session.id, studentId: { in: [...uniqueIds] } } });
     const byStudent = new Map(existing.map((r) => [r.studentId, r]));
-    const changesExisting = marks.some((m) => {
-      const prev = byStudent.get(m.studentId);
-      return prev && (prev.status !== m.status || (prev.note ?? null) !== (m.note ?? null));
-    });
-    if (changesExisting && !reason) throw badRequest("A reason is required to change saved attendance");
-
     const newlyAbsent: string[] = [];
     for (const m of marks) {
       const prev = byStudent.get(m.studentId);
       if (prev && prev.status === m.status && (prev.note ?? null) === (m.note ?? null)) continue;
+      if (m.status === null) {
+        if (!prev) continue;
+        await tx.attendanceRecord.delete({ where: { sessionId_studentId: { sessionId: session.id, studentId: m.studentId } } });
+        await writeAudit(
+          {
+            actorId: actor.userId,
+            action: "attendance.clear",
+            entity: "AttendanceRecord",
+            entityId: `${session.id}:${m.studentId}`,
+            before: { status: prev.status, note: prev.note },
+            after: { status: null, note: null },
+            reason,
+          },
+          tx
+        );
+        if (prev.status === "ABSENT") await cancelTelegramReminders(m.studentId, `absent:${session.id}`, tx);
+        continue;
+      }
       await tx.attendanceRecord.upsert({
         where: { sessionId_studentId: { sessionId: session.id, studentId: m.studentId } },
         create: { sessionId: session.id, studentId: m.studentId, status: m.status, note: m.note ?? null, markedById: actor.userId },
@@ -90,7 +107,7 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
     newlyAbsentCount = newlyAbsent.length;
     // Absence notice; the student can switch the "attendance" category off. One per lesson and student.
     for (const studentId of newlyAbsent) {
-      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, template: "ATTENDANCE_ABSENT", vars: { group: slot.group.name, date: slot.startsAt }, email: true, telegram: true }, tx));
+      emailIds.push(await notify({ userId: studentId, type: "ATTENDANCE_ABSENT", category: "attendance", dedupeKey: `absent:${session.id}`, template: "ATTENDANCE_ABSENT", vars: { group: slot.group.name, date: slot.startsAt }, email: true, telegram: true, telegramLessonAt: slot.startsAt }, tx));
     }
 
     return tx.attendanceRecord.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: "asc" } });
@@ -98,6 +115,155 @@ export const markAttendance = async (actor: Actor, slotId: string, marks: Mark[]
   dispatchEmails(emailIds);
   if (newlyAbsentCount > 0) dispatchTelegramReminders();
   return records;
+};
+
+export const markAttendanceBulk = async (actor: Actor, groupId: string, changes: BulkMark[], reason?: string) => {
+  await loadAccessibleGroup(actor, groupId);
+  if (!hasPermission(actor.role, "attendance:mark")) throw forbidden("You cannot mark attendance");
+
+  const slotsByStudent = new Map<string, Set<string>>();
+  const marksBySlot = new Map<string, Mark[]>();
+  for (const { slotId, ...mark } of changes) {
+    const students = slotsByStudent.get(slotId) ?? new Set<string>();
+    if (students.has(mark.studentId)) throw badRequest("Duplicate student in the request");
+    students.add(mark.studentId);
+    slotsByStudent.set(slotId, students);
+    const marks = marksBySlot.get(slotId) ?? [];
+    marks.push(mark);
+    marksBySlot.set(slotId, marks);
+  }
+
+  const slots = await prisma.scheduleSlot.findMany({
+    where: { id: { in: [...marksBySlot.keys()] }, groupId },
+    include: { group: true, session: true },
+  });
+  if (slots.length !== marksBySlot.size) throw notFound("Lesson not found in this group");
+  const slotById = new Map(slots.map((slot) => [slot.id, slot]));
+  const members = await prisma.groupMembership.findMany({ where: { groupId, leftAt: null }, select: { studentId: true } });
+  const memberIds = new Set(members.map((member) => member.studentId));
+
+  for (const [slotId, marks] of marksBySlot) {
+    const slot = slotById.get(slotId);
+    if (!slot) throw notFound("Lesson not found in this group");
+    if (slot.status === "CANCELLED") throw conflict("A cancelled lesson has no attendance");
+    if (marks.some((mark) => mark.status === "ONLINE") && !slot.onlineUrl) throw badRequest("ONLINE is only valid for lessons with an online link");
+    if (marks.some((mark) => !memberIds.has(mark.studentId))) throw badRequest("Every student must be an active member of this group");
+    if (slot.session?.finalizedAt && !hasPermission(actor.role, "attendance:edit")) {
+      throw forbidden("This attendance is finalized; ask an administrator to change it");
+    }
+  }
+
+  const emailIds: (string | null)[] = [];
+  let shouldDispatchTelegramReminders = false;
+  return prisma.$transaction(async (tx) => {
+    const results: { slotId: string; records: Awaited<ReturnType<typeof markAttendance>> }[] = [];
+
+    for (const [slotId, marks] of marksBySlot) {
+      const slot = slotById.get(slotId);
+      if (!slot) throw notFound("Lesson not found in this group");
+
+      let session = slot.session;
+      if (!session) {
+        if (marks.every((mark) => mark.status === null)) {
+          results.push({ slotId, records: [] });
+          continue;
+        }
+        session = await tx.attendanceSession.upsert({
+          where: { slotId },
+          create: { slotId, createdById: actor.userId },
+          update: {},
+        });
+      }
+
+      const existing = await tx.attendanceRecord.findMany({
+        where: { sessionId: session.id, studentId: { in: marks.map((mark) => mark.studentId) } },
+      });
+      const byStudent = new Map(existing.map((record) => [record.studentId, record]));
+      const newlyAbsent: string[] = [];
+
+      for (const mark of marks) {
+        const previous = byStudent.get(mark.studentId);
+        if (previous && previous.status === mark.status && (previous.note ?? null) === (mark.note ?? null)) continue;
+
+        if (mark.status === null) {
+          if (!previous) continue;
+          await tx.attendanceRecord.delete({
+            where: { sessionId_studentId: { sessionId: session.id, studentId: mark.studentId } },
+          });
+          await writeAudit(
+            {
+              actorId: actor.userId,
+              action: "attendance.clear",
+              entity: "AttendanceRecord",
+              entityId: `${session.id}:${mark.studentId}`,
+              before: { status: previous.status, note: previous.note },
+              after: { status: null, note: null },
+              reason,
+            },
+            tx
+          );
+          if (previous.status === "ABSENT") await cancelTelegramReminders(mark.studentId, `absent:${session.id}`, tx);
+          continue;
+        }
+
+        await tx.attendanceRecord.upsert({
+          where: { sessionId_studentId: { sessionId: session.id, studentId: mark.studentId } },
+          create: {
+            sessionId: session.id,
+            studentId: mark.studentId,
+            status: mark.status,
+            note: mark.note ?? null,
+            markedById: actor.userId,
+          },
+          update: { status: mark.status, note: mark.note ?? null, markedById: actor.userId },
+        });
+        await writeAudit(
+          {
+            actorId: actor.userId,
+            action: previous ? "attendance.change" : "attendance.mark",
+            entity: "AttendanceRecord",
+            entityId: `${session.id}:${mark.studentId}`,
+            before: previous ? { status: previous.status, note: previous.note } : undefined,
+            after: { status: mark.status, note: mark.note ?? null },
+            reason: previous ? reason : undefined,
+          },
+          tx
+        );
+
+        if (mark.status === "ABSENT") newlyAbsent.push(mark.studentId);
+        else if (previous?.status === "ABSENT") await cancelTelegramReminders(mark.studentId, `absent:${session.id}`, tx);
+      }
+
+      for (const studentId of newlyAbsent) {
+        emailIds.push(await notify(
+          {
+            userId: studentId,
+            type: "ATTENDANCE_ABSENT",
+            category: "attendance",
+            dedupeKey: `absent:${session.id}`,
+            template: "ATTENDANCE_ABSENT",
+            vars: { group: slot.group.name, date: slot.startsAt },
+            email: true,
+            telegram: true,
+            telegramLessonAt: slot.startsAt,
+          },
+          tx
+        ));
+      }
+      if (newlyAbsent.length > 0) shouldDispatchTelegramReminders = true;
+
+      results.push({
+        slotId,
+        records: await tx.attendanceRecord.findMany({ where: { sessionId: session.id }, orderBy: { createdAt: "asc" } }),
+      });
+    }
+
+    return results;
+  }, { timeout: 30_000 }).then((results) => {
+    dispatchEmails(emailIds);
+    if (shouldDispatchTelegramReminders) dispatchTelegramReminders();
+    return results;
+  });
 };
 
 export const finalizeSession = async (actor: Actor, slotId: string) => {
@@ -108,6 +274,68 @@ export const finalizeSession = async (actor: Actor, slotId: string) => {
   const session = await prisma.attendanceSession.update({ where: { id: slot.session.id }, data: { finalizedAt: new Date() } });
   await writeAudit({ actorId: actor.userId, action: "attendance.finalize", entity: "AttendanceSession", entityId: session.id });
   return session;
+};
+
+/** Sends a teacher-authored message only to linked students marked absent in this group's lesson. */
+export const sendAttendanceTelegramMessage = async (
+  actor: Actor,
+  groupId: string,
+  slotId: string,
+  message: string,
+  tomorrowMessage: string
+) => {
+  await loadAccessibleGroup(actor, groupId);
+  if (!hasPermission(actor.role, "attendance:mark")) throw forbidden("You cannot send attendance messages");
+  if (!isTelegramConfigured()) throw new HttpError(503, "Telegram bot is not configured");
+
+  const slot = await slotWithGroup(slotId);
+  if (slot.groupId !== groupId) throw notFound("Lesson not found in this group");
+  if (slot.status === "CANCELLED") throw conflict("A cancelled lesson has no attendance");
+  if (!slot.session) return { recipients: 0, sent: 0, failed: 0 };
+
+  const records = await prisma.attendanceRecord.findMany({
+    where: { sessionId: slot.session.id, status: "ABSENT" },
+    select: { studentId: true },
+  });
+  const absentIds = records.map((record) => record.studentId);
+  if (absentIds.length === 0) return { recipients: 0, sent: 0, failed: 0 };
+
+  await prisma.notification.updateMany({
+    where: {
+      type: "ATTENDANCE_ABSENT",
+      dedupeKey: `absent:${slot.session.id}`,
+      userId: { in: absentIds },
+      telegramNextAt: { not: null },
+      telegramSends: { lt: TELEGRAM_REMINDER_COUNT },
+    },
+    data: { telegramTodayMessage: message, telegramTomorrowMessage: tomorrowMessage },
+  });
+
+  const members = await prisma.groupMembership.findMany({
+    where: {
+      groupId,
+      leftAt: null,
+      studentId: { in: absentIds },
+      student: { isActive: true, telegramId: { not: null } },
+    },
+    select: { student: { select: { telegramId: true } } },
+  });
+  const telegramIds = members.flatMap((member) => member.student.telegramId ? [member.student.telegramId] : []);
+  let sent = 0;
+  for (let i = 0; i < telegramIds.length; i += 5) {
+    const results = await Promise.all(telegramIds.slice(i, i + 5).map((id) => sendTelegramNotice(id, message)));
+    sent += results.filter(Boolean).length;
+    if (i + 5 < telegramIds.length) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  const failed = telegramIds.length - sent;
+  await writeAudit({
+    actorId: actor.userId,
+    action: "attendance.telegram.send",
+    entity: "ScheduleSlot",
+    entityId: slotId,
+    after: { attempted: telegramIds.length, sent, failed },
+  });
+  return { recipients: telegramIds.length, sent, failed };
 };
 
 export const getSessionRoster = async (actor: Actor, slotId: string) => {
@@ -153,6 +381,67 @@ export const groupReport = async (actor: Actor, groupId: string) => {
     ...summarize(records.filter((r) => r.studentId === m.studentId).map((r) => r.status)),
   }));
   return { groupId, lessons, rows };
+};
+
+const TASHKENT_OFFSET_MS = 5 * 3_600_000;
+
+/** "YYYY-MM" of an instant on the Tashkent calendar. */
+const monthKey = (date: Date): string => {
+  const local = new Date(date.getTime() + TASHKENT_OFFSET_MS);
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+/**
+ * One month of lessons with every member's marks: the data behind the group's attendance journal.
+ * The month is a Tashkent calendar month (UTC+5, no DST); cancelled lessons stay in the list so the
+ * grid can show them, but their marks never count anywhere.
+ */
+export const groupMonthlyJournal = async (actor: Actor, groupId: string, month?: string) => {
+  await loadAccessibleGroup(actor, groupId);
+  const key = month ?? monthKey(new Date());
+  const [year, monthNo] = key.split("-").map(Number);
+  const from = new Date(Date.UTC(year, monthNo - 1, 1) - TASHKENT_OFFSET_MS);
+  const to = new Date(Date.UTC(year, monthNo, 1) - TASHKENT_OFFSET_MS);
+
+  const [members, slots] = await Promise.all([
+    prisma.groupMembership.findMany({
+      where: { groupId, leftAt: null },
+      orderBy: { student: { name: "asc" } },
+      select: { studentId: true, student: { select: { name: true, phone: true, userNumber: true, studentNumber: true, telegramId: true } } },
+    }),
+    prisma.scheduleSlot.findMany({
+      where: { groupId, startsAt: { gte: from, lt: to } },
+      orderBy: { startsAt: "asc" },
+      select: {
+        id: true,
+        startsAt: true,
+        endsAt: true,
+        topic: true,
+        status: true,
+        onlineUrl: true,
+        session: { select: { finalizedAt: true, records: { select: { studentId: true, status: true, note: true } } } },
+      },
+    }),
+  ]);
+
+  return {
+    groupId,
+    month: key,
+    members: members.map((m) => {
+      const { telegramId, ...student } = m.student;
+      return { studentId: m.studentId, ...student, telegramLinked: Boolean(telegramId) };
+    }),
+    lessons: slots.map((s) => ({
+      slotId: s.id,
+      startsAt: s.startsAt,
+      endsAt: s.endsAt,
+      topic: s.topic,
+      status: s.status,
+      onlineUrl: s.onlineUrl,
+      finalizedAt: s.session?.finalizedAt ?? null,
+      records: s.session?.records ?? [],
+    })),
+  };
 };
 
 /** CSV export is limited to roles with reports:read (admins), not teachers. */

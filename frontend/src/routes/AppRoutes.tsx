@@ -47,6 +47,7 @@ const Orders = lazy(() => import("@/pages/student/Orders"));
 const Notifications = lazy(() => import("@/pages/student/Notifications"));
 const TeacherGroups = lazy(() => import("@/pages/teacher/TeacherGroups"));
 const TeacherGroupDetail = lazy(() => import("@/pages/teacher/TeacherGroupDetail"));
+const TeacherSchedule = lazy(() => import("@/pages/teacher/TeacherSchedule"));
 const TicketEditor = lazy(() => import("@/pages/teacher/TicketEditor"));
 const StudentKnowledge = lazy(() => import("@/pages/teacher/StudentKnowledge"));
 const Settings = lazy(() => import("@/pages/student/Settings"));
@@ -126,6 +127,10 @@ export default function AppRoutes() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teacher" element={<TeacherRoute><TeacherGroups /></TeacherRoute>} />
+            <Route path="/teacher/schedule" element={<TeacherRoute><TeacherSchedule /></TeacherRoute>} />
+            {/* The chosen group is remembered in localStorage, so the address bar stays clean. */}
+            <Route path="/teacher/groups" element={<TeacherRoute><TeacherGroupDetail /></TeacherRoute>} />
+            {/* Old links with an id in the address bar still open and move the id into localStorage. */}
             <Route path="/teacher/groups/:groupId" element={<TeacherRoute><TeacherGroupDetail /></TeacherRoute>} />
             <Route path="/tests/manage/:ticket" element={<RequirePerm perm="tickets:edit"><TicketEditor /></RequirePerm>} />
             <Route path="/users" element={<RequirePerm perm="users:manage"><AdminUsers /></RequirePerm>} />

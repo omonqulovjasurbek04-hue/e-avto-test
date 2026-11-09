@@ -26,15 +26,27 @@ export type NotifyInput = NotifyText & {
   email?: boolean;
   /** "attendance" notices can be switched off by the student independently. */
   category?: "general" | "attendance";
-  /** Also remind through the Telegram bot (accounts linked to Telegram only): see TELEGRAM_REMINDERS. */
+  /** Also remind through the Telegram bot (accounts linked to Telegram only). */
   telegram?: boolean;
+  /** Lesson start used to schedule the second reminder at the same local time the next day. */
+  telegramLessonAt?: Date | null;
 };
 
-/**
- * Telegram reminders of one notice, counted from when it was created: right away, after 1 hour, and the
- * next day. They stop as soon as the student reads the notice on the site (or the event is withdrawn).
- */
-export const TELEGRAM_REMINDERS_MS = [0, 60 * 60 * 1000, 24 * 60 * 60 * 1000];
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+const TASHKENT_OFFSET_MS = 5 * HOUR_MS;
+export const TELEGRAM_REMINDER_COUNT = 3;
+
+/** One hour after the notice, then at the lesson time and 20:00 on the next Tashkent calendar day. */
+export const telegramReminderAt = (createdAt: Date, sentCount: number, lessonAt?: Date | null): Date | null => {
+  if (sentCount === 0) return new Date(createdAt.getTime() + HOUR_MS);
+  if (sentCount === 1) return new Date((lessonAt ?? createdAt).getTime() + DAY_MS);
+  if (sentCount !== 2) return null;
+  const tashkentDate = new Date(createdAt.getTime() + TASHKENT_OFFSET_MS);
+  tashkentDate.setUTCHours(20, 0, 0, 0);
+  tashkentDate.setUTCDate(tashkentDate.getUTCDate() + 1);
+  return new Date(tashkentDate.getTime() - TASHKENT_OFFSET_MS);
+};
 
 export const MAX_EMAIL_ATTEMPTS = 3;
 
@@ -105,20 +117,20 @@ export const resetTemplate = async (actorId: string, key: TemplateKey, language:
 export const notify = async (input: NotifyInput, db: Db = prisma): Promise<string | null> => {
   const [prefs, user] = await Promise.all([
     db.notificationPreference.findUnique({ where: { userId: input.userId } }),
-    db.user.findUnique({ where: { id: input.userId }, select: { email: true, isActive: true, name: true } }),
+    db.user.findUnique({ where: { id: input.userId }, select: { email: true, isActive: true, name: true, telegramId: true } }),
   ]);
   if (!user?.isActive) return null;
   if (input.category === "attendance" && prefs?.attendance === false) return null;
 
   const inApp = prefs?.inApp ?? true;
   const wantsEmail = Boolean(input.email) && (prefs?.email ?? true);
-  if (!inApp && !wantsEmail) return null;
+  const telegramId = input.telegram && isTelegramConfigured() ? user.telegramId : null;
+  if (!inApp && !wantsEmail && !telegramId) return null;
 
   // No e-mail wanted -> NONE. Wanted but impossible (no SMTP / no address) -> SKIPPED, shown honestly as not sent.
   const emailStatus = !wantsEmail ? "NONE" : isMailConfigured() && user.email ? "PENDING" : "SKIPPED";
 
   const existing = await db.notification.findUnique({ where: { userId_dedupeKey: { userId: input.userId, dedupeKey: input.dedupeKey } }, select: { id: true } });
-  const telegramId = input.telegram && isTelegramConfigured() ? (await db.user.findUnique({ where: { id: input.userId }, select: { telegramId: true } }))?.telegramId : null;
   if (existing) return null; // duplicate event: nothing new to show or send
 
   // Rendered once, in the recipient's language: the in-app row and the e-mail show the same text.
@@ -126,6 +138,7 @@ export const notify = async (input: NotifyInput, db: Db = prisma): Promise<strin
     ? renderTemplate(await templateText(db, input.template, userLanguage(prefs?.language)), { name: user.name, ...input.vars })
     : { subject: input.title, body: input.body };
 
+  const createdAt = new Date();
   const row = await db.notification.create({
     data: {
       userId: input.userId,
@@ -135,8 +148,9 @@ export const notify = async (input: NotifyInput, db: Db = prisma): Promise<strin
       dedupeKey: input.dedupeKey,
       inApp,
       emailStatus,
-      // First Telegram reminder is due now; processTelegramReminders() sends it and schedules the next.
-      telegramNextAt: telegramId ? new Date() : null,
+      createdAt,
+      telegramNextAt: telegramId ? telegramReminderAt(createdAt, 0, input.telegramLessonAt) : null,
+      telegramLessonAt: input.telegramLessonAt ?? null,
     },
   });
   return emailStatus === "PENDING" ? row.id : null;
@@ -188,7 +202,7 @@ export const processEmailQueue = async (batch = 100): Promise<number> => {
 export const processTelegramReminders = async (now: Date = new Date(), batch = 100): Promise<number> => {
   if (!isTelegramConfigured()) return 0;
   const due = await prisma.notification.findMany({
-    where: { telegramNextAt: { lte: now }, telegramSends: { lt: TELEGRAM_REMINDERS_MS.length } },
+    where: { telegramNextAt: { lte: now }, telegramSends: { lt: TELEGRAM_REMINDER_COUNT } },
     orderBy: { telegramNextAt: "asc" },
     take: batch,
     include: { user: { select: { telegramId: true, isActive: true } } },
@@ -209,24 +223,27 @@ export const processTelegramReminders = async (now: Date = new Date(), batch = 1
     });
     if (claimed.count === 0) continue;
     const nr = n.telegramSends + 1;
-    const total = TELEGRAM_REMINDERS_MS.length;
+    const total = TELEGRAM_REMINDER_COUNT;
     const prefix = nr === 1 ? "" : `Eslatma (${nr}/${total}): `;
-    const ok = await sendTelegramNotice(n.user.telegramId, `${prefix}${n.title}\n\n${n.body}\n\n— E-Avto Test`);
+    const reminderBody = nr === 1
+      ? n.telegramTodayMessage ?? n.body
+      : n.telegramTomorrowMessage ?? n.body;
+    const ok = await sendTelegramNotice(n.user.telegramId, `${prefix}${n.title}\n\n${reminderBody}\n\n— E-Avto Test`);
     if (!ok) continue; // claimed for 5 minutes: tried again after that
     sent += 1;
-    const next = TELEGRAM_REMINDERS_MS[nr];
+    const next = telegramReminderAt(n.createdAt, nr, n.telegramLessonAt);
     // Schedule the next one only if our claim still stands: if the reminders were cancelled while this
     // one was being sent (absence corrected to "present"), they stay cancelled.
     const scheduled = await prisma.notification.updateMany({
       where: { id: n.id, telegramNextAt: claimedUntil },
-      data: { telegramSends: nr, telegramNextAt: next === undefined ? null : new Date(n.createdAt.getTime() + next) },
+      data: { telegramSends: nr, telegramNextAt: next },
     });
     if (scheduled.count === 0) await prisma.notification.update({ where: { id: n.id }, data: { telegramSends: nr } });
   }
   return sent;
 };
 
-/** Fire-and-forget after commit: the first reminder goes out without waiting for the next scheduled run. */
+/** Fire-and-forget after commit: the reminder is queued for its first due time. */
 export const dispatchTelegramReminders = (): void => {
   void processTelegramReminders().catch((e: Error) => console.error("Telegram reminders failed:", e.message));
 };
@@ -277,7 +294,7 @@ export const announce = async (actorId: string, input: { title: string; body: st
     if (emailId) queuedEmails++;
   }
   await writeAudit({ actorId, action: "notification.announce", entity: "Notification", entityId: announcementId, after: { audience: input.audience, recipients: created, title: input.title } });
-  // Start draining right away; the periodic job finishes whatever is left.
+  // Wake the worker for newly queued reminders; their scheduled due time is still enforced.
   void processEmailQueue(200).catch(() => undefined);
   return { recipients: created, emailsQueued: queuedEmails, emailConfigured: isMailConfigured() };
 };

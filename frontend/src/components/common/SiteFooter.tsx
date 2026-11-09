@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Car } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { DEFAULT_CONTACT } from "@/constants/config";
 
@@ -15,7 +14,7 @@ export default function SiteFooter() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="space-y-3 md:col-span-1">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"><Car className="h-4 w-4" /></div>
+            <img src="/brand-logo.png" alt="" className="h-8 w-8 rounded-lg object-cover" />
             <span className="font-extrabold text-slate-900 dark:text-white tracking-tight">{siteName.toUpperCase()}</span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{site.tagline || t("home.heroSubtitle")}</p>

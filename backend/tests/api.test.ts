@@ -145,7 +145,7 @@ describe.skipIf(!enabled)("E-Avto API", () => {
       expect(stats.status).toBe(200);
       // Accounts per role: every role present, and together they are all the accounts.
       const byRole = stats.body.data.byRole as Record<string, number>;
-      expect(Object.keys(byRole).sort()).toEqual(["ADMIN", "FINANCE", "MANAGER", "MODERATOR", "SUPERADMIN", "TEACHER", "USER"]);
+      expect(Object.keys(byRole).sort()).toEqual(["ADMIN", "MANAGER", "SUPERADMIN", "TEACHER", "USER"]);
       expect(Object.values(byRole).reduce((n, c) => n + c, 0)).toBe(stats.body.data.totalUsers);
       expect(stats.body.data.studentUsers).toBeLessThanOrEqual(byRole.USER);
       expect((await api().get("/api/admin/statistics")).status).toBe(401);

@@ -16,7 +16,7 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
   const base = () => `/api/teacher/courses/${courseId}`;
   const question = { text: `${run} Qaysi belgi?`, options: ["To'xtash", "Yurish", "Burilish"], correctIndex: 0, explanation: "Qoida 1" };
 
-  const signup = async (k: string, role?: "TEACHER" | "MODERATOR") => {
+  const signup = async (k: string, role?: "TEACHER" | "ADMIN") => {
     const email = `${run}-${k}@example.com`;
     const res = await request(app).post("/api/auth/register").send({ name: `${run} ${k}`, email, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
@@ -29,7 +29,7 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
     ({ prisma } = await import("../src/config/database"));
     await signup("teacher", "TEACHER");
     await signup("student");
-    await signup("moderator", "MODERATOR");
+    await signup("moderator", "ADMIN");
     courseId = (await prisma.course.create({ data: { title: `Ticket edit ${run}`, description: "d" } })).id;
     lessonId = (await prisma.lesson.create({ data: { courseId, title: "Belgilar" } })).id;
     await prisma.question.createMany({ data: Array.from({ length: 120 }, (_, i) => ({ courseId, text: `${run} q${i}`, options: ["OK", "No"], correctIndex: 0 })) });
@@ -101,7 +101,7 @@ describe.skipIf(!enabled)("teacher ticket editing", () => {
     expect(list.body.data.items).toHaveLength(5);
     expect(list.body.data.total).toBeGreaterThanOrEqual(120);
 
-    // A moderator edits questions too (no teaching rights needed).
+    // An admin edits questions too (no teaching rights needed).
     const add = await request(app).post(`${base()}/questions`).set(as("moderator")).send({ ...question, text: `${run} Bank savoli`, imageUrl: "https://cdn.example.uz/clip.mp4" });
     expect(add.status).toBe(201);
     expect(add.body.data.ticket).toBeNull();

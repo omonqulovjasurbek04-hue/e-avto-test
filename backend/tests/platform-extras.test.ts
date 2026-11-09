@@ -39,7 +39,7 @@ describe.skipIf(!enabled)("platform extras", () => {
   const tok: Record<string, string> = {};
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
 
-  const signup = async (k: string, role?: "ADMIN" | "MODERATOR") => {
+  const signup = async (k: string, role?: "ADMIN" | "MANAGER") => {
     const res = await request(app).post("/api/auth/register").send({ name: k, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     if (role) await prisma.user.update({ where: { id: res.body.data.user.id }, data: { role } });
@@ -53,7 +53,7 @@ describe.skipIf(!enabled)("platform extras", () => {
     ({ default: app } = await import("../src/app"));
     ({ prisma } = await import("../src/config/database"));
     await signup("admin", "ADMIN");
-    await signup("moder", "MODERATOR");
+    await signup("moder", "MANAGER");
     await signup("student");
   });
 
@@ -199,7 +199,7 @@ describe.skipIf(!enabled)("platform extras", () => {
     let categoryId = "";
     let courseId = "";
 
-    it("catalog managers create a category with translations; moderators cannot", async () => {
+    it("catalog managers create a category with translations; the front desk cannot", async () => {
       const body = { slug: `${run}-signs`, name: "Yo‘l belgilari", description: "<b>Belgilar</b>", translations: { ru: { name: "Дорожные знаки" } } };
       expect((await request(app).post("/api/admin/categories").set(bearer("moder")).send(body)).status).toBe(403);
       const res = await request(app).post("/api/admin/categories").set(bearer("admin")).send(body);

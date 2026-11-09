@@ -9,7 +9,7 @@ import { success } from "../utils/apiResponse";
 const uuid = z.string().uuid();
 const h = (fn: (req: AuthRequest, res: Response) => Promise<unknown>) => asyncHandler(fn as never);
 
-/** Exam rules and question-bank import/export (tests:manage — ADMIN, SUPERADMIN, MODERATOR). */
+/** Exam rules and question-bank import/export (tests:manage — ADMIN, SUPERADMIN). */
 const router = Router();
 router.use(asyncHandler(authMiddleware));
 router.use(requirePermission("tests:manage"));

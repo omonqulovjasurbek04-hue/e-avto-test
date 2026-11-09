@@ -21,7 +21,7 @@ describe.skipIf(!enabled)("refunds and order expiry", () => {
   let packageId = "";
   const bearer = (k: string) => ({ Authorization: `Bearer ${tok[k]}` });
 
-  const signup = async (k: string, role?: "FINANCE" | "ADMIN") => {
+  const signup = async (k: string, role?: "ADMIN" | "TEACHER") => {
     const res = await request(app).post("/api/auth/register").send({ name: `${run}-${k}`, email: `${run}-${k}@example.com`, password: "Passw0rdOK" });
     ids.push(res.body.data.user.id);
     uid[k] = res.body.data.user.id;
@@ -53,7 +53,8 @@ describe.skipIf(!enabled)("refunds and order expiry", () => {
     ({ signMock: sign } = await import("../src/lib/payments/mock.provider"));
     ({ expireStaleOrders } = await import("../src/services/payment.service"));
     await signup("admin", "ADMIN");
-    await signup("finance", "FINANCE");
+    await signup("finance", "ADMIN");
+    await signup("teacher", "TEACHER");
     await signup("buyer");
     await signup("late");
     await signup("race");
@@ -76,12 +77,13 @@ describe.skipIf(!enabled)("refunds and order expiry", () => {
     await prisma.$disconnect();
   });
 
-  it("only finance/superadmin may move money; admins and students may not", async () => {
+  it("admins may move money; students and teachers may not", async () => {
     const o = await order("buyer");
     await pay(o, `${run}-p1`);
     expect((await refundApi("buyer", o.payments[0].id, 1000)).status).toBe(403);
-    expect((await refundApi("admin", o.payments[0].id, 1000)).status).toBe(403);
-    expect((await request(app).get("/api/admin/finance/refunds").set(bearer("admin"))).status).toBe(403);
+    expect((await refundApi("teacher", o.payments[0].id, 1000)).status).toBe(403);
+    expect((await request(app).get("/api/admin/finance/refunds").set(bearer("teacher"))).status).toBe(403);
+    expect((await request(app).get("/api/admin/finance/refunds").set(bearer("finance"))).status).toBe(200);
   });
 
   it("partial refund keeps access, over-refund is rejected, full refund revokes access", async () => {
@@ -113,7 +115,7 @@ describe.skipIf(!enabled)("refunds and order expiry", () => {
     expect(total._sum.amount).toBe(60_000);
   });
 
-  it("a provider without refund support leaves it pending until finance confirms or rejects it", async () => {
+  it("a provider without refund support leaves it pending until an admin confirms or rejects it", async () => {
     const buyer = uid.buyer;
     const o = await prisma.order.create({ data: { userId: buyer, status: "PAID", subtotal: 50_000, total: 50_000, paidAt: new Date() } });
     const pm = await prisma.payment.create({ data: { orderId: o.id, provider: "manual-bank", providerPaymentId: `${run}-bank`, status: "PAID", amount: 50_000, paidAt: new Date() } });

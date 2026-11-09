@@ -11,8 +11,6 @@ generator client {
 enum Role {
   USER
   TEACHER
-  MODERATOR
-  FINANCE
   MANAGER
   ADMIN
   SUPERADMIN
@@ -46,9 +44,9 @@ model User {
   // teacher0001…: own sequence, set when the account first becomes a teacher. Never reused; kept (as
   // history) when the teacher role is taken away.
   teacherNumber      Int?      @unique
-  // moderator0001, finance0001, manager0001, admin0001, superadmin0001: staff (non-teaching) roles,
-  // each role with its own sequence, unique together with the role. Set when the account gets a staff
-  // role (its user number is freed then, as for a teacher); a new staff role gives a new number.
+  // manager0001, admin0001, superadmin0001: staff (non-teaching) roles, each role with its own sequence,
+  // unique together with the role. Set when the account gets a staff role (its user number is freed then,
+  // as for a teacher); a new staff role gives a new number.
   staffNumber        Int?
   isActive           Boolean   @default(true)
   // Incremented on password change / "log out everywhere"; older JWTs stop working.
@@ -395,8 +393,6 @@ enum IdentifierKind {
   STUDENT
   TEACHER
   // Staff numbers: the kind is the role the number was given for.
-  MODERATOR
-  FINANCE
   MANAGER
   ADMIN
   SUPERADMIN
@@ -736,6 +732,8 @@ model TeacherGroup {
   capacity      Int         @default(20)
   // Weekly rhythm in Tashkent time; when set, the lessons are generated from it.
   days          GroupDays?
+  // Custom weekdays (1 = Monday … 7 = Sunday) when `days` is null; empty = no fixed rhythm.
+  weekdays      Int[]       @default([])
   startTime     String?
   lessonMinutes Int?
   room          String?
@@ -892,7 +890,10 @@ model Notification {
   // (null = none wanted, or finished / stopped because the notice was read).
   telegramSends  Int       @default(0)
   telegramNextAt DateTime?
-  createdAt      DateTime  @default(now())
+  telegramLessonAt DateTime?
+  telegramTodayMessage    String?
+  telegramTomorrowMessage String?
+  createdAt       DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

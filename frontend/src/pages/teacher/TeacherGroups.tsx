@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Archive, ArchiveRestore, Check, CalendarDays, CalendarPlus, DoorOpen, GraduationCap, Plus, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,9 +19,31 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { GroupForm, rhythmLabel } from "@/components/groups/GroupForm";
 import { MembersModal, SlotsModal } from "@/components/groups/GroupAdminModals";
+import { ApiError } from "@/services/api";
 
-/** "" = every room; NO_ROOM = groups without a room. */
-const NO_ROOM = "__none__";
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+const scheduleConflictToast = (error: unknown, t: ReturnType<typeof useTranslation>["t"]) => {
+  if (!(error instanceof ApiError) || error.status !== 409 || !Array.isArray(error.errors)) return null;
+  const detail = error.errors.find((item) => isRecord(item) && (item.kind === "teacher" || item.kind === "room"));
+  if (!isRecord(detail)) return null;
+
+  const startsAt = typeof detail.conflictingStartsAt === "string" ? new Date(detail.conflictingStartsAt) : null;
+  const group = typeof detail.conflictingGroup === "string" ? detail.conflictingGroup : "";
+  if (!startsAt || Number.isNaN(startsAt.getTime()) || !group) return null;
+
+  const date = new Intl.DateTimeFormat(undefined, { timeZone: "Asia/Tashkent", dateStyle: "medium" }).format(startsAt);
+  const time = new Intl.DateTimeFormat(undefined, { timeZone: "Asia/Tashkent", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(startsAt);
+  return {
+    title: t("groupForm.scheduleConflict"),
+    description: t("groupForm.scheduleConflictDetail", {
+      group,
+      date,
+      time,
+      reason: t(detail.kind === "room" ? "groupForm.roomConflict" : "groupForm.teacherConflict"),
+    }),
+  };
+};
 
 /** What a click on a card does while choosing: pick for deleting / archiving / bringing back, or open the edit form. */
 type PickMode = "delete" | "archive" | "restore" | "edit";
@@ -40,7 +62,6 @@ export default function TeacherGroups() {
   // "Open a group" from the dashboard arrives as ?new=1 and opens the form right away.
   const [opening, setOpening] = useState(useSearchParams()[0].get("new") === "1");
   const [busy, setBusy] = useState(false);
-  const [room, setRoom] = useState("");
   const [membersOf, setMembersOf] = useState<Group | null>(null);
   const [slotsOf, setSlotsOf] = useState<Group | null>(null);
   // "Delete", "archive" and "edit" turn on choosing; the chosen groups are handled together (delete after a confirmation).
@@ -69,7 +90,9 @@ export default function TeacherGroups() {
       setEditing(null);
       reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      const scheduleConflict = scheduleConflictToast(e, t);
+      if (scheduleConflict) toast.error(scheduleConflict.title, { description: scheduleConflict.description });
+      else toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -83,7 +106,9 @@ export default function TeacherGroups() {
       setOpening(false);
       navigate(`/teacher/groups/${g.id}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      const scheduleConflict = scheduleConflictToast(e, t);
+      if (scheduleConflict) toast.error(scheduleConflict.title, { description: scheduleConflict.description });
+      else toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -127,12 +152,13 @@ export default function TeacherGroups() {
   const archivedCount = all.filter((g) => g.status === "ARCHIVED").length;
   const groups = all.filter((g) => (showArchive ? g.status === "ARCHIVED" : g.status !== "ARCHIVED"));
   const mine = groups.filter((g) => g.teacherId === me?.id);
-  // Rooms in use (a group's own room), sorted; groups without one go last.
-  const rooms = useMemo(() => [...new Set(groups.map((g) => g.room?.trim()).filter((r): r is string => Boolean(r)))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), [groups]);
-  const byRoom = (r: string) => groups.filter((g) => (r === NO_ROOM ? !g.room?.trim() : g.room?.trim() === r));
-  const sections = (room ? [room] : [...rooms, NO_ROOM]).map((r) => ({ room: r, list: byRoom(r) })).filter((s) => s.list.length > 0);
+  const card = (g: Group, withTools: boolean) => {
+    const room = g.room?.trim();
+    const roomLabel = room
+      ? /^\d+$/.test(room) ? t("teacher.schedule.roomNumber", { number: room }) : room
+      : t("groupsByRoom.noRoom");
 
-  const card = (g: Group, withTools: boolean) => (
+    return (
     <Card
       key={g.id}
       className={cn(
@@ -153,8 +179,24 @@ export default function TeacherGroups() {
               stopSelecting();
             } else toggle(g.id);
           }}
-          className="block space-y-2"
+          className="relative block space-y-2 pr-20"
         >
+          <span
+            title={t("teacher.groups.students", { count: g._count.members, capacity: g.capacity })}
+            aria-label={t("teacher.groups.students", { count: g._count.members, capacity: g.capacity })}
+            className="absolute right-0 top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1.5 text-sm font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <Users className="h-4 w-4" aria-hidden="true" />
+            {g._count.members}
+          </span>
+          <span
+            title={roomLabel}
+            aria-label={roomLabel}
+            className="absolute bottom-0 right-0 inline-flex max-w-20 items-center gap-1.5 truncate rounded-full bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <DoorOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{roomLabel}</span>
+          </span>
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-bold text-slate-900 dark:text-white">{g.name}</h3>
             {mode === "edit" && <Pencil className="h-4 w-4 shrink-0 text-brand-500" aria-hidden />}
@@ -181,9 +223,6 @@ export default function TeacherGroups() {
               <CalendarDays className="h-4 w-4" /> {rhythmLabel(g, t)}
             </p>
           )}
-          <p className="flex items-center gap-1.5 text-sm text-slate-500">
-            <Users className="h-4 w-4" /> {t("teacher.groups.students", { count: g._count.members, capacity: g.capacity })}
-          </p>
         </Link>
         {withTools && !selecting && g.status === "ACTIVE" && (
           <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
@@ -197,13 +236,14 @@ export default function TeacherGroups() {
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   const chip = "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition";
   const idle = "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-brand-400 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700";
-  // Edit and archive sit with the archive switch, at the end of the room row (their own row on a phone).
+  // Group-management actions sit beside the room section heading.
   const tools = !selecting && (
-    <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {groups.length > 0 && (
         <button type="button" onClick={() => startPicking("edit")} className={cn(chip, idle)}>
           <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -219,10 +259,7 @@ export default function TeacherGroups() {
       {(archivedCount > 0 || showArchive) && (
         <button
           type="button"
-          onClick={() => {
-            setShowArchive((v) => !v);
-            setRoom("");
-          }}
+          onClick={() => setShowArchive((v) => !v)}
           aria-pressed={showArchive}
           className={cn(chip, showArchive ? "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900" : idle)}
         >
@@ -237,9 +274,9 @@ export default function TeacherGroups() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{manager ? t("admin.groups.title") : t("teacher.groups.title")}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("teacher.groups.title")}</h1>
         {!selecting && (
-          <div className="flex flex-wrap gap-2">
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
             <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setOpening(true)}>
               {manager ? t("admin.groups.new") : t("groupForm.open")}
             </Button>
@@ -308,33 +345,15 @@ export default function TeacherGroups() {
           )}
 
           <section>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("groupsByRoom.title")}</h2>
-            <p className="mb-3 text-sm text-slate-500">{t("groupsByRoom.hint")}</p>
-            {/* Room filter: every room, one room, or groups without a room. */}
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="flex flex-wrap gap-2">
-                {["", ...rooms, ...(byRoom(NO_ROOM).length ? [NO_ROOM] : [])].map((r) => (
-                  <button key={r || "all"} type="button" onClick={() => setRoom(r)} aria-pressed={room === r} className={cn(chip, room === r ? "bg-brand-600 text-white" : idle)}>
-                    {r && <DoorOpen className="h-3.5 w-3.5" aria-hidden />}
-                    {r === "" ? t("groupsByRoom.all") : r === NO_ROOM ? t("groupsByRoom.noRoom") : r}
-                  </button>
-                ))}
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div className="w-full min-w-0 sm:w-1/2">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("groupsByRoom.title")}</h2>
+                <p className="text-sm text-slate-500">{t("groupsByRoom.hint")}</p>
               </div>
               {tools}
             </div>
             {groups.length === 0 && <EmptyState title={showArchive ? t("groupArchive.empty") : t("teacher.groups.empty")} />}
-            <div className="space-y-6">
-              {sections.map((s) => (
-                <div key={s.room}>
-                  <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-                    <DoorOpen className="h-4 w-4" aria-hidden />
-                    {s.room === NO_ROOM ? t("groupsByRoom.noRoom") : s.room}
-                    <span className="font-normal normal-case text-slate-400">· {t("groupsByRoom.count", { count: s.list.length })}</span>
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">{s.list.map((g) => card(g, true))}</div>
-                </div>
-              ))}
-            </div>
+            <div className="grid gap-4 sm:grid-cols-2">{groups.map((g) => card(g, true))}</div>
           </section>
         </div>
       )}

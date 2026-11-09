@@ -40,7 +40,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
   );
 }
 
-/** TOTP 2FA for admin / finance accounts: setup, recovery codes, turning it off. */
+/** TOTP 2FA for admin accounts: setup, recovery codes, turning it off. */
 function TwoFactorCard() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
